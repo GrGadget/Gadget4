@@ -17,6 +17,8 @@ fftw3 = dependency('fftw3')
 hdf5 = dependency('hdf5',language: 'cpp')
 gsl = dependency('gsl')
 
+pkg=import('pkgconfig')
+
 user_config=files('Config.sh')
 
 subdir('buildsystem')
@@ -25,9 +27,12 @@ sources=[]
 headers=[]
 subdir('src')
 
+subdir('md5')
+
 if (format.found())
     run_target('format', 
-    command: [format,'-i',sources,headers])
+    command: [format,'-i',sources,headers,
+        md5_src,md5_headers])
 endif
 
 config_header = custom_target('config',
@@ -48,5 +53,6 @@ git_version = custom_target('git-info',
 
 gadget = executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
-    dependencies: [fftw3,mpi,hdf5,gsl])
+    dependencies: [fftw3,mpi,hdf5,gsl,md5],
+    install: true)
 

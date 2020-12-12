@@ -1,18 +1,7 @@
-#include "gadgetconfig.h"
-
 /*! \file Md5.cc
  *
  *  \brief implementation code of MD5 checksum computation for blocks of memory
  */
-
-#ifdef DEBUG_MD5
-
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "../data/allvars.h"
-#include "../data/dtypes.h"
 
 /*
  **********************************************************************
@@ -293,4 +282,3 @@ static void Transform(UINT4 *buf, UINT4 *in)
  ******************************* (cut) ********************************
  */
 
-#endif
