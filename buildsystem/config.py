@@ -37,9 +37,9 @@ def out2(options, fname):
 #include <stdlib.h>
 #include <math.h>
 #include \"gadgetconfig.h\"
-#include \"data/dtypes.h\"
-#include \"data/allvars.h\"
-#include \"main/main.h\"
+#include \"src/data/dtypes.h\"
+#include \"src/data/allvars.h\"
+#include \"src/main/main.h\"
 void output_compile_time_options(void)\n{
 printf(
 """
@@ -69,10 +69,10 @@ def out3(options, fname):
 #include <errno.h>
 #include <math.h>
 #include \"gadgetconfig.h\"
-#include \"data/constants.h\"
-#include \"data/dtypes.h\"
-#include \"data/macros.h\"
-#include \"io/io.h\"
+#include \"src/data/constants.h\"
+#include \"src/data/dtypes.h\"
+#include \"src/data/macros.h\"
+#include \"src/io/io.h\"
 hid_t my_H5Acreate(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id);
 hid_t my_H5Screate(H5S_class_t type);
 herr_t my_H5Aclose(hid_t attr_id, const char *attr_name);
@@ -111,8 +111,8 @@ H5Tset_size(atype, 1);\n
     f.write("\n")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
-        print("Usage: python check.py <Config.sh> <build_dir> <curr_dir> <src_dir>")
+    if len(sys.argv) < 3:
+        print("Usage: python config.py <Config.sh> <build_dir>")
         exit(1)
         
        
