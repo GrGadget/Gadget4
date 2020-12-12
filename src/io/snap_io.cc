@@ -38,7 +38,7 @@
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
 #include "../sort/peano.h"
-#include "../src/pm/pm.h"
+#include "../pm/pm.h"
 #include "../system/system.h"
 
 /*!
