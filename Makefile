@@ -100,7 +100,7 @@ RESULT     := $(shell CONFIG=$(CONFIG) PYTHON=$(PYTHON) BUILD_DIR=$(BUILD_DIR) S
 $(info $(RESULT))
 CONFIGVARS := $(shell cat $(BUILD_DIR)/gadgetconfig.h)
 
-RESULT     := $(shell SRC_DIR=$(SRC_DIR) BUILD_DIR=$(BUILD_DIR) ./buildsystem/git_version.sh)
+RESULT     := $(shell bash git_version.sh $(SRC_DIR) $(BUILD_DIR))
 
 ##########################
 #define available Systems#
