@@ -1,7 +1,4 @@
-sources += files(
-    'instrset_detect.cpp')
-
-headers += files([
+vectorclass_headers = files([
     'instrset.h',
     'vectorclass.h',
     'vectorf128.h',
@@ -19,3 +16,4 @@ headers += files([
     'vectormath_hyp.h',
     'vectormath_lib.h',
     'vectormath_trig.h'])
+

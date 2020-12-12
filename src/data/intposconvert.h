@@ -48,7 +48,7 @@ class intposconvert
 #endif
 
 #ifdef EXPLICIT_VECTORIZATION
-  inline Vec4d nearest_image_intpos_to_doublepos_vectorial(MyIntPosType const &a, MyIntPosType const &b0, MyIntPosType const &b1,
+  inline vectorclass::Vec4d nearest_image_intpos_to_doublepos_vectorial(MyIntPosType const &a, MyIntPosType const &b0, MyIntPosType const &b1,
                                                            MyIntPosType const &b2, MyIntPosType const &b3)
   {
 #if defined(GRAVITY_TALLBOX) || defined(LONG_X_BITS) || defined(LONG_Y_BITS) || defined(LONG_Z_BITS)
@@ -59,7 +59,7 @@ class intposconvert
 
     Vec4MySignedIntPosType intpos = (Vec4MySignedIntPosType)delta;
 
-    Vec4d pos = to_double(intpos);
+    vectorclass::Vec4d pos = to_double(intpos);
 
     return pos * FacIntToCoord;
   }

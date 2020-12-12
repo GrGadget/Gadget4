@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <cstddef>
 #ifdef EXPLICIT_VECTORIZATION
-#include "../vectorclass/vectorclass.h"
+#include <vectorclass/vectorclass.h>
 #endif
 
 #if !defined(POSITIONS_IN_32BIT) && !defined(POSITIONS_IN_64BIT) && !defined(POSITIONS_IN_128BIT)
@@ -36,8 +36,8 @@ typedef uint32_t MyIntPosType;
 typedef int32_t MySignedIntPosType;
 #define BITS_FOR_POSITIONS 32
 #ifdef EXPLICIT_VECTORIZATION
-typedef Vec4ui Vec4MyIntPosType;
-typedef Vec4i Vec4MySignedIntPosType;
+typedef vectorclass::Vec4ui Vec4MyIntPosType;
+typedef vectorclass::Vec4i Vec4MySignedIntPosType;
 #endif
 #endif
 
@@ -46,8 +46,8 @@ typedef uint64_t MyIntPosType;
 typedef int64_t MySignedIntPosType;
 #define BITS_FOR_POSITIONS 64
 #ifdef EXPLICIT_VECTORIZATION
-typedef Vec4uq Vec4MyIntPosType;
-typedef Vec4q Vec4MySignedIntPosType;
+typedef vectorclass::Vec4uq Vec4MyIntPosType;
+typedef vectorclass::Vec4q Vec4MySignedIntPosType;
 #endif
 #endif
 

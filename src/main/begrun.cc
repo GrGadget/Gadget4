@@ -76,7 +76,7 @@ void sim::hello(void)
 
 #ifdef EXPLICIT_VECTORIZATION
 
-  int instrset = instrset_detect();
+  int instrset = vectorclass::instrset_detect();
   mpi_printf("CPU supports instruction sets: ");
   if(instrset >= 1)
     mpi_printf("SSE ");

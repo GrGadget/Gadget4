@@ -10,7 +10,8 @@
 * (c) Copyright 2012-2017 GNU General Public License http://www.gnu.org/licenses
 \*****************************************************************************/
 
-#include "instrset.h"
+#include <vectorclass/vectorclass.h>
+#include "vectorclass/instrset.h"
 
 #ifdef VCL_NAMESPACE
 namespace VCL_NAMESPACE

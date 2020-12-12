@@ -38,7 +38,7 @@
  */
 
 /* -- include the following line if the md5.h header file is separate -- */
-#include "Md5.h"
+#include "md5/Md5.h"
 
 /* forward declaration */
 static void Transform(UINT4 *buf, UINT4 *in);
