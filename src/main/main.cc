@@ -19,9 +19,9 @@
 #include <string.h>
 #include <time.h>
 
+#include <half/half.hpp>
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "../half/half.hpp"
 #include "../io/io.h"
 #include "../io/restart.h"
 #include "../io/snap_io.h"

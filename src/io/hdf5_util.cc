@@ -23,7 +23,7 @@
 #include "gadget/dtypes.h"
 
 #define HALF_ROUND_STYLE 1
-#include "../half/half.hpp"
+#include <half/half.hpp>
 using half_float::half;
 
 hid_t Halfprec_memtype;

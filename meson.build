@@ -30,6 +30,7 @@ subdir('src')
 
 subdir('md5')
 subdir('vectorclass')
+subdir('half')
 
 
 config_header = custom_target('config',
@@ -52,7 +53,7 @@ git_version = custom_target('git-info',
 subdir('gadget')
 executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
-    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget],
+    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half],
     install: true)
 
 if (format.found())
@@ -60,5 +61,6 @@ if (format.found())
     command: [format,'-i',sources,headers,
         md5_src,md5_headers,
         vectorclass_src,vectorclass_headers,
-        gadget_src,gadget_headers])
+        gadget_src,gadget_headers,
+        half_headers])
 endif
