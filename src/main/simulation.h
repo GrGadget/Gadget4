@@ -44,9 +44,8 @@
 #include "../ngenic/ngenic.h"
 #include "../pm/pm.h"
 #include "../sph/sph.h"
-#include "../system/pinning.h"
 
-class sim : public pinning, public test_io_bandwidth
+class sim : public test_io_bandwidth
 {
  public:
   sim(MPI_Comm comm) : setcomm(comm), test_io_bandwidth(comm) {}
