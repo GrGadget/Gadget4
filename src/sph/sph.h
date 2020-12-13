@@ -12,16 +12,17 @@
 #ifndef SPH_H
 #define SPH_H
 
+#include <vectorclass/vectorclass.h>
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../ngbtree/ngbtree.h"
-#include <vectorclass/vectorclass.h>
 
 #define MAX_NGBS 500000
 
 class sph : public ngbtree
 {
-  using Vec4d = vectorclass::Vec4d;
+  using Vec4d  = vectorclass::Vec4d;
   using Vec4db = vectorclass::Vec4db;
+
  public:
   void compute_densities(void);
   void density(int *targetlist, int ntarget);

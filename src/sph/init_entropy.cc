@@ -78,8 +78,6 @@ void sph::init_entropy(void)
   Foreign_Points = (foreign_sphpoint_data *)Mem.mymalloc_movable(&Foreign_Points, "Foreign_Points",
                                                                  MaxForeignPoints * sizeof(foreign_sphpoint_data));
 
-
-
   double tstart = Logs.second();
 
   int global_left_particles = 0;
@@ -90,7 +88,7 @@ void sph::init_entropy(void)
     {
       double t0 = Logs.second();
 
- /*  Since EntropyToInvGammaPred of remote particles can change, we have to import the particles in every iteration */
+      /*  Since EntropyToInvGammaPred of remote particles can change, we have to import the particles in every iteration */
 
       MaxForeignNodes  = nspace;
       MaxForeignPoints = 8 * nspace;
@@ -171,9 +169,7 @@ void sph::init_entropy(void)
     }
   while(global_left_particles > 0);
 
-
   TIMER_STOP(CPU_DENSITY);
-
 
   /* free temporary buffers */
 

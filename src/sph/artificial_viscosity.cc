@@ -137,11 +137,11 @@ void sph_particle_data::set_velocity_gradients(void)
 void sph_particle_data::set_viscosity_coefficient(double dt)
 {
   double dDivVel_dt = dt > 0 ? (DivVel - DivVelOld) / (dt) : 0;
-  dDivVel_dt *= All.cf_a2inv; //now in physical coordinates
+  dDivVel_dt *= All.cf_a2inv;  // now in physical coordinates
   double shockIndicator = -dDivVel_dt > 0 ? -dDivVel_dt : 0;
-  double hsml_p           = Hsml * All.cf_atime;
-  double hsml2_p          = hsml_p * hsml_p;
-  double csnd_p           = Csnd * All.cf_afac3;
+  double hsml_p         = Hsml * All.cf_atime;
+  double hsml2_p        = hsml_p * hsml_p;
+  double csnd_p         = Csnd * All.cf_afac3;
   double alpha_tar      = (hsml2_p * shockIndicator) / (hsml2_p * shockIndicator + csnd_p * csnd_p) * All.ArtBulkViscConst;
 
   double DivVel2       = (DivVel * All.cf_a2inv) * (DivVel * All.cf_a2inv);
@@ -158,7 +158,7 @@ void sph_particle_data::set_viscosity_coefficient(double dt)
       return;
     }
 
-  double devayVel_p = decayVel  * All.cf_afac3;  //has the same a factor as sound speed
+  double devayVel_p = decayVel * All.cf_afac3;  // has the same a factor as sound speed
 
   double DecayTime = 10. * hsml_p / devayVel_p;
   Alpha            = limiter * (alpha_tar + (Alpha - alpha_tar) * exp(-dt / DecayTime));

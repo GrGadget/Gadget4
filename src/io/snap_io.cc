@@ -37,8 +37,8 @@
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
-#include "../sort/peano.h"
 #include "../pm/pm.h"
+#include "../sort/peano.h"
 #include "../system/system.h"
 
 /*!
@@ -415,13 +415,13 @@ void snap_io::read_ic(const char *fname)
   Sp->NumPart += add_numpart;
 #endif
 
-
-
 #ifdef GADGET2_HEADER
 #ifndef INITIAL_CONDITIONS_CONTAIN_ENTROPY
-  if(header.flag_entropy_instead_u) Terminate("Initial condition file contains entropy, but INITIAL_CONDITIONS_CONTAIN_ENTROPY is not set\n");
-#else    
-  if(! header.flag_entropy_instead_u)Terminate("Initial condition file contains uthermal, but INITIAL_CONDITIONS_CONTAIN_ENTROPY is set\n");
+  if(header.flag_entropy_instead_u)
+    Terminate("Initial condition file contains entropy, but INITIAL_CONDITIONS_CONTAIN_ENTROPY is not set\n");
+#else
+  if(!header.flag_entropy_instead_u)
+    Terminate("Initial condition file contains uthermal, but INITIAL_CONDITIONS_CONTAIN_ENTROPY is set\n");
 #endif
 #endif
 

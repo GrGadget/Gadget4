@@ -237,8 +237,8 @@ void domain<simparticles>::domain_find_total_cost(void)
 
           if(Tp->P[i].getType() == 0)
             {
-	      if(bin >= Tp->P[i].getTimeBinHydro())
-		HydroCostPerListedTimeBin[n] += 1.0;
+              if(bin >= Tp->P[i].getTimeBinHydro())
+                HydroCostPerListedTimeBin[n] += 1.0;
             }
         }
     }

@@ -275,7 +275,8 @@ static inline double get_density_bias(double hsml, double mass, int DesNumNgb)
 #endif
 
 #ifdef EXPLICIT_VECTORIZATION
-static inline void kernel_main_vector(vectorclass::Vec4d u, vectorclass::Vec4d hinv3, vectorclass::Vec4d hinv4, vectorclass::Vec4d *wk, vectorclass::Vec4d *dwk)
+static inline void kernel_main_vector(vectorclass::Vec4d u, vectorclass::Vec4d hinv3, vectorclass::Vec4d hinv4, vectorclass::Vec4d *wk,
+                                      vectorclass::Vec4d *dwk)
 {
 #ifdef CUBIC_SPLINE_KERNEL
   vectorclass::Vec4d ucompl    = u - 1.0;
@@ -288,8 +289,8 @@ static inline void kernel_main_vector(vectorclass::Vec4d u, vectorclass::Vec4d h
   vectorclass::Vec4d dwk1    = wksub + uucomp * 18.0;
   vectorclass::Vec4d wk2     = ucompsq * -2.0 * ucompl;
   vectorclass::Vec4d dwk2    = ucompsq * -6.0;
-  *wk           = select(decision, wk1, wk2);
-  *dwk          = select(decision, dwk1, dwk2);
+  *wk                        = select(decision, wk1, wk2);
+  *dwk                       = select(decision, dwk1, dwk2);
 #endif
 
 #ifdef WENDLAND_C2_KERNEL /* Dehnen & Aly 2012 */
@@ -305,8 +306,8 @@ static inline void kernel_main_vector(vectorclass::Vec4d u, vectorclass::Vec4d h
   vectorclass::Vec4d t1 = (1.0 - u);
   vectorclass::Vec4d t2 = (t1 * t1);
 
-  *dwk     = -20.0 * u * t2 * t1;
-  *wk      = t2 * t2 * (1.0 + u * 4.0);
+  *dwk                  = -20.0 * u * t2 * t1;
+  *wk                   = t2 * t2 * (1.0 + u * 4.0);
 #endif
 #endif /* WENDLAND_C2_KERNEL */
 
@@ -324,9 +325,9 @@ static inline void kernel_main_vector(vectorclass::Vec4d u, vectorclass::Vec4d h
   vectorclass::Vec4d t2 = (t1 * t1);
   vectorclass::Vec4d t4 = t2 * t2;
   vectorclass::Vec4d t6 = t2 * t2 * t2;
-  *dwk     = -56.0 / 3.0 * u * t4 * t1 * (5.0 * u + 1);
+  *dwk                  = -56.0 / 3.0 * u * t4 * t1 * (5.0 * u + 1);
 
-  *wk      = t6 * (1.0 + u * (6.0 + 35.0 / 3.0 * u));
+  *wk                   = t6 * (1.0 + u * (6.0 + 35.0 / 3.0 * u));
 
 #endif
 #endif /* WENDLAND_C4_KERNEL */
@@ -338,8 +339,8 @@ static inline void kernel_main_vector(vectorclass::Vec4d u, vectorclass::Vec4d h
   vectorclass::Vec4d t4 = t2 * t2;
   vectorclass::Vec4d t6 = t4 * t2;
   vectorclass::Vec4d t7 = t4 * t2 * t1;
-  *dwk     = -6.0 * u * t6 * (3.0 + u * (18.0 + 35.0 * u));
-  *wk      = t7 * (1.0 + u * (7.0 + u * (19.0 + 21.0 * u)));
+  *dwk                  = -6.0 * u * t6 * (3.0 + u * (18.0 + 35.0 * u));
+  *wk                   = t7 * (1.0 + u * (7.0 + u * (19.0 + 21.0 * u)));
 
 #else /* 2d or 3d */
   vectorclass::Vec4d t1 = (1.0 - u);
@@ -347,8 +348,8 @@ static inline void kernel_main_vector(vectorclass::Vec4d u, vectorclass::Vec4d h
   vectorclass::Vec4d t4 = t2 * t2;
   vectorclass::Vec4d t7 = t4 * t2 * t1;
   vectorclass::Vec4d t8 = t4 * t4;
-  *dwk     = -22.0 * u * (1.0 + u * (7.0 + 16.0 * u)) * t7;
-  *wk      = t8 * (1.0 + u * (8.0 + u * (25.0 + 32.0 * u)));
+  *dwk                  = -22.0 * u * (1.0 + u * (7.0 + 16.0 * u)) * t7;
+  *wk                   = t8 * (1.0 + u * (8.0 + u * (25.0 + 32.0 * u)));
 
 #endif
 #endif /* WENDLAND_C6_KERNEL */
