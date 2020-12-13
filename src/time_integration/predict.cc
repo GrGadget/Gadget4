@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/simparticles.h"
 #include "../lightcone/lightcone.h"
@@ -30,6 +29,7 @@
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /*
  * It counts the number of particles in each timebin and updates the

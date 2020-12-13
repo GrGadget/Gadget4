@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/timer.h"
@@ -34,6 +33,7 @@
 #include "../src/gravtree/gravtree.h"
 #include "../src/time_integration/timestep.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 #define GRID (HRPMGRID)
 #define GRIDz (GRID / 2 + 1)

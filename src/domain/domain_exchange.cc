@@ -19,7 +19,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../fof/fof.h"
@@ -29,6 +28,7 @@
 #include "../ngbtree/ngbtree.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*! \file domain_exchange.c
  *  \brief exchanges particle data according to the new domain decomposition

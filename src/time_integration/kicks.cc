@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../domain/domain.h"
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
@@ -30,6 +29,7 @@
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /*! \brief performs the first half step kick operator for the gravity
  *

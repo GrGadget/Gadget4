@@ -24,7 +24,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../data/particle_data.h"
 #include "../fof/fof.h"
@@ -38,6 +37,7 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../subfind/subfind_readid_io.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 subreadid_io::subreadid_io(idstoredata *IdStore_ptr, MPI_Comm comm, int format) : IO_Def(comm, format)
 {

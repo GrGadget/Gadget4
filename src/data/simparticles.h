@@ -17,7 +17,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../data/particle_data.h"
@@ -27,6 +26,7 @@
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/constants.h"
+#include "gadget/dtypes.h"
 #include "gadget/macros.h"
 #include "gadget/setcomm.h"
 

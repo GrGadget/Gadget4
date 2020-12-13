@@ -21,7 +21,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../gravtree/gravtree.h"
@@ -35,6 +34,7 @@
 #include "../ngbtree/ngbtree.h"
 #include "../sort/parallel_sort.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*!
  * Main driver routine for advancing the simulation forward in time.

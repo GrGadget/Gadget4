@@ -17,7 +17,6 @@
 #ifdef SUBFIND_ORPHAN_TREATMENT
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../data/particle_data.h"
 #include "../fof/fof.h"
@@ -30,6 +29,7 @@
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 class subreadid_io : public IO_Def
 {

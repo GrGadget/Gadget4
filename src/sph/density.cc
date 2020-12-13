@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
@@ -30,6 +29,7 @@
 #include "../sph/kernel.h"
 #include "../sph/sph.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*! This file contains the function for the "first SPH loop", where the SPH densities and some
  *  auxiliary quantities are computed.  There is also functionality that

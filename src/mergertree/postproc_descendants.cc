@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../fof/fof_io.h"
@@ -40,6 +39,7 @@
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 // this is used in FOF postprocessing to assign the previous subhalo length to particles
 void mergertree::get_previous_size_of_subhalo_for_each_particle(int num)

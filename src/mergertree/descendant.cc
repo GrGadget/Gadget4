@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../io/hdf5_util.h"
@@ -40,6 +39,7 @@
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /* This function allocates and fills the "Descendants" array, which gives the number of the descendant subhalo in the newly created
  * subhalo catalogue for every subhalo from the previous catalogue.

@@ -24,7 +24,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../data/simparticles.h"
 #include "../fmm/fmm.h"
@@ -48,6 +47,7 @@
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /*!
  *  This file contains various functions to initialize a simulation run. In

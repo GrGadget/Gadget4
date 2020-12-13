@@ -19,7 +19,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -27,6 +26,7 @@
 #include "../main/simulation.h"
 #include "../pm/pm.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 using namespace std;
 

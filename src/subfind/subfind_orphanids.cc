@@ -24,7 +24,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../io/hdf5_util.h"
@@ -37,6 +36,7 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 template <>
 void fof<simparticles>::subfind_match_ids_of_previously_most_bound_ids(simparticles *Sp)

@@ -20,7 +20,6 @@
 #include <stdlib.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
@@ -28,6 +27,7 @@
 #include "../ngenic/ngenic.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 double ngenic::ngenic_power_spec(double k)
 {

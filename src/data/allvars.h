@@ -18,9 +18,9 @@
 
 #include <math.h>
 
-#include "gadget/dtypes.h"
 #include "../io/parameters.h"
 #include "gadget/constants.h"
+#include "gadget/dtypes.h"
 #include "gadget/macros.h"
 
 /** Data which is the SAME for all tasks (mostly code parameters read

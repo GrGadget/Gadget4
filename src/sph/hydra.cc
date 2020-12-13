@@ -19,7 +19,6 @@
 #include <algorithm>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
@@ -31,6 +30,7 @@
 #include "../sph/kernel.h"
 #include "../sph/sph.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*! This file contains the "second SPH loop", where the SPH forces are
  *  computed, and where the rate of change of entropy due to the shock heating

@@ -19,8 +19,8 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../io/hdf5_util.h"
+#include "gadget/dtypes.h"
 
 #define HALF_ROUND_STYLE 1
 #include "../half/half.hpp"

@@ -18,9 +18,9 @@
 
 #include <md5/Md5.h>
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
+#include "gadget/dtypes.h"
 
 void logs::block_checksum(void *base, size_t bytes, int res[4])
 {

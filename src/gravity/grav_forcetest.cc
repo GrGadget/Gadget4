@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -37,6 +36,7 @@
 #include "../pm/pm.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /*  This function computes the gravitational forces for all active particles.
  *  A new tree is constructed, if the number of force computations since

@@ -19,13 +19,13 @@
 #include <sys/stat.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../io/io.h"
 #include "../io/parameters.h"
 #include "../main/main.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 void parameters::add_param(const char *name, void *buf, int type, int flag)
 {

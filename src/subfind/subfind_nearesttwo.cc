@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -33,6 +32,7 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*! Structure for communication during the density computation. Holds data that is sent to other processors.
  */

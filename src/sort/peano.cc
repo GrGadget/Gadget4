@@ -23,7 +23,6 @@ struct peano_hilbert_data
   int index;
 };
 
-
 /*
 struct peano_comparator
 {

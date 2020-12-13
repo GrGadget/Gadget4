@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../io/hdf5_util.h"
 #include "../io/io.h"
@@ -34,6 +33,7 @@
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*!
  * \brief Function for field registering.

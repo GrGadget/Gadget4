@@ -21,7 +21,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../fof/fof.h"
@@ -33,6 +32,7 @@
 #include "../sort/peano.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*! Structure for communication during the density computation. Holds data that is sent to other processors.
  */

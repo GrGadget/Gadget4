@@ -23,7 +23,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../io/hdf5_util.h"
@@ -37,6 +36,7 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 #define HALF_ROUND_STYLE 1
 #include "../half/half.hpp"

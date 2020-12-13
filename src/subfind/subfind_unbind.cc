@@ -22,7 +22,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -36,6 +35,7 @@
 #include "../sort/peano.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 #define MAX_UNBOUND_FRAC_BEFORE_BULK_VELOCITY_UPDATE 0.02
 #define MAX_UNBOUND_FRAC_BEFORE_POTENTIAL_UPDATE 0.20

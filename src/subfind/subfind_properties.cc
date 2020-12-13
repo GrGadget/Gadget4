@@ -21,7 +21,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -35,6 +34,7 @@
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
+#include "gadget/dtypes.h"
 
 template <>
 void fof<simparticles>::subfind_get_factors(double &fac_vel_to_phys, double &fac_hubbleflow, double &fac_comov_to_phys)

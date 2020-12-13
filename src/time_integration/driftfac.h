@@ -20,8 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "gadget/dtypes.h"
 #include "../main/main.h"
+#include "gadget/dtypes.h"
 #include "gadgetconfig.h"
 
 class driftfac

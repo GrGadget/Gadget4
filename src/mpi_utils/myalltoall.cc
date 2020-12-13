@@ -18,9 +18,9 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../mpi_utils/mpi_utils.h"
+#include "gadget/dtypes.h"
 
 #define PCHAR(a) ((char *)a)
 

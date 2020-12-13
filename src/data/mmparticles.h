@@ -18,13 +18,13 @@
 
 #include <math.h>
 
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/lightcone_massmap_data.h"
 #include "../data/mymalloc.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/constants.h"
+#include "gadget/dtypes.h"
 #include "gadget/macros.h"
 #include "gadget/setcomm.h"
 #include "gadgetconfig.h"

@@ -18,8 +18,8 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../mpi_utils/mpi_utils.h"
+#include "gadget/dtypes.h"
 
 int myMPI_Sendrecv(void *sendb, size_t sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvb, size_t recvcount,
                    MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)

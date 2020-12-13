@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -34,6 +33,7 @@
 #include "../sort/peano.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /*!
  *  This file contains the construction of the tree used for calculating the gravitational force.

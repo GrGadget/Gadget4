@@ -18,8 +18,8 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../mpi_utils/mpi_utils.h"
+#include "gadget/dtypes.h"
 
 MPI_Datatype MPI_MyIntPosType;
 

@@ -23,7 +23,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -37,6 +36,7 @@
 #include "../sort/peano.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 template <typename partset>
 void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<partset> *SingleDomain, domain_options mode, int gr)

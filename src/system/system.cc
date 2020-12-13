@@ -28,7 +28,6 @@
 #include <unistd.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
@@ -36,6 +35,7 @@
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 gsl_rng *random_generator; /*!< the random number generator used */
 

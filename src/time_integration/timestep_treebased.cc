@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../data/simparticles.h"
@@ -32,6 +31,7 @@
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 inline int sph::sph_treetimestep_evaluate_particle_node_opening_criterion(pinfo &pdat, ngbnode *nop)
 {

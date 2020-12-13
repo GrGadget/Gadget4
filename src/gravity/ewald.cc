@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../gravity/ewald.h"
 #include "../gravity/ewaldtensors.h"
@@ -28,6 +27,7 @@
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*!
  *  This file contains the computation of the Ewald correction table, and the corresponding lookup functions.

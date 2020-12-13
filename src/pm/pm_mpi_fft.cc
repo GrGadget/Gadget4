@@ -22,12 +22,12 @@
 #include <algorithm>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
 #include "../pm/pm.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /* We only use the one-dimensional FFTW3 routines, because the MPI versions of FFTW3
  * allocated memory for themselves during the transforms (which we want to strictly avoid),

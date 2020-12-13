@@ -23,7 +23,6 @@
 #include <algorithm>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -35,6 +34,7 @@
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /*!
  * These routines support two different strategies for doing the particle data exchange to assemble the density field

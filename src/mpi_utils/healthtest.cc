@@ -18,12 +18,12 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 #define TEST_PACKET_SIZE_IN_MB 5
 #define WORK_LOOP_COUNTER 50000000

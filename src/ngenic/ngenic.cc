@@ -20,7 +20,6 @@
 #include <algorithm>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
@@ -30,6 +29,7 @@
 #include "../ngenic/ngenic.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 #ifdef GRIDX
 #undef GRIDX

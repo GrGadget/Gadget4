@@ -22,7 +22,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
@@ -40,6 +39,7 @@
 #include "../pm/pm.h"
 #include "../sort/peano.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*!
  * \brief Function for field registering.

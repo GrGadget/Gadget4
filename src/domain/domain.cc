@@ -31,7 +31,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../logs/logs.h"
@@ -40,6 +39,7 @@
 #include "../sort/peano.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /*! This is the main routine for the domain decomposition.  It acts as a
  *  driver routine that allocates various temporary buffers, maps the

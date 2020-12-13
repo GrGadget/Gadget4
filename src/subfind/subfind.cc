@@ -23,7 +23,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../fof/fof.h"
@@ -38,6 +37,7 @@
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 /* main routine of SUBFIND algorithm, for output number 'num'.
  */

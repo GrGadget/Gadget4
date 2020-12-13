@@ -18,15 +18,15 @@
 #include <climits>
 
 #include <stdlib.h>
-#include "gadget/dtypes.h"
 #include "../data/idstorage.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../data/symtensors.h"
+#include "../sort/peano.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
-#include "../sort/peano.h"
 #include "gadget/constants.h"
+#include "gadget/dtypes.h"
 #include "gadget/macros.h"
 #include "gadget/setcomm.h"
 

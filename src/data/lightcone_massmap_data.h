@@ -14,8 +14,8 @@
 
 #if defined(LIGHTCONE) && defined(LIGHTCONE_MASSMAPS)
 
-#include "gadget/dtypes.h"
 #include "gadget/constants.h"
+#include "gadget/dtypes.h"
 #include "gadget/macros.h"
 
 struct lightcone_massmap_data

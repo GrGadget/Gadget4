@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -36,6 +35,7 @@
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 void fmm::fmm_force_passdown(int no, unsigned char no_shmrank, taylor_data taylor_current)
 {

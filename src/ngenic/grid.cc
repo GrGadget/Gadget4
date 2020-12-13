@@ -19,7 +19,6 @@
 #include <stdlib.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/timer.h"
@@ -27,6 +26,7 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../ngenic/ngenic.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 void ngenic::create_grid(void)
 {

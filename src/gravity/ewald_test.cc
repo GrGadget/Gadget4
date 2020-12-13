@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../gravity/ewald.h"
 #include "../gravity/ewaldtensors.h"
@@ -27,6 +26,7 @@
 #include "../main/simulation.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 #ifdef EWALD_TEST
 

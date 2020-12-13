@@ -12,8 +12,8 @@
 #define MPI_UTILS_H
 
 #include <mpi.h>
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
+#include "gadget/dtypes.h"
 
 /*!< Various tags used for labeling MPI messages */
 #define TAG_TOPNODE_FREE 4

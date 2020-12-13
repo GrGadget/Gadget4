@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../gravtree/gravtree.h"
@@ -31,6 +30,7 @@
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 void ngbtree::report_log_message(void)
 {

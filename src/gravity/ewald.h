@@ -21,13 +21,13 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../data/symtensors.h"
 #include "../gravity/ewaldtensors.h"
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /*!
  *

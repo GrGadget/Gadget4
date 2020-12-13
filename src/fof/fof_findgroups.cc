@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -32,6 +31,7 @@
 #include "../ngbtree/ngbtree.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 /* local data structure for collecting particle/cell data that is sent to other processors if needed */
 struct foffind_in : data_in_generic

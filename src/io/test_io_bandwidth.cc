@@ -20,7 +20,6 @@
 #include <unistd.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../io/io.h"
@@ -32,6 +31,7 @@
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 void test_io_bandwidth::measure_io_bandwidth(void)
 {

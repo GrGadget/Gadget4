@@ -21,10 +21,10 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/simparticles.h"
 #include "../domain/domain.h"
 #include "../gravtree/gravtree.h"
+#include "gadget/dtypes.h"
 
 #define TESTGRID 384
 

@@ -19,7 +19,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../logs/timer.h"
@@ -28,6 +27,7 @@
 #include "../sort/cxxsort.h"
 #include "../sort/peano.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 template <typename partset>
 void domain<partset>::domain_do_local_refine(int n, int *list)

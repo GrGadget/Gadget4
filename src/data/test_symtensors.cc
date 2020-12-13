@@ -20,11 +20,11 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/symtensors.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 static bool compare_list(const int &a, const int &b) { return a < b; }
 

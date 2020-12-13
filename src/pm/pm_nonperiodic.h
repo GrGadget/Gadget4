@@ -15,7 +15,6 @@
 #include "gadgetconfig.h"
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../data/simparticles.h"
@@ -25,6 +24,7 @@
 #include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/dtypes.h"
 
 class pm_nonperiodic : public pm_mpi_fft
 {

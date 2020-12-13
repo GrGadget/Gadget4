@@ -23,7 +23,6 @@
 #include <cstdio>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
@@ -36,6 +35,7 @@
 #include "../sort/cxxsort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
+#include "gadget/dtypes.h"
 
 struct r2type
 {

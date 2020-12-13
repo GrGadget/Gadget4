@@ -203,7 +203,6 @@ struct times_catalogue
   double Redshift;
 };
 
-
 enum mysnaptype
 {
   NORMAL_SNAPSHOT,

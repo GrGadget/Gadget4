@@ -21,7 +21,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../fof/fof.h"
@@ -31,6 +30,7 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../sort/cxxsort.h"
 #include "../subfind/subfind.h"
+#include "gadget/dtypes.h"
 
 template <typename partset>
 void fof<partset>::subfind_distribute_groups(void)
