@@ -22,14 +22,14 @@
 #include "../data/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/lightcone_particle_data.h"
-#include "../data/macros.h"
 #include "../data/mymalloc.h"
 #include "../data/particle_data.h"
 #include "../data/sph_particle_data.h"
 #include "../mpi_utils/mpi_utils.h"
-#include "../mpi_utils/setcomm.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/macros.h"
+#include "gadget/setcomm.h"
 
 class lcparticles : public intposconvert, public setcomm
 {

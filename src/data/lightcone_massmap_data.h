@@ -16,7 +16,7 @@
 
 #include "../data/constants.h"
 #include "../data/dtypes.h"
-#include "../data/macros.h"
+#include "gadget/macros.h"
 
 struct lightcone_massmap_data
 {

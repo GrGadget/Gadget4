@@ -15,8 +15,9 @@
 #ifndef DOMAIN_H
 #define DOMAIN_H
 
+#include <stdarg.h>
 #include "../data/dtypes.h"
-#include "../mpi_utils/setcomm.h"
+#include "gadget/setcomm.h"
 
 enum domain_options
 {

@@ -11,14 +11,8 @@
 
 #include "gadgetconfig.h"
 
-#include <gsl/gsl_rng.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../system/pinning.h"
+#include "gadget/macros.h"
+#include "gadget/pinning.h"
 
 #define MAX_CORES 4096
 

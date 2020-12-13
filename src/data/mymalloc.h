@@ -37,7 +37,7 @@
 #define myrealloc(x, y) myrealloc_movable_fullinfo(x, y, __FUNCTION__, __FILE__, __LINE__, 0)
 #define myrealloc_movable(x, y) myrealloc_movable_fullinfo(x, y, __FUNCTION__, __FILE__, __LINE__, 1)
 
-#include "../mpi_utils/setcomm.h"
+#include "gadget/setcomm.h"
 
 class memory : public setcomm
 {

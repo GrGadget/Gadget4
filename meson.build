@@ -31,12 +31,6 @@ subdir('src')
 subdir('md5')
 subdir('vectorclass')
 
-if (format.found())
-    run_target('format', 
-    command: [format,'-i',sources,headers,
-        md5_src,md5_headers,
-        vectorclass_src,vectorclass_headers])
-endif
 
 config_header = custom_target('config',
     build_by_default: true,
@@ -54,8 +48,17 @@ git_version = custom_target('git-info',
     output: 'version.cc',
     command : [bash,gitinfo_generator,meson.source_root(),'@OUTDIR@'])
 
-gadget = executable('Gadget4',
+
+subdir('gadget')
+executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
-    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass],
+    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget],
     install: true)
 
+if (format.found())
+    run_target('format', 
+    command: [format,'-i',sources,headers,
+        md5_src,md5_headers,
+        vectorclass_src,vectorclass_headers,
+        gadget_src,gadget_headers])
+endif

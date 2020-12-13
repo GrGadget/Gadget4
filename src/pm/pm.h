@@ -26,9 +26,9 @@ typedef float fft_real;
 typedef fftwf_complex fft_complex;
 #endif
 
-#include "../mpi_utils/setcomm.h"
 #include "../pm/pm_nonperiodic.h"
 #include "../pm/pm_periodic.h"
+#include "gadget/setcomm.h"
 
 class pm : public pm_periodic, public pm_nonperiodic
 {

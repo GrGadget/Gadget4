@@ -15,11 +15,11 @@
 #include "../data/constants.h"
 #include "../data/dtypes.h"
 #include "../data/intposconvert.h"
-#include "../data/macros.h"
 #include "../data/mymalloc.h"
-#include "../mpi_utils/setcomm.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/macros.h"
+#include "gadget/setcomm.h"
 
 /* in this structure, all SPH variables are put that are needed for passive
  * particles in the hydro force calculation. Only this part will be sent

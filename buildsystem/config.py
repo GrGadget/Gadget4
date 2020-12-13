@@ -71,7 +71,7 @@ def out3(options, fname):
 #include \"gadgetconfig.h\"
 #include \"src/data/constants.h\"
 #include \"src/data/dtypes.h\"
-#include \"src/data/macros.h\"
+#include \"gadget/macros.h\"
 #include \"src/io/io.h\"
 hid_t my_H5Acreate(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id);
 hid_t my_H5Screate(H5S_class_t type);

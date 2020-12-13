@@ -19,8 +19,8 @@
 #include "../data/constants.h"
 #include "../data/dtypes.h"
 #include "../data/idstorage.h"
-#include "../data/macros.h"
 #include "../data/symtensors.h"
+#include "gadget/macros.h"
 
 struct lightcone_particle_data
 {

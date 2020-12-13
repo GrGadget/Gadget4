@@ -13,20 +13,22 @@
 #define SIMPART_H
 
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "../data/allvars.h"
 #include "../data/constants.h"
 #include "../data/dtypes.h"
 #include "../data/intposconvert.h"
-#include "../data/macros.h"
 #include "../data/mymalloc.h"
 #include "../data/particle_data.h"
 #include "../data/sph_particle_data.h"
 #include "../main/main.h"
 #include "../mpi_utils/mpi_utils.h"
-#include "../mpi_utils/setcomm.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/macros.h"
+#include "gadget/setcomm.h"
 
 #ifdef LIGHTCONE
 class lightcone;

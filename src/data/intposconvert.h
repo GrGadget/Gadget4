@@ -12,6 +12,7 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
+#include <stdio.h>
 #include "allvars.h"
 #include "dtypes.h"
 

@@ -12,7 +12,7 @@
 #ifndef PM_MPI_FFT_H
 #define PM_MPI_FFT_H
 
-#include "../mpi_utils/setcomm.h"
+#include "gadget/setcomm.h"
 
 #ifndef FFTW
 #define CONCAT(prefix, name) prefix##name

@@ -14,8 +14,8 @@
 #include "../data/allvars.h"
 #include "../data/constants.h"
 #include "../data/dtypes.h"
-#include "../data/macros.h"
 #include "../time_integration/driftfac.h"
+#include "gadget/macros.h"
 
 void global_data_all_processes::set_cosmo_factors_for_current_time(void)
 {

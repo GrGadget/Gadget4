@@ -13,5 +13,4 @@ sources += files([
 headers += files([
     'mpi_utils.h',
     'generic_comm.h',
-    'setcomm.h',
     'shared_mem_handler.h'])

@@ -21,7 +21,7 @@
 #include "../data/simparticles.h"
 #include "../fof/fof.h"
 #include "../io/io_streamcount.h"
-#include "../mpi_utils/setcomm.h"
+#include "gadget/setcomm.h"
 
 #define LABEL_LEN 4
 #define DATASETNAME_LEN 256

@@ -12,18 +12,7 @@
 #ifndef PINNING_H
 #define PINNING_H
 
-#include <gsl/gsl_rng.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../data/allvars.h"
-#include "../data/dtypes.h"
-#include "../main/main.h"
-#include "../mpi_utils/setcomm.h"
-#include "../system/system.h"
+#include "gadget/setcomm.h"
 #include "gadgetconfig.h"
 
 /*! \file pinning.c

@@ -15,7 +15,7 @@
 #ifdef COOLING
 
 #include "../data/simparticles.h"
-#include "../mpi_utils/setcomm.h"
+#include "gadget/setcomm.h"
 
 class coolsfr : public setcomm
 {

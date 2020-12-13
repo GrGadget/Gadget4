@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #include "../main/simulation.h"
-#include "../mpi_utils/setcomm.h"
+#include "gadget/setcomm.h"
 
 #define CPU_STRING_LEN 120
 

@@ -21,7 +21,6 @@
 #include "../data/constants.h"
 #include "../data/dtypes.h"
 #include "../data/lcparticles.h"
-#include "../data/macros.h"
 #include "../data/mmparticles.h"
 #include "../data/mymalloc.h"
 #include "../data/simparticles.h"
@@ -39,11 +38,12 @@
 #include "../logs/logs.h"
 #include "../mergertree/mergertree.h"
 #include "../mpi_utils/mpi_utils.h"
-#include "../mpi_utils/setcomm.h"
 #include "../ngbtree/ngbtree.h"
 #include "../ngenic/ngenic.h"
 #include "../pm/pm.h"
 #include "../sph/sph.h"
+#include "gadget/macros.h"
+#include "gadget/setcomm.h"
 
 class sim : public test_io_bandwidth
 {

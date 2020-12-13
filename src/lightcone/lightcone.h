@@ -22,8 +22,8 @@
 #include "../data/mmparticles.h"
 #include "../data/simparticles.h"
 #include "../data/symtensors.h"
-#include "../mpi_utils/setcomm.h"
 #include "../time_integration/driftfac.h"
+#include "gadget/setcomm.h"
 
 #ifdef LIGHTCONE_MASSMAPS
 #include <chealpix.h>

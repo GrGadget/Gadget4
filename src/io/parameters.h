@@ -13,7 +13,7 @@
 #define PARAMETERS_H
 
 #include "../data/dtypes.h"
-#include "../mpi_utils/setcomm.h"
+#include "gadget/setcomm.h"
 
 #define PARAM_DOUBLE 1
 #define PARAM_STRING 2

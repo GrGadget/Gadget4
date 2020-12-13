@@ -20,8 +20,8 @@
 
 #include "../data/constants.h"
 #include "../data/dtypes.h"
-#include "../data/macros.h"
 #include "../io/parameters.h"
+#include "gadget/macros.h"
 
 /** Data which is the SAME for all tasks (mostly code parameters read
  * from the parameter file).  Holding this data in a structure is
