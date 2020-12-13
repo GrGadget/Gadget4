@@ -21,7 +21,7 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../logs/logs.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"

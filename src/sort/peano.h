@@ -12,6 +12,22 @@
 #ifndef SORT_H
 #define SORT_H
 
+#include "gadget/dtypes.h"
+
+class peanokey
+{
+ public:
+  MyIntPosType hs, is, ls; /* 'hs'-high significance, 'is'-intermediate, 'ls'-low significance bits */
+};
+
+bool operator>=(const peanokey &a, const peanokey &b);
+
+bool operator<(const peanokey &a, const peanokey &b);
+
+peanokey operator+(const peanokey &a, const peanokey &b);
+
+peanokey get_peanokey_offset(unsigned int j, int bits); /* this returns the peanokey for which  j << bits */
+
 peanokey peano_hilbert_key(MyIntPosType x, MyIntPosType y, MyIntPosType z, int bits);
 void peano_hilbert_key_inverse(peanokey key, int bits, MyIntPosType *x, MyIntPosType *y, MyIntPosType *z);
 

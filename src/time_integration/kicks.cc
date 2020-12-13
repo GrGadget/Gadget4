@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../domain/domain.h"
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"

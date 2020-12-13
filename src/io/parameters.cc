@@ -19,7 +19,7 @@
 #include <sys/stat.h>
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../io/io.h"
 #include "../io/parameters.h"

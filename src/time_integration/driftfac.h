@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../main/main.h"
 #include "gadgetconfig.h"
 

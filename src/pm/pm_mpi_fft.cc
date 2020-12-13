@@ -22,7 +22,7 @@
 #include <algorithm>
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"

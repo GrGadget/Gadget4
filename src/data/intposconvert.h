@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include "allvars.h"
-#include "dtypes.h"
+#include "gadget/dtypes.h"
 
 #include <cmath>
 

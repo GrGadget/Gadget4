@@ -21,7 +21,7 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../half/half.hpp"
 #include "../io/io.h"
 #include "../io/restart.h"

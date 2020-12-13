@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../io/hdf5_util.h"
 
 #define HALF_ROUND_STYLE 1

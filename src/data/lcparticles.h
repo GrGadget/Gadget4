@@ -18,7 +18,7 @@
 
 #include "gadgetconfig.h"
 
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/lightcone_particle_data.h"
 #include "../data/mymalloc.h"

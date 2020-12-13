@@ -12,7 +12,7 @@
 #define MPI_UTILS_H
 
 #include <mpi.h>
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 
 /*!< Various tags used for labeling MPI messages */

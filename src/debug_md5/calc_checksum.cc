@@ -18,7 +18,7 @@
 
 #include <md5/Md5.h>
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 

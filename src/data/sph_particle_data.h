@@ -12,7 +12,7 @@
 #ifndef SPHPARTDATA_H
 #define SPHPARTDATA_H
 
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../system/system.h"

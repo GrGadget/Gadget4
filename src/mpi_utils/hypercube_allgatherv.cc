@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 
 #ifdef MPI_HYPERCUBE_ALLGATHERV
 

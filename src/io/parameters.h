@@ -12,7 +12,7 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "gadget/setcomm.h"
 
 #define PARAM_DOUBLE 1

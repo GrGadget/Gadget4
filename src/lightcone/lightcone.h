@@ -17,7 +17,7 @@
 #ifdef LIGHTCONE
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/lcparticles.h"
 #include "../data/mmparticles.h"
 #include "../data/simparticles.h"

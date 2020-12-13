@@ -17,7 +17,7 @@
 #ifdef MERGERTREE
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../io/hdf5_util.h"

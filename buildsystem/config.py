@@ -37,7 +37,7 @@ def out2(options, fname):
 #include <stdlib.h>
 #include <math.h>
 #include \"gadgetconfig.h\"
-#include \"src/data/dtypes.h\"
+#include \"gadget/dtypes.h\"
 #include \"src/data/allvars.h\"
 #include \"src/main/main.h\"
 void output_compile_time_options(void)\n{
@@ -70,7 +70,7 @@ def out3(options, fname):
 #include <math.h>
 #include \"gadgetconfig.h\"
 #include \"gadget/constants.h\"
-#include \"src/data/dtypes.h\"
+#include \"gadget/dtypes.h\"
 #include \"gadget/macros.h\"
 #include \"src/io/io.h\"
 hid_t my_H5Acreate(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id);

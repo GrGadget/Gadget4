@@ -14,7 +14,7 @@
 
 #if defined(LIGHTCONE) && defined(LIGHTCONE_MASSMAPS)
 
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "gadget/constants.h"
 #include "gadget/macros.h"
 

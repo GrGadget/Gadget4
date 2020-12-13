@@ -17,7 +17,7 @@
 #ifdef SUBFIND_ORPHAN_TREATMENT
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/mymalloc.h"
 #include "../data/particle_data.h"
 #include "../fof/fof.h"

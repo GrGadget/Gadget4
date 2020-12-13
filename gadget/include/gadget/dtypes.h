@@ -13,7 +13,6 @@
 #define DTYPES_H
 
 #include <stdint.h>
-#include <cstddef>
 #ifdef EXPLICIT_VECTORIZATION
 #include <vectorclass/vectorclass.h>
 #endif
@@ -204,102 +203,6 @@ struct times_catalogue
   double Redshift;
 };
 
-class peanokey
-{
- public:
-  MyIntPosType hs, is, ls; /* 'hs'-high significance, 'is'-intermediate, 'ls'-low significance bits */
-};
-
-inline bool operator>=(const peanokey &a, const peanokey &b)
-{
-  if(a.hs < b.hs)
-    return false;
-  else if(a.hs > b.hs)
-    return true;
-  else if(a.is < b.is)
-    return false;
-  else if(a.is > b.is)
-    return true;
-  else if(a.ls < b.ls)
-    return false;
-  else
-    return true;
-}
-
-inline bool operator<(const peanokey &a, const peanokey &b)
-{
-  if(a.hs < b.hs)
-    return true;
-  else if(a.hs > b.hs)
-    return false;
-  else if(a.is < b.is)
-    return true;
-  else if(a.is > b.is)
-    return false;
-  else if(a.ls < b.ls)
-    return true;
-  else
-    return false;
-}
-
-inline peanokey operator+(const peanokey &a, const peanokey &b)
-{
-  peanokey c;
-
-  c.ls = a.ls + b.ls;
-  c.is = a.is + b.is;
-  c.hs = a.hs + b.hs;
-
-  if(c.is < a.is || c.is < b.is) /* overflow has occurred */
-    {
-      c.hs += 1;
-    }
-
-  if(c.ls < a.ls || c.ls < b.ls) /* overflow has occurred */
-    {
-      c.is += 1;
-      if(c.is == 0) /* overflown again */
-        c.hs += 1;
-    }
-
-  /* note: for hs we don't check for overflow explicitly as this would not be represented in the type anyhow */
-
-  return c;
-}
-
-inline peanokey get_peanokey_offset(unsigned int j, int bits) /* this returns the peanokey for which  j << bits */
-{
-  peanokey key = {j, j, j};
-
-  if(bits < BITS_FOR_POSITIONS)
-    key.ls <<= bits;
-  else
-    key.ls = 0;
-
-  int is_bits = bits - BITS_FOR_POSITIONS;
-
-  if(is_bits <= -BITS_FOR_POSITIONS)
-    key.is = 0;
-  else if(is_bits <= 0)
-    key.is >>= -is_bits;
-  else if(is_bits < BITS_FOR_POSITIONS)
-    key.is <<= is_bits;
-  else
-    key.is = 0;
-
-  int hs_bits = bits - 2 * BITS_FOR_POSITIONS;
-
-  if(hs_bits <= -BITS_FOR_POSITIONS)
-    key.hs = 0;
-  else if(hs_bits <= 0)
-    key.hs >>= -hs_bits;
-  else if(hs_bits < BITS_FOR_POSITIONS)
-    key.hs <<= hs_bits;
-  else
-    key.hs = 0;
-
-  return key;
-}
 
 enum mysnaptype
 {

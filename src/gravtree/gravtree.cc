@@ -18,7 +18,7 @@
 #include <atomic>
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"

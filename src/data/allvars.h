@@ -18,7 +18,7 @@
 
 #include <math.h>
 
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../io/parameters.h"
 #include "gadget/constants.h"
 #include "gadget/macros.h"

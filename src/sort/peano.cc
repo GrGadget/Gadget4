@@ -11,21 +11,9 @@
 
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <algorithm>
-
-#include "../data/allvars.h"
-#include "../data/dtypes.h"
-#include "../data/mymalloc.h"
-#include "../logs/timer.h"
-#include "../main/simulation.h"
-#include "../sort/cxxsort.h"
+//#include "../sort/cxxsort.h"
 #include "../sort/peano.h"
-#include "../system/system.h"
+#include "gadget/constants.h"
 
 namespace
 {
@@ -34,6 +22,7 @@ struct peano_hilbert_data
   peanokey key;
   int index;
 };
+
 
 /*
 struct peano_comparator
@@ -76,6 +65,40 @@ const unsigned char subpix3[48][8] = {
     {4, 3, 7, 0, 5, 2, 6, 1}, {3, 2, 0, 1, 4, 5, 7, 6}, {2, 5, 1, 6, 3, 4, 0, 7}};
 
 }  // unnamed namespace
+
+peanokey get_peanokey_offset(unsigned int j, int bits) /* this returns the peanokey for which  j << bits */
+{
+  peanokey key = {j, j, j};
+
+  if(bits < BITS_FOR_POSITIONS)
+    key.ls <<= bits;
+  else
+    key.ls = 0;
+
+  int is_bits = bits - BITS_FOR_POSITIONS;
+
+  if(is_bits <= -BITS_FOR_POSITIONS)
+    key.is = 0;
+  else if(is_bits <= 0)
+    key.is >>= -is_bits;
+  else if(is_bits < BITS_FOR_POSITIONS)
+    key.is <<= is_bits;
+  else
+    key.is = 0;
+
+  int hs_bits = bits - 2 * BITS_FOR_POSITIONS;
+
+  if(hs_bits <= -BITS_FOR_POSITIONS)
+    key.hs = 0;
+  else if(hs_bits <= 0)
+    key.hs >>= -hs_bits;
+  else if(hs_bits < BITS_FOR_POSITIONS)
+    key.hs <<= hs_bits;
+  else
+    key.hs = 0;
+
+  return key;
+}
 
 /*! This function computes a Peano-Hilbert key for an integer triplet (x,y,z),
  *  with x,y,z in the range between 0 and 2^bits-1.
@@ -179,4 +202,58 @@ void peano_hilbert_key_inverse(peanokey key, int bits, MyIntPosType *x, MyIntPos
 
       key.ls <<= 3;
     }
+}
+peanokey operator+(const peanokey &a, const peanokey &b)
+{
+  peanokey c;
+
+  c.ls = a.ls + b.ls;
+  c.is = a.is + b.is;
+  c.hs = a.hs + b.hs;
+
+  if(c.is < a.is || c.is < b.is) /* overflow has occurred */
+    {
+      c.hs += 1;
+    }
+
+  if(c.ls < a.ls || c.ls < b.ls) /* overflow has occurred */
+    {
+      c.is += 1;
+      if(c.is == 0) /* overflown again */
+        c.hs += 1;
+    }
+
+  /* note: for hs we don't check for overflow explicitly as this would not be represented in the type anyhow */
+
+  return c;
+}
+bool operator<(const peanokey &a, const peanokey &b)
+{
+  if(a.hs < b.hs)
+    return true;
+  else if(a.hs > b.hs)
+    return false;
+  else if(a.is < b.is)
+    return true;
+  else if(a.is > b.is)
+    return false;
+  else if(a.ls < b.ls)
+    return true;
+  else
+    return false;
+}
+bool operator>=(const peanokey &a, const peanokey &b)
+{
+  if(a.hs < b.hs)
+    return false;
+  else if(a.hs > b.hs)
+    return true;
+  else if(a.is < b.is)
+    return false;
+  else if(a.is > b.is)
+    return true;
+  else if(a.ls < b.ls)
+    return false;
+  else
+    return true;
 }

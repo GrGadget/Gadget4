@@ -22,7 +22,7 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"

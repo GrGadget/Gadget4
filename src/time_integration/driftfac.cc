@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/dtypes.h"
+#include "gadget/dtypes.h"
 #include "../time_integration/driftfac.h"
 
 void driftfac::init_drift_table(void)
