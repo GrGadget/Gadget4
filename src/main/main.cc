@@ -32,6 +32,7 @@
 #include "../mergertree/mergertree.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../ngenic/ngenic.h"
+#include "../system/pinning.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 
