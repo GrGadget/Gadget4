@@ -16,6 +16,7 @@ mpi = dependency('mpi',language: 'cpp')
 fftw3 = dependency('fftw3')
 hdf5 = dependency('hdf5',language: 'cpp')
 gsl = dependency('gsl')
+hwloc = dependency('hwloc')
 
 pkg=import('pkgconfig')
 
@@ -55,6 +56,6 @@ git_version = custom_target('git-info',
 
 gadget = executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
-    dependencies: [fftw3,mpi,hdf5,gsl,md5,vectorclass],
+    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass],
     install: true)
 
