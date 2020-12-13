@@ -16,8 +16,8 @@
 #define DOMAIN_H
 
 #include <stdarg.h>
-#include "../sort/peano.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 #include "gadget/setcomm.h"
 
 enum domain_options

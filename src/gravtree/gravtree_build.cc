@@ -30,10 +30,10 @@
 #include "../ngbtree/ngbtree.h"
 #include "../pm/pm.h"
 #include "../sort/cxxsort.h"
-#include "../sort/peano.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 
 /*!
  *  This file contains the construction of the tree used for calculating the gravitational force.

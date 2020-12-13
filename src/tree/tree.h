@@ -27,8 +27,8 @@
 
 #include "../domain/domain.h"
 #include "../mpi_utils/shared_mem_handler.h"
-#include "../sort/peano.h"
 #include "../system/system.h"
+#include "gadget/peano.h"
 
 class sim;
 

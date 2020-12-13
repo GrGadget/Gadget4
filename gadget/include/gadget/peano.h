@@ -12,7 +12,7 @@
 #ifndef SORT_H
 #define SORT_H
 
-#include "gadget/dtypes.h"
+#include "gadget/dtypes.h"  // definition of MyIntPosType
 
 class peanokey
 {

@@ -32,10 +32,10 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
-#include "../sort/peano.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 
 #define MAX_UNBOUND_FRAC_BEFORE_BULK_VELOCITY_UPDATE 0.02
 #define MAX_UNBOUND_FRAC_BEFORE_POTENTIAL_UPDATE 0.20

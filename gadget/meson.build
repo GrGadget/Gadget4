@@ -3,6 +3,7 @@ subdir('src')
 gadget_lib=static_library('gadget',gadget_src+gadget_headers,
     config_header[0],
     include_directories: gadget_inc,
+    dependencies: [vectorclass],
     install : true)
 
 install_headers(gadget_headers,subdir: 'gagdet')

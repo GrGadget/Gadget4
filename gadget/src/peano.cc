@@ -11,9 +11,7 @@
 
 #include "gadgetconfig.h"
 
-//#include "../sort/cxxsort.h"
-#include "../sort/peano.h"
-#include "gadget/constants.h"
+#include "gadget/peano.h"
 
 namespace
 {

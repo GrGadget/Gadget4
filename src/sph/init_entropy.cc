@@ -25,11 +25,11 @@
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
 #include "../ngbtree/ngbtree.h"
-#include "../sort/peano.h"
 #include "../sph/kernel.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 
 #ifdef PRESSURE_ENTROPY_SPH
 

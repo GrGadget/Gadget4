@@ -22,12 +22,12 @@
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../data/symtensors.h"
-#include "../sort/peano.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/constants.h"
 #include "gadget/dtypes.h"
 #include "gadget/macros.h"
+#include "gadget/peano.h"
 #include "gadget/setcomm.h"
 
 /** This structure holds all the information that is

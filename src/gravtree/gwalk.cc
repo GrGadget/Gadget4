@@ -29,10 +29,10 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../pm/pm.h"
 #include "../sort/cxxsort.h"
-#include "../sort/peano.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 
 /*! This file contains the code for the gravitational force computation by
  *  means of the tree algorithm. To this end, a tree force is computed for all

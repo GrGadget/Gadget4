@@ -37,9 +37,9 @@
 #include "../main/simulation.h"
 #include "../mpi_utils/mpi_utils.h"
 #include "../pm/pm.h"
-#include "../sort/peano.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 
 /*!
  * \brief Function for field registering.

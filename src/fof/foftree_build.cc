@@ -26,11 +26,11 @@
 #include "../logs/logs.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../sort/peano.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 
 template <typename partset>
 void foftree<partset>::report_log_message(void)

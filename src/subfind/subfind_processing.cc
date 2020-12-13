@@ -32,10 +32,10 @@
 #include "../mpi_utils/mpi_utils.h"
 #include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
-#include "../sort/peano.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/peano.h"
 
 template <typename partset>
 void fof<partset>::subfind_processing(domain<partset> *SubDomain, domain_options mode)
