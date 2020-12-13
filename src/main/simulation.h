@@ -18,7 +18,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "../data/constants.h"
 #include "../data/dtypes.h"
 #include "../data/lcparticles.h"
 #include "../data/mmparticles.h"
@@ -42,6 +41,7 @@
 #include "../ngenic/ngenic.h"
 #include "../pm/pm.h"
 #include "../sph/sph.h"
+#include "gadget/constants.h"
 #include "gadget/macros.h"
 #include "gadget/setcomm.h"
 

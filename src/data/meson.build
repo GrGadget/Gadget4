@@ -4,7 +4,6 @@ sources += files([
     'test_symtensors.cc'])
     
 headers += files(['allvars.h',
-    'constants.h',
     'dtypes.h',
     'idstorage.h',
     'intposconvert.h',

@@ -69,7 +69,7 @@ def out3(options, fname):
 #include <errno.h>
 #include <math.h>
 #include \"gadgetconfig.h\"
-#include \"src/data/constants.h\"
+#include \"gadget/constants.h\"
 #include \"src/data/dtypes.h\"
 #include \"gadget/macros.h\"
 #include \"src/io/io.h\"

@@ -18,7 +18,6 @@
 #include <climits>
 
 #include <stdlib.h>
-#include "../data/constants.h"
 #include "../data/dtypes.h"
 #include "../data/idstorage.h"
 #include "../data/intposconvert.h"
@@ -26,6 +25,7 @@
 #include "../data/symtensors.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/constants.h"
 #include "gadget/macros.h"
 #include "gadget/setcomm.h"
 

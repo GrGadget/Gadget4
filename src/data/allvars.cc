@@ -12,9 +12,9 @@
 #include "gadgetconfig.h"
 
 #include "../data/allvars.h"
-#include "../data/constants.h"
 #include "../data/dtypes.h"
 #include "../time_integration/driftfac.h"
+#include "gadget/constants.h"
 #include "gadget/macros.h"
 
 void global_data_all_processes::set_cosmo_factors_for_current_time(void)
