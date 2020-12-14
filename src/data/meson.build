@@ -13,5 +13,4 @@ headers += files(['allvars.h',
     'particle_data.h',
     'simparticles.h',
     'sph_particle_data.h',
-    'symtensor_indices.h',
     'symtensors.h'])

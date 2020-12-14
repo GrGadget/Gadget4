@@ -12,7 +12,7 @@
 #ifndef SYMTENSORS_H
 #define SYMTENSORS_H
 
-#include "symtensor_indices.h"
+#include "gadget/symtensor_indices.h"
 
 void symtensor_test(void);
 

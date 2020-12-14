@@ -6,4 +6,5 @@ gadget_headers = files([
     'constants.h',
     'mpi_utils.h',
     'idstorage.h',
+    'symtensor_indices.h',
     'setcomm.h'])
