@@ -12,7 +12,8 @@
 #ifndef DTYPES_H
 #define DTYPES_H
 
-#include <stdint.h>
+#include <cstddef>  // size_t
+#include <cstdint>  // int32_t, int64_t, etc
 #ifdef EXPLICIT_VECTORIZATION
 #include <vectorclass/vectorclass.h>
 #endif
@@ -31,8 +32,8 @@
  */
 
 #ifdef POSITIONS_IN_32BIT
-typedef uint32_t MyIntPosType;
-typedef int32_t MySignedIntPosType;
+typedef std::uint32_t MyIntPosType;
+typedef std::int32_t MySignedIntPosType;
 #define BITS_FOR_POSITIONS 32
 #ifdef EXPLICIT_VECTORIZATION
 typedef vectorclass::Vec4ui Vec4MyIntPosType;
@@ -41,8 +42,8 @@ typedef vectorclass::Vec4i Vec4MySignedIntPosType;
 #endif
 
 #ifdef POSITIONS_IN_64BIT
-typedef uint64_t MyIntPosType;
-typedef int64_t MySignedIntPosType;
+typedef std::uint64_t MyIntPosType;
+typedef std::int64_t MySignedIntPosType;
 #define BITS_FOR_POSITIONS 64
 #ifdef EXPLICIT_VECTORIZATION
 typedef vectorclass::Vec4uq Vec4MyIntPosType;
@@ -130,9 +131,9 @@ typedef int integertime;
 #endif
 
 #if MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 32
-typedef uint32_t node_bit_field;
+typedef std::uint32_t node_bit_field;
 #elif MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 64
-typedef uint64_t node_bit_field;
+typedef std::uint64_t node_bit_field;
 #else
 #error "unsupported MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY setting"
 #endif
@@ -242,9 +243,9 @@ struct thread_data
   double Ewaldcount; /*!< The total cost for the Ewald correction per thread */
   int FirstExec;     /*!< Keeps track, if a given thread executes the gravity_primary_loop() for the first time */
 
-  size_t ExportSpace;
-  size_t InitialSpace;
-  size_t ItemSize;
+  std::size_t ExportSpace;
+  std::size_t InitialSpace;
+  std::size_t ItemSize;
 
   int *P_CostCount;
   int *TreePoints_CostCount;
