@@ -5,4 +5,5 @@ gadget_headers = files([
     'peano.h',
     'constants.h',
     'mpi_utils.h',
+    'idstorage.h',
     'setcomm.h'])
