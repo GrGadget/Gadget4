@@ -14,8 +14,8 @@
 
 #ifdef FMM
 
-#include "gadget/symtensors.h"
 #include "../gravtree/gravtree.h"
+#include "gadget/symtensors.h"
 
 class fmm : public gravtree<simparticles>
 {

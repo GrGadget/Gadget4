@@ -16,11 +16,11 @@
 
 #if defined(LIGHTCONE) && defined(LIGHTCONE_PARTICLES)
 
-#include "gadget/symtensors.h"
 #include "gadget/constants.h"
 #include "gadget/dtypes.h"
 #include "gadget/idstorage.h"
 #include "gadget/macros.h"
+#include "gadget/symtensors.h"
 
 struct lightcone_particle_data
 {

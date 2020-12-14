@@ -11,7 +11,7 @@
 
 #include "gadgetconfig.h"
 
-#include <gsl/gsl_linalg.h>
+// #include <gsl/gsl_linalg.h>
 
 #include "../data/sph_particle_data.h"
 

@@ -12,6 +12,8 @@
 #ifndef TIMESTEP_H
 #define TIMESTEP_H
 
+#include "gadget/dtypes.h"  // TIMEBINS
+
 struct TimeBinData
 {
  public:

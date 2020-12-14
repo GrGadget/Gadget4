@@ -17,9 +17,9 @@
 #include <atomic>
 #include <cstring>  // memcpy
 
-#include "gadget/symtensors.h"  // vector
-#include "gadget/idstorage.h"    // MyIDStorage
+#include "gadget/idstorage.h"  // MyIDStorage
 #include "gadget/peano.h"
+#include "gadget/symtensors.h"  // vector
 
 /** This structure holds all the information that is
  * stored for each particle of the simulation.

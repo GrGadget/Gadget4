@@ -12,14 +12,11 @@
 #ifndef SPHPARTDATA_H
 #define SPHPARTDATA_H
 
-#include "../data/intposconvert.h"
-#include "../data/mymalloc.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/constants.h"
-#include "gadget/dtypes.h"
-#include "gadget/macros.h"
-#include "gadget/setcomm.h"
+#include <cmath>
+
+#include "gadget/constants.h"  // GAMMA
+#include "gadget/dtypes.h"     // MyFloat
+#include "gadget/macros.h"     // Terminate
 
 /* in this structure, all SPH variables are put that are needed for passive
  * particles in the hydro force calculation. Only this part will be sent

@@ -20,10 +20,10 @@
 #include "../data/lcparticles.h"
 #include "../data/mmparticles.h"
 #include "../data/simparticles.h"
-#include "gadget/symtensors.h"
 #include "../time_integration/driftfac.h"
 #include "gadget/dtypes.h"
 #include "gadget/setcomm.h"
+#include "gadget/symtensors.h"
 
 #ifdef LIGHTCONE_MASSMAPS
 #include <chealpix.h>

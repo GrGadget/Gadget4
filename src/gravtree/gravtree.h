@@ -43,10 +43,10 @@
 #include <string.h>
 
 #include "../data/simparticles.h"
-#include "gadget/symtensors.h"  // vector
 #include "../domain/domain.h"
 #include "../tree/tree.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/symtensors.h"  // vector
 
 /** The tree node data structure. Nodes points to the actual memory
  allocated for the internal nodes, but is shifted such that
