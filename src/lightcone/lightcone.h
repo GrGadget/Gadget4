@@ -20,7 +20,7 @@
 #include "../data/lcparticles.h"
 #include "../data/mmparticles.h"
 #include "../data/simparticles.h"
-#include "../data/symtensors.h"
+#include "gadget/symtensors.h"
 #include "../time_integration/driftfac.h"
 #include "gadget/dtypes.h"
 #include "gadget/setcomm.h"

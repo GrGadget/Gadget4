@@ -21,7 +21,7 @@
 
 #include "../data/allvars.h"
 #include "../data/intposconvert.h"
-#include "../data/symtensors.h"
+#include "gadget/symtensors.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"

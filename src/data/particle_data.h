@@ -17,7 +17,7 @@
 #include <atomic>
 #include <cstring>  // memcpy
 
-#include "../data/symtensors.h"  // vector
+#include "gadget/symtensors.h"  // vector
 #include "gadget/idstorage.h"    // MyIDStorage
 #include "gadget/peano.h"
 

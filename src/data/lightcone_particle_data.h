@@ -16,7 +16,7 @@
 
 #if defined(LIGHTCONE) && defined(LIGHTCONE_PARTICLES)
 
-#include "../data/symtensors.h"
+#include "gadget/symtensors.h"
 #include "gadget/constants.h"
 #include "gadget/dtypes.h"
 #include "gadget/idstorage.h"

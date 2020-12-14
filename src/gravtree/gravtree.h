@@ -43,7 +43,7 @@
 #include <string.h>
 
 #include "../data/simparticles.h"
-#include "../data/symtensors.h"  // vector
+#include "gadget/symtensors.h"  // vector
 #include "../domain/domain.h"
 #include "../tree/tree.h"
 #include "gadget/mpi_utils.h"

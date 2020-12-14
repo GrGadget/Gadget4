@@ -12,7 +12,7 @@
 #ifndef GRAVITY_EWALDTENSORS_H
 #define GRAVITY_EWALDTENSORS_H
 
-#include "../data/symtensors.h"
+#include "gadget/symtensors.h"
 
 // derivative tensors for Ewald correction - they have few independent elements due to cubic symmetry
 

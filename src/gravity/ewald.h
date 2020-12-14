@@ -22,7 +22,7 @@
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
-#include "../data/symtensors.h"
+#include "gadget/symtensors.h"
 #include "../gravity/ewaldtensors.h"
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
