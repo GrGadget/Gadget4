@@ -28,13 +28,13 @@
 #include "../domain/domain.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../pm/pm.h"
 #include "../pm/pm_periodic.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*!
  * These routines support two different strategies for doing the particle data exchange to assemble the density field

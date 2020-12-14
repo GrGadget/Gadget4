@@ -35,11 +35,11 @@
 #include "../main/simulation.h"
 #include "../mergertree/io_readsnap.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 // this is used in FOF postprocessing to assign the previous subhalo length to particles
 void mergertree::get_previous_size_of_subhalo_for_each_particle(int num)

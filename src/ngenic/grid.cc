@@ -23,10 +23,10 @@
 #include "../data/mymalloc.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngenic/ngenic.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 void ngenic::create_grid(void)
 {

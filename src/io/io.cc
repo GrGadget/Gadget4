@@ -33,10 +33,10 @@
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 #define HALF_ROUND_STYLE 1
 #include <half/half.hpp>

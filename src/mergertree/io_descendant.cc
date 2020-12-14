@@ -33,11 +33,11 @@
 #include "../main/simulation.h"
 #include "../mergertree/io_descendant.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 descendant_io::descendant_io(mergertree *MergerTree_ptr, MPI_Comm comm, int format) : IO_Def(comm, format)
 {

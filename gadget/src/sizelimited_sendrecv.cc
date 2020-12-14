@@ -11,15 +11,10 @@
 
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>  // memcpy
 
-#include "../data/allvars.h"
-#include "../mpi_utils/mpi_utils.h"
-#include "gadget/dtypes.h"
+#include "gadget/constants.h"  // MPI_MESSAGE_SIZELIMIT_IN_BYTES
+#include "gadget/mpi_utils.h"
 
 int myMPI_Sendrecv(void *sendb, size_t sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvb, size_t recvcount,
                    MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)

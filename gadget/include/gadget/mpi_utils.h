@@ -12,8 +12,8 @@
 #define MPI_UTILS_H
 
 #include <mpi.h>
-#include "../data/mymalloc.h"
-#include "gadget/dtypes.h"
+#include <vector>
+#include "gadget/macros.h"  // definition of Terminate
 
 /*!< Various tags used for labeling MPI messages */
 #define TAG_TOPNODE_FREE 4
@@ -149,8 +149,7 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
 
   // we are responsible for a certain stretch of the result, namely the one starting at loc_first_n, of length blocksize[thistask]
 
-  int *blocksize  = (int *)Mem.mymalloc("blocksize", sizeof(int) * ntask);
-  int *blockstart = (int *)Mem.mymalloc("blockstart", sizeof(int) * ntask);
+  std::vector<int> blocksize(ntask), blockstart(ntask);
 
   int blk     = N / ntask;
   int rmd     = N - blk * ntask; /* remainder */
@@ -174,12 +173,9 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
     }
 
   /* here we store the local result */
-  T *loc_data = (T *)Mem.mymalloc_clear("loc_data", blocksize[thistask] * sizeof(T));
+  std::vector<T> loc_data(blocksize[thistask]);
 
-  int *send_count = (int *)Mem.mymalloc("send_count", sizeof(int) * ntask);
-  int *recv_count = (int *)Mem.mymalloc("recv_count", sizeof(int) * ntask);
-
-  int *send_offset = (int *)Mem.mymalloc("send_offset", sizeof(int) * ntask);
+  std::vector<int> send_count(ntask), recv_count(ntask), send_offset(ntask);
 
   struct ind_data
   {
@@ -187,8 +183,8 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
     T val;
   };
 
-  ind_data *export_data = NULL;
-  int nexport           = 0;
+  std::vector<ind_data> export_data;
+  int nexport = 0;
 
   for(int rep = 0; rep < 2; rep++)
     {
@@ -219,7 +215,7 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
 
       if(rep == 0)
         {
-          MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, Communicator);
+          MPI_Alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1, MPI_INT, Communicator);
 
           send_offset[0] = 0;
 
@@ -231,7 +227,7 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
                 send_offset[j] = send_offset[j - 1] + send_count[j - 1];
             }
 
-          export_data = (ind_data *)Mem.mymalloc("export_data", nexport * sizeof(ind_data));
+          export_data.resize(nexport);
         }
       else
         {
@@ -243,11 +239,11 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
                   {
                     int nimport = recv_count[recvTask];
 
-                    ind_data *import_data = (ind_data *)Mem.mymalloc("import_data", nimport * sizeof(ind_data));
+                    std::vector<ind_data> import_data(nimport);
 
                     MPI_Sendrecv(&export_data[send_offset[recvTask]], send_count[recvTask] * sizeof(ind_data), MPI_BYTE, recvTask,
-                                 TAG_DENS_B, import_data, recv_count[recvTask] * sizeof(ind_data), MPI_BYTE, recvTask, TAG_DENS_B,
-                                 Communicator, MPI_STATUS_IGNORE);
+                                 TAG_DENS_B, import_data.data(), recv_count[recvTask] * sizeof(ind_data), MPI_BYTE, recvTask,
+                                 TAG_DENS_B, Communicator, MPI_STATUS_IGNORE);
 
                     for(int i = 0; i < nimport; i++)
                       {
@@ -258,18 +254,10 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
 
                         loc_data[j] += import_data[i].val;
                       }
-
-                    Mem.myfree(import_data);
                   }
             }
-
-          Mem.myfree(export_data);
         }
     }
-
-  Mem.myfree(send_offset);
-  Mem.myfree(recv_count);
-  Mem.myfree(send_count);
 
   /* now share the result across all processors */
   for(int ngrp = 0; ngrp < (1 << ptask); ngrp++) /* note: here we also have a transfer from each task to itself (for ngrp=0) */
@@ -277,13 +265,9 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
       int recvTask = thistask ^ ngrp;
       if(recvTask < ntask)
         if(blocksize[thistask] > 0 || blocksize[recvTask] > 0)
-          MPI_Sendrecv(loc_data, blocksize[thistask] * sizeof(T), MPI_BYTE, recvTask, TAG_DENS_A, &glob[blockstart[recvTask]],
+          MPI_Sendrecv(loc_data.data(), blocksize[thistask] * sizeof(T), MPI_BYTE, recvTask, TAG_DENS_A, &glob[blockstart[recvTask]],
                        blocksize[recvTask] * sizeof(T), MPI_BYTE, recvTask, TAG_DENS_A, Communicator, MPI_STATUS_IGNORE);
     }
-
-  Mem.myfree(loc_data);
-  Mem.myfree(blockstart);
-  Mem.myfree(blocksize);
 }
 
 #endif

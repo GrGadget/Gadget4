@@ -27,11 +27,11 @@
 #include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngbtree/ngbtree.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /* local data structure for collecting particle/cell data that is sent to other processors if needed */
 struct foffind_in : data_in_generic

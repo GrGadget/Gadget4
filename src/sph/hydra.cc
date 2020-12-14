@@ -24,13 +24,13 @@
 #include "../logs/logs.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngbtree/ngbtree.h"
 #include "../sort/cxxsort.h"
 #include "../sph/kernel.h"
 #include "../sph/sph.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*! This file contains the "second SPH loop", where the SPH forces are
  *  computed, and where the rate of change of entropy due to the shock heating

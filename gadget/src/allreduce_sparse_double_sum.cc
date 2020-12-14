@@ -9,18 +9,14 @@
  *  \brief implementation of a reduction operation for sparsely populated data
  */
 
+#include <vector>
+
+extern template class std::vector<int>;
+extern template class std::vector<double>;
+
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../mpi_utils/mpi_utils.h"
-#include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Communicator)
 {
@@ -31,11 +27,7 @@ void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Comm
   for(ptask = 0; ntask > (1 << ptask); ptask++)
     ;
 
-  int *send_count  = (int *)Mem.mymalloc("send_count", sizeof(int) * ntask);
-  int *recv_count  = (int *)Mem.mymalloc("recv_count", sizeof(int) * ntask);
-  int *send_offset = (int *)Mem.mymalloc("send_offset", sizeof(int) * ntask);
-  int *recv_offset = (int *)Mem.mymalloc("recv_offset", sizeof(int) * ntask);
-  int *blocksize   = (int *)Mem.mymalloc("blocksize", sizeof(int) * ntask);
+  std::vector<int> send_count(ntask), recv_count(ntask), send_offset(ntask), recv_offset(ntask), blocksize(ntask);
 
   int blk     = N / ntask;
   int rmd     = N - blk * ntask; /* remainder */
@@ -53,8 +45,7 @@ void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Comm
         loc_first_n += blocksize[task];
     }
 
-  double *loc_data = (double *)Mem.mymalloc("loc_data", blocksize[thistask] * sizeof(double));
-  memset(loc_data, 0, blocksize[thistask] * sizeof(double));
+  std::vector<double> loc_data(blocksize[thistask], 0.0);
 
   for(int j = 0; j < ntask; j++)
     send_count[j] = 0;
@@ -74,7 +65,7 @@ void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Comm
         }
     }
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, Communicator);
+  MPI_Alltoall(send_count.data(), 1, MPI_INT, recv_count.data(), 1, MPI_INT, Communicator);
 
   int nimport = 0, nexport = 0;
 
@@ -96,10 +87,7 @@ void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Comm
     int n;
     double val;
   };
-  ind_data *export_data, *import_data;
-
-  export_data = (ind_data *)Mem.mymalloc("export_data", nexport * sizeof(ind_data));
-  import_data = (ind_data *)Mem.mymalloc("import_data", nimport * sizeof(ind_data));
+  std::vector<ind_data> export_data(nexport), import_data(nimport);
 
   for(int j = 0; j < ntask; j++)
     send_count[j] = 0;
@@ -141,12 +129,8 @@ void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Comm
       loc_data[j] += import_data[i].val;
     }
 
-  Mem.myfree(import_data);
-  Mem.myfree(export_data);
-
   /* now share the cost data across all processors */
-  int *bytecounts = (int *)Mem.mymalloc("bytecounts", sizeof(int) * ntask);
-  int *byteoffset = (int *)Mem.mymalloc("byteoffset", sizeof(int) * ntask);
+  std::vector<int> bytecounts(ntask), byteoffset(ntask);
 
   for(int task = 0; task < ntask; task++)
     bytecounts[task] = blocksize[task] * sizeof(double);
@@ -155,15 +139,5 @@ void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Comm
   for(int task = 1; task < ntask; task++)
     byteoffset[task] = byteoffset[task - 1] + bytecounts[task - 1];
 
-  MPI_Allgatherv(loc_data, bytecounts[thistask], MPI_BYTE, glob, bytecounts, byteoffset, MPI_BYTE, Communicator);
-
-  Mem.myfree(byteoffset);
-  Mem.myfree(bytecounts);
-
-  Mem.myfree(loc_data);
-  Mem.myfree(blocksize);
-  Mem.myfree(recv_offset);
-  Mem.myfree(send_offset);
-  Mem.myfree(recv_count);
-  Mem.myfree(send_count);
+  MPI_Allgatherv(loc_data.data(), bytecounts[thistask], MPI_BYTE, glob, bytecounts.data(), byteoffset.data(), MPI_BYTE, Communicator);
 }

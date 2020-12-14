@@ -23,12 +23,12 @@
 #include "../io/io.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngbtree/ngbtree.h"
 #include "../sph/kernel.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 #include "gadget/peano.h"
 
 #ifdef PRESSURE_ENTROPY_SPH

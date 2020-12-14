@@ -25,11 +25,11 @@
 #include "../logs/logs.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../pm/pm.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*! \brief This routine computes the gravitational accelerations for all active particles.
  *

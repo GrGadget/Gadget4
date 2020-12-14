@@ -14,6 +14,10 @@
 
 #include <stdio.h>
 
+#include "gadget/constants.h"  // TO_MBYTE_FAC
+#include "gadget/dtypes.h"     // restart_options
+#include "gadget/setcomm.h"
+
 #define CACHELINESIZE 64
 
 #define MAXBLOCKS 5000
@@ -36,8 +40,6 @@
 
 #define myrealloc(x, y) myrealloc_movable_fullinfo(x, y, __FUNCTION__, __FILE__, __LINE__, 0)
 #define myrealloc_movable(x, y) myrealloc_movable_fullinfo(x, y, __FUNCTION__, __FILE__, __LINE__, 1)
-
-#include "gadget/setcomm.h"
 
 class memory : public setcomm
 {

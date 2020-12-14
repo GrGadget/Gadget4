@@ -16,6 +16,10 @@
 #define MPI_Allgatherv MPI_hypercube_Allgatherv
 #endif
 
+#include <mpi.h>
+#include <stdio.h>   // sprintf
+#include <stdlib.h>  // exit
+
 #define Terminate(...)                                                                                                      \
   {                                                                                                                         \
     {                                                                                                                       \

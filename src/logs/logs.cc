@@ -21,10 +21,10 @@
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*! \brief Open files for logging.
  *

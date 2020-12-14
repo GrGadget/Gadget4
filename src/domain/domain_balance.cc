@@ -22,11 +22,11 @@
 #include "../domain/domain.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /** This function uses the cumulative cost function (which weights work-load and memory-load equally) to subdivide
  *  the list of top-level leaf nodes into pieces that are (approximately) equal in size.

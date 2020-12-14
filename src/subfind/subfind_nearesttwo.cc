@@ -29,10 +29,10 @@
 #include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*! Structure for communication during the density computation. Holds data that is sent to other processors.
  */

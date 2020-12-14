@@ -23,13 +23,13 @@
 #include "../logs/logs.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngbtree/ngbtree.h"
 #include "../sort/cxxsort.h"
 #include "../sph/kernel.h"
 #include "../sph/sph.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*! This file contains the function for the "first SPH loop", where the SPH densities and some
  *  auxiliary quantities are computed.  There is also functionality that

@@ -27,10 +27,10 @@
 #include "../gravtree/gravtree.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/cxxsort.h"
 #include "../subfind/subfind.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 template <typename partset>
 void fof<partset>::subfind_distribute_groups(void)

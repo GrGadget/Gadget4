@@ -9,18 +9,13 @@
  *  \brief a simple wrapper around MPI_Alltoallv that can deal with data in individual sends that are very big
  */
 
+#include <cstring>  // memcpy
+#include <vector>
+
+extern template class std::vector<int>;
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../mpi_utils/mpi_utils.h"
-#include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 #define PCHAR(a) ((char *)a)
 
@@ -113,8 +108,8 @@ void myMPI_Alltoallv_new(void *sendbuf, int *sendcnt, int *sdispls, MPI_Datatype
         lptask <<= 1;
       int tag = 42;
 
-      MPI_Request *requests = (MPI_Request *)Mem.mymalloc("requests", 2 * nranks * sizeof(MPI_Request));
-      int n_requests        = 0;
+      std::vector<MPI_Request> requests(2 * nranks);
+      int n_requests = 0;
 
       if(recvcnt[rank] > 0)  // local communication
         memcpy(PCHAR(recvbuf) + tsz * rdispls[rank], PCHAR(sendbuf) + tsz * sdispls[rank], tsz * recvcnt[rank]);
@@ -135,14 +130,13 @@ void myMPI_Alltoallv_new(void *sendbuf, int *sendcnt, int *sdispls, MPI_Datatype
               MPI_Issend(PCHAR(sendbuf) + tsz * sdispls[otask], sendcnt[otask], sendtype, otask, tag, comm, &requests[n_requests++]);
         }
 
-      MPI_Waitall(n_requests, requests, MPI_STATUSES_IGNORE);
-      Mem.myfree(requests);
+      MPI_Waitall(n_requests, requests.data(), MPI_STATUSES_IGNORE);
     }
   else if(method == 10)
     {
       if(sendtype != recvtype)
         Terminate("bad MPI communication types");
-      int *disp_at_sender  = (int *)Mem.mymalloc("disp_at_sender", nranks * sizeof(int));
+      std::vector<int> disp_at_sender(nranks);
       disp_at_sender[rank] = sdispls[rank];
       MPI_Win win;
       MPI_Win_create(sdispls, nranks * sizeof(MPI_INT), sizeof(MPI_INT), MPI_INFO_NULL, comm, &win);
@@ -168,7 +162,6 @@ void myMPI_Alltoallv_new(void *sendbuf, int *sendcnt, int *sdispls, MPI_Datatype
         }
       MPI_Win_fence(0, win);
       MPI_Win_free(&win);
-      Mem.myfree(disp_at_sender);
     }
   else
     Terminate("bad communication method");
@@ -185,10 +178,7 @@ void myMPI_Alltoallv(void *sendb, size_t *sendcounts, size_t *sdispls, void *rec
       int ntask;
       MPI_Comm_size(comm, &ntask);
 
-      int *scount = (int *)Mem.mymalloc("scount", ntask * sizeof(int));
-      int *rcount = (int *)Mem.mymalloc("rcount", ntask * sizeof(int));
-      int *soff   = (int *)Mem.mymalloc("soff", ntask * sizeof(int));
-      int *roff   = (int *)Mem.mymalloc("roff", ntask * sizeof(int));
+      std::vector<int> scount(ntask), rcount(ntask), soff(ntask), roff(ntask);
 
       for(int i = 0; i < ntask; i++)
         {
@@ -198,12 +188,7 @@ void myMPI_Alltoallv(void *sendb, size_t *sendcounts, size_t *sdispls, void *rec
           roff[i]   = rdispls[i] * len;
         }
 
-      MPI_Alltoallv(sendbuf, scount, soff, MPI_BYTE, recvbuf, rcount, roff, MPI_BYTE, comm);
-
-      Mem.myfree(roff);
-      Mem.myfree(soff);
-      Mem.myfree(rcount);
-      Mem.myfree(scount);
+      MPI_Alltoallv(sendbuf, scount.data(), soff.data(), MPI_BYTE, recvbuf, rcount.data(), roff.data(), MPI_BYTE, comm);
     }
   else
     {
@@ -243,10 +228,7 @@ void my_int_MPI_Alltoallv(void *sendb, int *sendcounts, int *sdispls, void *recv
       int ntask;
       MPI_Comm_size(comm, &ntask);
 
-      int *scount = (int *)Mem.mymalloc("scount", ntask * sizeof(int));
-      int *rcount = (int *)Mem.mymalloc("rcount", ntask * sizeof(int));
-      int *soff   = (int *)Mem.mymalloc("soff", ntask * sizeof(int));
-      int *roff   = (int *)Mem.mymalloc("roff", ntask * sizeof(int));
+      std::vector<int> scount(ntask), rcount(ntask), soff(ntask), roff(ntask);
 
       for(int i = 0; i < ntask; i++)
         {
@@ -256,12 +238,7 @@ void my_int_MPI_Alltoallv(void *sendb, int *sendcounts, int *sdispls, void *recv
           roff[i]   = rdispls[i] * len;
         }
 
-      MPI_Alltoallv(sendbuf, scount, soff, MPI_BYTE, recvbuf, rcount, roff, MPI_BYTE, comm);
-
-      Mem.myfree(roff);
-      Mem.myfree(soff);
-      Mem.myfree(rcount);
-      Mem.myfree(scount);
+      MPI_Alltoallv(sendbuf, scount.data(), soff.data(), MPI_BYTE, recvbuf, rcount.data(), roff.data(), MPI_BYTE, comm);
     }
   else
     {

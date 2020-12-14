@@ -11,15 +11,7 @@
 
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../data/allvars.h"
-#include "../mpi_utils/mpi_utils.h"
-#include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 int myMPI_Allreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {

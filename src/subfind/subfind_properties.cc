@@ -28,13 +28,13 @@
 #include "../gravtree/gravtree.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 template <>
 void fof<simparticles>::subfind_get_factors(double &fac_vel_to_phys, double &fac_hubbleflow, double &fac_comov_to_phys)

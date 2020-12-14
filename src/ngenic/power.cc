@@ -23,11 +23,11 @@
 #include "../data/mymalloc.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngenic/ngenic.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 double ngenic::ngenic_power_spec(double k)
 {

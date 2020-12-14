@@ -33,9 +33,9 @@
 #include "../logs/logs.h"
 #include "../main/main.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 gsl_rng *random_generator; /*!< the random number generator used */
 

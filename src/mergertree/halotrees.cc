@@ -38,11 +38,11 @@
 #include "../mergertree/io_progenitors.h"
 #include "../mergertree/io_treelinks.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /* This is the main function for constructing the halo trees.
  */

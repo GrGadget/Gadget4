@@ -24,12 +24,12 @@
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../ngenic/ngenic.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 #ifdef GRIDX
 #undef GRIDX

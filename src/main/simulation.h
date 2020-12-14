@@ -35,7 +35,6 @@
 #include "../lightcone/lightcone.h"
 #include "../logs/logs.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngbtree/ngbtree.h"
 #include "../ngenic/ngenic.h"
 #include "../pm/pm.h"
@@ -43,6 +42,7 @@
 #include "gadget/constants.h"
 #include "gadget/dtypes.h"
 #include "gadget/macros.h"
+#include "gadget/mpi_utils.h"
 #include "gadget/setcomm.h"
 
 class sim : public test_io_bandwidth

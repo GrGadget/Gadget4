@@ -14,7 +14,7 @@
 
 #include "../domain/domain.h"
 #include "../logs/logs.h"
-#include "../mpi_utils/mpi_utils.h"
+#include "gadget/mpi_utils.h"
 
 #define EXTRA_SPACE 16384
 

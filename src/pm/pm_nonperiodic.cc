@@ -25,7 +25,6 @@
 #include "../data/mymalloc.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../pm/pm.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../pm/pm_nonperiodic.h"
@@ -34,6 +33,7 @@
 #include "../src/time_integration/timestep.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 #define GRID (HRPMGRID)
 #define GRIDz (GRID / 2 + 1)

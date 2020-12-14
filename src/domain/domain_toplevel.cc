@@ -23,10 +23,10 @@
 #include "../domain/domain.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 #include "gadget/peano.h"
 
 template <typename partset>

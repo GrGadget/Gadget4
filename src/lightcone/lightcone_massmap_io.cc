@@ -31,9 +31,9 @@
 #include "../lightcone/lightcone.h"
 #include "../lightcone/lightcone_massmap_io.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*!
  * \brief Function for field registering.

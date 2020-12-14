@@ -33,10 +33,10 @@
 #include "../main/simulation.h"
 #include "../mergertree/io_readsnap.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 template <>
 void fof<simparticles>::subfind_match_ids_of_previously_most_bound_ids(simparticles *Sp)

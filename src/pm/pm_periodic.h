@@ -28,11 +28,11 @@
 #include "../data/simparticles.h"
 #include "../domain/domain.h"
 #include "../logs/timer.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 class pm_periodic : public pm_mpi_fft
 {

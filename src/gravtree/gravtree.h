@@ -45,8 +45,8 @@
 #include "../data/simparticles.h"
 #include "../data/symtensors.h"
 #include "../domain/domain.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../tree/tree.h"
+#include "gadget/mpi_utils.h"
 
 /** The tree node data structure. Nodes points to the actual memory
  allocated for the internal nodes, but is shifted such that

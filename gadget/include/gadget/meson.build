@@ -4,4 +4,5 @@ gadget_headers = files([
     'macros.h',
     'peano.h',
     'constants.h',
+    'mpi_utils.h',
     'setcomm.h'])

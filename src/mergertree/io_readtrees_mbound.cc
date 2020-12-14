@@ -33,11 +33,11 @@
 #include "../main/simulation.h"
 #include "../mergertree/io_readtrees_mbound.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*
  struct treehalo_ids_type

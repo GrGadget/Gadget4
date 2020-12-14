@@ -24,11 +24,11 @@
 #include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 class readsnap_io : public IO_Def
 {

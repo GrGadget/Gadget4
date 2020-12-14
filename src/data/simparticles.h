@@ -22,12 +22,12 @@
 #include "../data/particle_data.h"
 #include "../data/sph_particle_data.h"
 #include "../main/main.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/constants.h"
 #include "gadget/dtypes.h"
 #include "gadget/macros.h"
+#include "gadget/mpi_utils.h"
 #include "gadget/setcomm.h"
 
 #ifdef LIGHTCONE

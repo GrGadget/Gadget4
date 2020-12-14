@@ -31,12 +31,12 @@
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../ngbtree/ngbtree.h"
 #include "../pm/pm.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*  This function computes the gravitational forces for all active particles.
  *  A new tree is constructed, if the number of force computations since

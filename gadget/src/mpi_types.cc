@@ -11,15 +11,15 @@
 
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "gadget/dtypes.h"  // MyIntPosType
+#include "gadget/mpi_utils.h"
 
-#include "../data/allvars.h"
-#include "../mpi_utils/mpi_utils.h"
-#include "gadget/dtypes.h"
+MPI_Datatype MPI_MyIntPosType;
+
+MPI_Op MPI_MIN_MyIntPosType;
+MPI_Op MPI_MAX_MyIntPosType;
+MPI_Op MPI_MIN_MySignedIntPosType;
+MPI_Op MPI_MAX_MySignedIntPosType;
 
 static void min_MPI_MyIntPosType(void *in, void *inout, int *len, MPI_Datatype *type)
 {

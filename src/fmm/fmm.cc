@@ -29,13 +29,13 @@
 #include "../logs/logs.h"
 #include "../logs/timer.h"
 #include "../main/simulation.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../pm/pm.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 void fmm::fmm_force_passdown(int no, unsigned char no_shmrank, taylor_data taylor_current)
 {

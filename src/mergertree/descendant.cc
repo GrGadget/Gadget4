@@ -35,11 +35,11 @@
 #include "../mergertree/io_descendant.h"
 #include "../mergertree/io_progenitors.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /* This function allocates and fills the "Descendants" array, which gives the number of the descendant subhalo in the newly created
  * subhalo catalogue for every subhalo from the previous catalogue.

@@ -40,7 +40,6 @@
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mergertree/mergertree.h"
-#include "../mpi_utils/mpi_utils.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../ngbtree/ngbtree.h"
 #include "../pm/pm.h"
@@ -48,6 +47,7 @@
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/mpi_utils.h"
 
 /*!
  *  This file contains various functions to initialize a simulation run. In
