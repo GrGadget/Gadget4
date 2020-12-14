@@ -1,6 +1,6 @@
 subdir('include')
 
-half_lib=library('half',half_headers,
+half_lib=static_library('half',half_headers,
     include_directories: half_inc,
     install : true)
 
