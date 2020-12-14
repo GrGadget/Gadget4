@@ -39,8 +39,6 @@
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
 
-using namespace std;
-
 /*! \brief Prepares the loaded initial conditions for the run
  *
  *  It is only called if RestartFlag != RST_RESUME. Various counters and variables are initialized.

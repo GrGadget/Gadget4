@@ -40,8 +40,6 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/peano.h"
 
-using namespace std;
-
 /*! Computation of a FOF group catalogue.
  *
  * \param num

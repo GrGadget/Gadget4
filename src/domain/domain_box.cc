@@ -28,8 +28,6 @@
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 
-using namespace std;
-
 /*! \file domain_box.cc
  *  \brief finds extension of particle set and/or wraps them back into the fundamental periodic box
  */

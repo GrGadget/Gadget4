@@ -36,7 +36,6 @@ class IdxComp__
 template <typename It, typename T2, typename Comp>
 inline void buildIndex(It begin, It end, T2 *idx, Comp comp)
 {
-  using namespace std;
   T2 num = end - begin;
   for(T2 i = 0; i < num; ++i)
     idx[i] = i;
