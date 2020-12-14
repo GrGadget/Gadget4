@@ -24,7 +24,7 @@ simulation based on them. It is also possible to instruct the code to
 only create the ICs, store them in a file and then end, which is
 accomplished by launching the code with restartflag 6.
 
-![k-space grid](../../documentation/img/ic-code.png)
+![k-space grid](img/ic-code.png)
 
 The NGENIC option needs to be set to the size of the FFTs used in the
 initial conditions creation, and the meaning of the other code
@@ -44,7 +44,7 @@ these options need to be enabled when `MERGERTREE` is set. The
 schematic organisation of the merger tree that is constructed is
 depicted in the following sketch:
 
-![merger tree](../../documentation/img/mergertree.png)
+![merger tree](img/mergertree.png)
 
 At each output time, FOF groups are identified which contain one or
 several (sub)halos, and the merger tree connects these halos. The FOF
@@ -104,7 +104,7 @@ in the following sketch, which shows how the code determines an
 interpolated particle coordinate x' in between two endpoints of the
 timestepping procedure.
 
-![light cone](../../documentation/img/lcone.png)
+![light cone](img/lcone.png)
 
 This option is activated with the `LIGHTCONE` switch, and needs to be
 active while the simulation is run. In this case, additional particle

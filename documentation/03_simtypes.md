@@ -17,44 +17,44 @@ calculations are done, is given in the following table.
 <caption id="multi_row">Overview of simulation types</caption>
 <tr><th>Type of Simulation  <th>Computational Method     <th>Remarks
 
-<tr><td> <img src="../../documentation/img/type1.png" width="100">  Newtonian space
+<tr><td> <img src="img/type1.png" width="100">  Newtonian space
     <td> Gravity: Tree, SPH (optional), vacuum boundary conditions
 	<td> OmegaLambda should be set to zero
 
-<tr><td> <img src="../../documentation/img/type2.png" width="100">  Periodic long box 
+<tr><td> <img src="img/type2.png" width="100">  Periodic long box 
     <td> No gravity, only SPH, periodic boundary conditions
 	<td> SELFGRAVITY needs to be deactivated,  LONG_X/Y/Z may be
  set to scale the dimensions of the box 
 
-<tr><td> <img src="../../documentation/img/type3.png" width="100">  Cosmological, physical coordinates
+<tr><td> <img src="img/type3.png" width="100">  Cosmological, physical coordinates
     <td> Gravity: Tree, SPH, vacuum boundaries
 	<td> ComovingIntegrationOn set to zero
 
-<tr><td> <img src="../../documentation/img/type4.png" width="100">  Cosmological, comoving coordinates
+<tr><td> <img src="img/type4.png" width="100">  Cosmological, comoving coordinates
     <td> Gravity: Tree, SPH, vacuum boundaries
 	<td> ComovingIntegrationOn set to one
 
-<tr><td> <img src="../../documentation/img/type5.png" width="100">  Cosmological, comoving periodic box
+<tr><td> <img src="img/type5.png" width="100">  Cosmological, comoving periodic box
     <td> Gravity: Tree with Ewald-correction, SPH, periodic boundaries
 	<td> PERIODIC needs to be set
 
-<tr><td> <img src="../../documentation/img/type6.png" width="100">  Cosmological, comoving coordinates, TreePM
+<tr><td> <img src="img/type6.png" width="100">  Cosmological, comoving coordinates, TreePM
     <td> Gravity: Tree with long range PM, SPH, vacuum boundaries
 	<td> PMGRID needs to be set
 
-<tr><td> <img src="../../documentation/img/type7.png" width="100">  Cosmological, comoving periodic box, TreePM
+<tr><td> <img src="img/type7.png" width="100">  Cosmological, comoving periodic box, TreePM
     <td> Gravity: Tree with long range PM, SPH, periodic boundaries
 	<td> PERIODIC and PMGRID need to be set
 
-<tr><td> <img src="../../documentation/img/type8.png" width="100">  Cosmological, comoving coordinates, TreePM, Zoom
+<tr><td> <img src="img/type8.png" width="100">  Cosmological, comoving coordinates, TreePM, Zoom
     <td> Gravity: Tree with long-range and intermediate-range PM, SPH, vacuum boundaries
 	<td> PMGRID and PLACEHIGHRESREGION need to be set
 
-<tr><td> <img src="../../documentation/img/type9.png" width="100">  Cosmological, periodic comoving box, TreePM, Zoom
+<tr><td> <img src="img/type9.png" width="100">  Cosmological, periodic comoving box, TreePM, Zoom
     <td> Gravity: Tree with long-range and intermediate-range PM, SPH, periodic boundaries
 	<td> PERIODIC, PMGRID and PLACEHIGHRESREGION need to be set
 
-<tr><td> <img src="../../documentation/img/type10.png" width="100"> Newtonian space, TreePM
+<tr><td> <img src="img/type10.png" width="100"> Newtonian space, TreePM
     <td> Gravity: Tree with long-range PM, SPH, vacuum boundaries
 	<td> PMGRID needs to be set
 
