@@ -8,4 +8,5 @@ gadget_headers = files([
     'idstorage.h',
     'symtensor_indices.h',
     'symtensors.h',
+    'sph_particle_data.h',
     'setcomm.h'])

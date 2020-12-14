@@ -9,4 +9,5 @@ gadget_src = files([
     'allreduce_debugcheck.cc',
     'hypercube_allgatherv.cc',
     'allreduce_sparse_double_sum.cc',
+    'artificial_viscosity.cc',
     'setcomm.cc'])

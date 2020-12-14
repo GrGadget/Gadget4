@@ -11,9 +11,7 @@
 
 #include "gadgetconfig.h"
 
-// #include <gsl/gsl_linalg.h>
-
-#include "../data/sph_particle_data.h"
+#include "gadget/sph_particle_data.h"
 
 /*! This file contains the function for the time-dependent artificial viscosity
  */

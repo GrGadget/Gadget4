@@ -11,6 +11,5 @@ headers += files(['allvars.h',
     'mmparticles.h',
     'mymalloc.h',
     'particle_data.h',
-    'simparticles.h',
-    'sph_particle_data.h'
+    'simparticles.h'
     ])
