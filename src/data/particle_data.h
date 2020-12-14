@@ -15,20 +15,11 @@
 #include "gadgetconfig.h"
 
 #include <atomic>
-#include <climits>
+#include <cstring>  // memcpy
 
-#include <stdlib.h>
-#include "../data/idstorage.h"
-#include "../data/intposconvert.h"
-#include "../data/mymalloc.h"
-#include "../data/symtensors.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/constants.h"
-#include "gadget/dtypes.h"
-#include "gadget/macros.h"
+#include "../data/symtensors.h"  // vector
+#include "gadget/idstorage.h"    // MyIDStorage
 #include "gadget/peano.h"
-#include "gadget/setcomm.h"
 
 /** This structure holds all the information that is
  * stored for each particle of the simulation.
