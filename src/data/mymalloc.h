@@ -12,7 +12,8 @@
 #ifndef MYMALLOC_H
 #define MYMALLOC_H
 
-#include <stdio.h>
+#include <cstddef>  // size_t
+#include <cstdio>   // FILE
 
 #include "gadget/constants.h"  // TO_MBYTE_FAC
 #include "gadget/dtypes.h"     // restart_options

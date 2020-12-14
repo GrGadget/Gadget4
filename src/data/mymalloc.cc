@@ -5,21 +5,16 @@
  *******************************************************************************/
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>  // malloc
+#include <cstring>  // memset
 
-#include "../data/allvars.h"
+#include <mpi.h>
+
 #include "../data/mymalloc.h"
-#include "../logs/logs.h"
-#include "../main/simulation.h"
-#include "../mpi_utils/shared_mem_handler.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
+#include "../logs/logs.h"                     // extern logs Logs;
+#include "../mpi_utils/shared_mem_handler.h"  // shmem Shmem; global variable
+
+#include "gadget/macros.h"  // Terminate
 
 /** \file mymalloc.cc
  *
