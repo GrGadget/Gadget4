@@ -12,6 +12,8 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include "gadgetconfig.h"
+
 #ifndef TREE_NUM_BEFORE_NODESPLIT
 #define TREE_NUM_BEFORE_NODESPLIT 3  // daughter nodes are only created if there are more than this number of particles in a node
 #endif
@@ -23,14 +25,15 @@
 
 #define TREE_MAX_ITER 100
 
-#include <mpi.h>
+#include "../mpi_utils/shared_mem_handler.h"  // shmem Shmem; global variable
 
-#include "../domain/domain.h"
-#include "../mpi_utils/shared_mem_handler.h"
-#include "../system/system.h"
-#include "gadget/peano.h"
-
-class sim;
+#if MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 32
+typedef std::uint32_t node_bit_field;
+#elif MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 64
+typedef std::uint64_t node_bit_field;
+#else
+#error "unsupported MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY setting"
+#endif
 
 /** The tree node data structure. Nodes points to the actual memory
     allocated for the internal nodes, but is shifted such that

@@ -11,26 +11,8 @@
 
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "../data/allvars.h"
-#include "../data/intposconvert.h"
-#include "../data/mymalloc.h"
-#include "../domain/domain.h"
-#include "../logs/logs.h"
-#include "../logs/timer.h"
-#include "../main/simulation.h"
 #include "../sort/cxxsort.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "../tree/tree.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
-#include "gadget/peano.h"
 
 /*! This file contains the construction of the tree used for calculating the gravitational force
  *  and the neighbor tree for SPH.

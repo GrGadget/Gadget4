@@ -130,14 +130,6 @@ typedef int integertime;
 #define MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY 64
 #endif
 
-#if MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 32
-typedef std::uint32_t node_bit_field;
-#elif MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 64
-typedef std::uint64_t node_bit_field;
-#else
-#error "unsupported MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY setting"
-#endif
-
 struct offset_tuple
 {
   char n[3];

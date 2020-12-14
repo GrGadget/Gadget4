@@ -20,6 +20,8 @@
 #include "../io/io_streamcount.h"
 #include "../main/simulation.h"
 
+class sim;
+
 class restart : public io_streamcount, public setcomm
 {
  public:
