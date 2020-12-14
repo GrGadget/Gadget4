@@ -20,7 +20,7 @@ hwloc = dependency('hwloc')
 
 pkg=import('pkgconfig')
 
-user_config=files('Config.sh')
+user_config=files(meson.build_root() / 'Config.sh')
 
 subdir('buildsystem')
 
