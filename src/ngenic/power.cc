@@ -13,21 +13,13 @@
 
 #ifdef NGENIC
 
-#include <gsl/gsl_integration.h>
-#include <gsl/gsl_rng.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdlib.h>
+#include <gsl/gsl_integration.h>  // gsl_function
+#include <algorithm>              // sort
 
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../logs/logs.h"
-#include "../main/simulation.h"
-#include "../ngenic/ngenic.h"
-#include "../pm/pm_mpi_fft.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
+#include "../data/allvars.h"   // extern All;
+#include "../data/mymalloc.h"  // extern Mem;
+#include "../ngenic/ngenic.h"  // class ngenic;
+#include "gadget/macros.h"     // Terminate
 
 double ngenic::ngenic_power_spec(double k)
 {
