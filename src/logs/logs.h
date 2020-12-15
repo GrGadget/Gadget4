@@ -15,8 +15,9 @@
 #include <cstring>  // strcpy inside timer.h
 
 //#include "../main/simulation.h"
-#include "gadget/macros.h"   // Terminate;
-#include "gadget/setcomm.h"  // class setcomm;
+#include "gadget/constants.h"  // NTYPES
+#include "gadget/macros.h"     // Terminate;
+#include "gadget/setcomm.h"    // class setcomm;
 
 #define CPU_STRING_LEN 120
 

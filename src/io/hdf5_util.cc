@@ -21,6 +21,7 @@
 #include "../data/allvars.h"
 #include "../io/hdf5_util.h"
 #include "gadget/dtypes.h"
+#include "gadget/macros.h"  // Terminate
 
 #define HALF_ROUND_STYLE 1
 #include <half/half.hpp>

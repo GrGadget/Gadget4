@@ -11,23 +11,11 @@
 
 #include "gadgetconfig.h"
 
-#include <mpi.h>
-#include <algorithm>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
+#include <mpi.h>               // MPI_Allreduce
+#include "../data/mymalloc.h"  // extern class Mem;
 #include "../domain/domain.h"
-#include "../logs/logs.h"
-#include "../main/simulation.h"
-#include "../sort/cxxsort.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
-#include "gadget/peano.h"
+#include "../sort/cxxsort.h"  // mycxxsort
+#include "gadget/macros.h"    // Terminate
 
 template <typename partset>
 void domain<partset>::domain_do_local_refine(int n, int *list)

@@ -22,6 +22,7 @@
 #include "../data/allvars.h"
 #include "../time_integration/driftfac.h"
 #include "gadget/dtypes.h"
+#include "gadget/macros.h"  // Terminate
 
 void driftfac::init_drift_table(void)
 {

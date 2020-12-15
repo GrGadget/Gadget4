@@ -11,11 +11,11 @@
 #ifndef GADGET4_CXXSORT_H
 #define GADGET4_CXXSORT_H
 
-#include <algorithm>
+#include <algorithm>  // std::merge
+#include <cstddef>    // size_t
 
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../logs/logs.h"
+#include "../data/mymalloc.h"  // extern Mem
+#include "../logs/logs.h"      // extern Logs
 
 template <typename T, typename Tcomp>
 void mycxxsort_internal_serial(T *begin, T *end, T *buf, bool res_into_buf, Tcomp comp)

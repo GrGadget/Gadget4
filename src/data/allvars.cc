@@ -11,11 +11,11 @@
 
 #include "gadgetconfig.h"
 
+#include <mpi.h>  // MPI_Bcast
+#include <cmath>  // pow
 #include "../data/allvars.h"
-#include "../time_integration/driftfac.h"
-#include "gadget/constants.h"
-#include "gadget/dtypes.h"
-#include "gadget/macros.h"
+#include "../time_integration/driftfac.h"  // extern driftfac Driftfac;
+#include "gadget/macros.h"                 // Terminate
 
 void global_data_all_processes::set_cosmo_factors_for_current_time(void)
 {

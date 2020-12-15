@@ -11,31 +11,31 @@
 
 #include "gadgetconfig.h"
 
-#include <gsl/gsl_rng.h>
-#include <math.h>
-#include <mpi.h>
+#include <gsl/gsl_rng.h>  // gsl_rng
+//#include <math.h>
+#include <mpi.h>  // MPI_Allgather
 #include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <sys/resource.h>
-#include <sys/statvfs.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
+//#include <stdarg.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
+//#include <strings.h>
+//#include <sys/resource.h>
+#include <sys/statvfs.h>  // statvfs
+//#include <sys/time.h>
+//#include <sys/types.h>
+//#include <time.h>
+//#include <unistd.h>
 
 #include "../data/allvars.h"
-#include "../data/mymalloc.h"
+#include "../data/mymalloc.h"  // extern Mem
 #include "../io/io.h"
-#include "../logs/logs.h"
-#include "../main/main.h"
-#include "../main/simulation.h"
+//#include "../logs/logs.h"
+//#include "../main/main.h"
+#include "../main/simulation.h"  // class sim
 #include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
+//#include "gadget/dtypes.h"
+//#include "gadget/mpi_utils.h"
 
 gsl_rng *random_generator; /*!< the random number generator used */
 

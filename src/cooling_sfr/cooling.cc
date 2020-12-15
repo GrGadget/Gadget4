@@ -13,21 +13,12 @@
 
 #ifdef COOLING
 
-#include <gsl/gsl_math.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <algorithm>
+#include <gsl/gsl_math.h>  // gsl_finite
 
 #include "../cooling_sfr/cooling.h"
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../logs/logs.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/dtypes.h"
+#include "../data/mymalloc.h"  // extern class Mem;
+#include "../logs/logs.h"      // TIMER_START
+#include "gadget/macros.h"     // Terminate
 
 /** \brief Compute the new internal energy per unit mass.
  *

@@ -13,18 +13,9 @@
 
 #ifdef STARFORMATION
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "../cooling_sfr/cooling.h"
-#include "../data/allvars.h"
-#include "../logs/logs.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/dtypes.h"
+#include "../data/allvars.h"  // extern global_data_all_processes All;
+#include "../logs/logs.h"     // TIMER_START
 
 /** \brief Main driver for star formation and gas cooling.
  *

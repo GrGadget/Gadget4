@@ -9,16 +9,15 @@
  *  \brief declares the class used for the domain decomposition
  */
 
-#ifndef ALLVARS_H
-#include "../data/allvars.h"
-#endif
 #ifndef DOMAIN_H
 #define DOMAIN_H
 
-#include <stdarg.h>
-#include "gadget/dtypes.h"
-#include "gadget/peano.h"
-#include "gadget/setcomm.h"
+#include <mpi.h>    // MPI_Comm
+#include <cstdarg>  // va_list
+#include <cstdio>   // vprintf
+
+#include "gadget/peano.h"    // peanokey
+#include "gadget/setcomm.h"  // class setcomm;
 
 enum domain_options
 {

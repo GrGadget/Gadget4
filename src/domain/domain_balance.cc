@@ -11,22 +11,10 @@
 
 #include "gadgetconfig.h"
 
-#include <mpi.h>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
 #include "../domain/domain.h"
-#include "../logs/logs.h"
-#include "../main/simulation.h"
-#include "../sort/cxxsort.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
+#include "../sort/cxxsort.h"  // mycxxsort
+
+#include "gadget/macros.h"  // Terminate
 
 /** This function uses the cumulative cost function (which weights work-load and memory-load equally) to subdivide
  *  the list of top-level leaf nodes into pieces that are (approximately) equal in size.

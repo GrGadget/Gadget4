@@ -12,9 +12,12 @@
 #ifndef PARALLEL_SORT_H
 #define PARALLEL_SORT_H
 
-#include "cxxsort.h"
+#include <mpi.h>      // MPI_Bcast
+#include <cstddef>    // size_t
+#include "cxxsort.h"  // mycxxsort
 
-#include "../data/mymalloc.h"
+#include "../data/mymalloc.h"  // extern Mem;
+#include "gadget/macros.h"     // Terminate
 
 //#define CHECK_LOCAL_RANK
 

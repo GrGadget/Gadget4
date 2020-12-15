@@ -11,22 +11,9 @@
 
 #include "gadgetconfig.h"
 
-#include <mpi.h>
-#include <algorithm>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
+#include "../data/simparticles.h"  // simparticles
 #include "../domain/domain.h"
-#include "../logs/logs.h"
-#include "../main/simulation.h"
-#include "../pm/pm.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/intposconvert.h"
+#include "gadget/dtypes.h"  // MyIntPosType
 
 /*! \file domain_box.cc
  *  \brief finds extension of particle set and/or wraps them back into the fundamental periodic box

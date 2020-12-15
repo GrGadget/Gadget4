@@ -13,20 +13,11 @@
 
 #ifdef STARFORMATION
 
-#include <assert.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "../cooling_sfr/cooling.h"
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../logs/logs.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/dtypes.h"
+#include "../data/allvars.h"   // extern All
+#include "../data/mymalloc.h"  // extern Mem
+#include "../logs/logs.h"      // TIMER_START
+#include "gadget/macros.h"     // Terminate
 
 /** \brief This routine creates star/wind particles according to their respective rates.
  *

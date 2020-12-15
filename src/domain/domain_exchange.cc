@@ -11,24 +11,11 @@
 
 #include "gadgetconfig.h"
 
-#include <mpi.h>
-#include <algorithm>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <mpi.h>  // MPI_Allreduce
 
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
 #include "../domain/domain.h"
-#include "../fof/fof.h"
-#include "../logs/logs.h"
-#include "../main/simulation.h"
-#include "../ngbtree/ngbtree.h"
-#include "../sort/cxxsort.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
+#include "../sort/cxxsort.h"  // mycxxsort
+#include "gadget/macros.h"    // Terminate
 
 /*! \file domain_exchange.c
  *  \brief exchanges particle data according to the new domain decomposition
