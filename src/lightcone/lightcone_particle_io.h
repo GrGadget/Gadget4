@@ -16,11 +16,11 @@
 
 #if defined(LIGHTCONE) && defined(LIGHTCONE_PARTICLES)
 
-#include "../data/intposconvert.h"
 #include "../data/lcparticles.h"
 #include "../io/io.h"
 #include "../lightcone/lightcone.h"
 #include "../mergertree/mergertree.h"
+#include "gadget/intposconvert.h"
 
 class lightcone_particle_io : public IO_Def
 {

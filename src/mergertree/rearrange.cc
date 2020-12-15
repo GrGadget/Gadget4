@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../io/hdf5_util.h"
 #include "../io/snap_io.h"
@@ -39,6 +38,7 @@
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 
 #if defined(REARRANGE_OPTION) && defined(MERGERTREE)
 void sim::rearrange_snapshot(int argc, char **argv)

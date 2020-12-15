@@ -14,6 +14,7 @@
 
 #include <cstddef>  // size_t
 #include <cstdint>  // int32_t, int64_t, etc
+#include "gadgetconfig.h"
 #ifdef EXPLICIT_VECTORIZATION
 #include <vectorclass/vectorclass.h>
 #endif

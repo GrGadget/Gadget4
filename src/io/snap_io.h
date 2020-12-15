@@ -14,10 +14,10 @@
 
 #include "gadgetconfig.h"
 
-#include "../data/intposconvert.h"
 #include "../data/simparticles.h"
 #include "../io/io.h"
 #include "../mergertree/mergertree.h"
+#include "gadget/intposconvert.h"
 
 class snap_io : public IO_Def
 {

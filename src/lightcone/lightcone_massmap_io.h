@@ -16,10 +16,10 @@
 
 #if defined(LIGHTCONE) && defined(LIGHTCONE_MASSMAPS)
 
-#include "../data/intposconvert.h"
 #include "../data/mmparticles.h"
 #include "../io/io.h"
 #include "../lightcone/lightcone.h"
+#include "gadget/intposconvert.h"
 
 class lightcone_massmap_io : public IO_Def
 {

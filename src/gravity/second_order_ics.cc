@@ -17,7 +17,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
@@ -25,6 +24,7 @@
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 
 #ifdef SECOND_ORDER_LPT_ICS
 

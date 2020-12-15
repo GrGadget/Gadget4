@@ -22,7 +22,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../gitversion/version.h"
@@ -37,6 +36,7 @@
 #include "../pm/pm.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 #include "gadget/peano.h"
 

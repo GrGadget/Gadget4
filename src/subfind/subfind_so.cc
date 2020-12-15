@@ -20,7 +20,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../fof/fof.h"
@@ -31,6 +30,7 @@
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 
 static double *R200, *M200;
 

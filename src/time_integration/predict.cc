@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/simparticles.h"
 #include "../lightcone/lightcone.h"
 #include "../logs/logs.h"
@@ -28,6 +27,7 @@
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 
 /*

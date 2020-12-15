@@ -9,4 +9,5 @@ gadget_headers = files([
     'symtensor_indices.h',
     'symtensors.h',
     'sph_particle_data.h',
+    'intposconvert.h',
     'setcomm.h'])

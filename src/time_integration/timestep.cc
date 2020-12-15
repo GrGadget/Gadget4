@@ -19,7 +19,6 @@
 
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../data/simparticles.h"
 #include "../logs/logs.h"
@@ -28,6 +27,7 @@
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 
 /*! This function advances the system in momentum space, i.e. it does apply the 'kick' operation after the
  *  forces have been computed. Additionally, it assigns new timesteps to particles. At start-up, a

@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
@@ -33,6 +32,7 @@
 #include "../src/time_integration/timestep.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 
 #define GRID (HRPMGRID)

@@ -12,11 +12,14 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
-#include <stdio.h>
-#include "allvars.h"
-#include "gadget/dtypes.h"
+#include "gadgetconfig.h"
 
-#include <cmath>
+#include <cmath>  // std::llrint
+
+#include <vectorclass/vectorclass.h>
+
+#include "gadget/dtypes.h"  // MyReal, MyIntPosType
+#include "gadget/macros.h"  // Terminate
 
 #define MSB ((MyIntPosType)(~((MyIntPosType)(~((MyIntPosType)0)) >> ((MyIntPosType)1))))
 

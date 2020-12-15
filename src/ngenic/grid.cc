@@ -19,13 +19,13 @@
 #include <stdlib.h>
 
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../ngenic/ngenic.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 
 void ngenic::create_grid(void)

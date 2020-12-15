@@ -19,7 +19,6 @@
 #include <cstring>
 
 #include "../data/allvars.h"
-#include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../logs/logs.h"
@@ -27,6 +26,7 @@
 #include "../pm/pm.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"
 
 /*! \file domain_box.cc
  *  \brief finds extension of particle set and/or wraps them back into the fundamental periodic box
