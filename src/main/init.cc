@@ -26,7 +26,7 @@
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
 #include "../io/snap_io.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"

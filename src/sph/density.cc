@@ -21,7 +21,6 @@
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
 #include "../sort/cxxsort.h"

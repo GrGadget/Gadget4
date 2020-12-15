@@ -36,7 +36,6 @@
 #include "../io/parameters.h"
 #include "../lightcone/lightcone.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mergertree/mergertree.h"

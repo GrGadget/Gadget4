@@ -28,7 +28,7 @@
 #include "../fof/fof.h"
 #include "../fof/fof_io.h"
 #include "../gravtree/gravtree.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mergertree/mergertree.h"
 #include "../sort/cxxsort.h"

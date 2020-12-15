@@ -25,7 +25,6 @@
 #include "../fmm/fmm.h"
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../pm/pm.h"
 #include "../system/system.h"

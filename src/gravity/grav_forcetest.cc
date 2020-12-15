@@ -27,7 +27,6 @@
 #include "../gravity/grav_forcetest.h"
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"

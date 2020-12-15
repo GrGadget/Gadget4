@@ -34,7 +34,6 @@
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"

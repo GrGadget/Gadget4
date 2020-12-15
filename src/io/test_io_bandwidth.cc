@@ -26,7 +26,7 @@
 #include "../io/io.h"
 #include "../io/test_io_bandwidth.h"
 #include "../lightcone/lightcone.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"

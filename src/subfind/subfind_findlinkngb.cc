@@ -28,7 +28,7 @@
 #include "../domain/domain.h"
 #include "../fof/fof.h"
 #include "../gravtree/gravtree.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"
 #include "../sort/cxxsort.h"

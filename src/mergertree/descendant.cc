@@ -29,7 +29,6 @@
 #include "../fof/fof.h"
 #include "../io/hdf5_util.h"
 #include "../io/io.h"
-#include "../logs/timer.h"
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mergertree/io_descendant.h"

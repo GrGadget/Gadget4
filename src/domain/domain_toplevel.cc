@@ -21,7 +21,7 @@
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"

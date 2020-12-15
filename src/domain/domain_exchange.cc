@@ -22,7 +22,7 @@
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../fof/fof.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
 #include "../sort/cxxsort.h"

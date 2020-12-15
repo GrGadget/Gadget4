@@ -21,7 +21,7 @@
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../ngenic/ngenic.h"
 #include "../pm/pm_mpi_fft.h"

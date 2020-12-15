@@ -32,7 +32,6 @@
 #include "../io/snap_io.h"
 #include "../lightcone/lightcone.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../pm/pm.h"

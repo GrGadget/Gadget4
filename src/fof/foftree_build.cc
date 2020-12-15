@@ -24,7 +24,6 @@
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"

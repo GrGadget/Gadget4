@@ -24,7 +24,7 @@
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
 #include "../fof/fof.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"
 #include "../ngbtree/ngbtree.h"

@@ -4,6 +4,10 @@
  * \copyright   (vspringel@mpa-garching.mpg.de) and all contributing authors.
  *******************************************************************************/
 
+//#pragma once
+
+//#include <cstring> // strcpy
+
 /*! \file timer.h
  *
  *  \brief defines the CPU consumption timers

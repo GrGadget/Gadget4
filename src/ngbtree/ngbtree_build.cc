@@ -23,7 +23,6 @@
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"

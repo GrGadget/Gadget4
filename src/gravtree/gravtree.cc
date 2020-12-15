@@ -25,7 +25,6 @@
 #include "../gravtree/gravtree.h"
 #include "../gravtree/gwalk.h"
 #include "../logs/logs.h"
-#include "../logs/timer.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../pm/pm.h"

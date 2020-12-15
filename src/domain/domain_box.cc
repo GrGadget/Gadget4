@@ -22,7 +22,7 @@
 #include "../data/intposconvert.h"
 #include "../data/mymalloc.h"
 #include "../domain/domain.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../pm/pm.h"
 #include "../system/system.h"

@@ -19,7 +19,7 @@
 #include "../data/mymalloc.h"
 #include "../data/simparticles.h"
 #include "../domain/domain.h"
-#include "../logs/timer.h"
+#include "../logs/logs.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"

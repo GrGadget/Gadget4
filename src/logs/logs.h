@@ -12,10 +12,11 @@
 #ifndef LOGS_H
 #define LOGS_H
 
-#include <stdio.h>
+#include <cstring>  // strcpy inside timer.h
 
-#include "../main/simulation.h"
-#include "gadget/setcomm.h"
+//#include "../main/simulation.h"
+#include "gadget/macros.h"   // Terminate;
+#include "gadget/setcomm.h"  // class setcomm;
 
 #define CPU_STRING_LEN 120
 
