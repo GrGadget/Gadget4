@@ -10,15 +10,9 @@
  */
 
 #include <hdf5.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
-#include <cstring>
 
-#include "../gravtree/gravtree.h"
-#include "../ngbtree/ngbtree.h"
-#include "../time_integration/driftfac.h"
+#include "../gravtree/gravtree.h"  // template class gravtree;
+#include "../ngbtree/ngbtree.h"    // ngbtree
 
 #include "../mpi_utils/shared_mem_handler.h"
 

@@ -25,6 +25,7 @@
 
 #define TREE_MAX_ITER 100
 
+#include "../domain/domain.h"                 // template class domain;
 #include "../mpi_utils/shared_mem_handler.h"  // shmem Shmem; global variable
 
 #if MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 32

@@ -12,15 +12,7 @@
 #ifndef SHAREDMEM_H
 #define SHAREDMEM_H
 
-#include <hdf5.h>
 #include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
-#include <atomic>
-#include <cstring>
-
-#include "../data/simparticles.h"
 
 #define MAX_TREE_INFOS 10
 
