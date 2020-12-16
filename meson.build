@@ -32,24 +32,6 @@ subdir('md5')
 subdir('vectorclass')
 subdir('half')
 
-
-config_header = custom_target('config',
-    build_by_default: true,
-    input: user_config,
-    output: ['gadgetconfig.h','compile_time_info.cc','compile_time_info_hdf5.cc'],
-    command : [python,config_generator,'@INPUT@','@OUTDIR@'])
-
-compile_header = custom_target('compileinfo',
-    build_by_default: true,
-    output: 'compiler-command-line-args.h',
-    command : [python,compileflags_generator,'@OUTDIR@'])
-
-git_version = custom_target('git-info',
-    build_by_default: true,
-    output: 'version.cc',
-    command : [bash,gitinfo_generator,meson.source_root(),'@OUTDIR@'])
-
-
 subdir('gadget')
 executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,

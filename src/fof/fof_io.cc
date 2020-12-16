@@ -26,7 +26,6 @@
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../fof/fof_io.h"
-#include "../gitversion/version.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
 #include "../main/main.h"
@@ -37,6 +36,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
+#include "version.h"
 
 /*! \file fof_io.c
  *  \brief parallel I/O routines for the FOF and SUBFIND group finders

@@ -1,0 +1,7 @@
+#ifndef VERSION_H
+#define VERSION_H
+
+#define GIT_DATE "_DATE_"
+#define GIT_COMMIT "_COMMIT_"
+
+#endif

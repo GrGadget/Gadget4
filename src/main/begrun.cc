@@ -28,7 +28,6 @@
 #include "../data/simparticles.h"
 #include "../fmm/fmm.h"
 #include "../fof/fof.h"
-#include "../gitversion/version.h"
 #include "../gravity/ewald.h"
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
@@ -47,6 +46,7 @@
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 #include "gadget/parameters.h"
+#include "version.h"
 
 /*!
  *  This file contains various functions to initialize a simulation run. In
