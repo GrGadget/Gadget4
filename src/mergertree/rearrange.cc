@@ -26,7 +26,6 @@
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
-#include "../io/hdf5_util.h"
 #include "../io/snap_io.h"
 #include "../lightcone/lightcone.h"
 #include "../lightcone/lightcone_particle_io.h"
@@ -38,6 +37,7 @@
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/intposconvert.h"
 
 #if defined(REARRANGE_OPTION) && defined(MERGERTREE)

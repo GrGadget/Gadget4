@@ -31,7 +31,6 @@
 #include "../gitversion/version.h"
 #include "../gravity/ewald.h"
 #include "../gravtree/gravtree.h"
-#include "../io/hdf5_util.h"
 #include "../io/io.h"
 #include "../io/parameters.h"
 #include "../lightcone/lightcone.h"
@@ -46,6 +45,7 @@
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
 /*!

@@ -10,4 +10,5 @@ gadget_src = files([
     'hypercube_allgatherv.cc',
     'allreduce_sparse_double_sum.cc',
     'sph_particle_data.cc',
+    'hdf5_util.cc',
     'setcomm.cc'])

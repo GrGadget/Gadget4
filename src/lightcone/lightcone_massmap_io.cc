@@ -26,13 +26,13 @@
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
-#include "../io/hdf5_util.h"
 #include "../io/io.h"
 #include "../lightcone/lightcone.h"
 #include "../lightcone/lightcone_massmap_io.h"
 #include "../main/simulation.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
 /*!

@@ -11,4 +11,5 @@ gadget_headers = files([
     'sph_particle_data.h',
     'intposconvert.h',
     'io_streamcount.h',
+    'hdf5_util.h',
     'setcomm.h'])

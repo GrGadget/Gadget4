@@ -26,7 +26,6 @@
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
-#include "../io/hdf5_util.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
 #include "../main/main.h"
@@ -36,6 +35,7 @@
 #include "../sort/parallel_sort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
 template <>

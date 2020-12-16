@@ -28,7 +28,6 @@
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
 #include "../fof/fof_io.h"
-#include "../io/hdf5_util.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
 #include "../main/main.h"
@@ -42,6 +41,7 @@
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
 /* This is the main function for constructing the halo trees.

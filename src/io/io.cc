@@ -11,32 +11,13 @@
 
 #include "gadgetconfig.h"
 
-#include <errno.h>
-#include <hdf5.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <algorithm>
-
-#include "../cooling_sfr/cooling.h"
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../fof/fof.h"
-#include "../io/hdf5_util.h"
+#include "../data/allvars.h"   // extern All;
+#include "../data/mymalloc.h"  // extern Mem;
 #include "../io/io.h"
-#include "../io/parameters.h"
-#include "../lightcone/lightcone.h"
-#include "../logs/logs.h"
-#include "../main/main.h"
-#include "../main/simulation.h"
-#include "../mergertree/mergertree.h"
-#include "../subfind/subfind.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
+#include "../system/system.h"  // myflush
+#include "gadget/hdf5_util.h"  // my_H5Fcreate;
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // TAG_HEADER
 
 #define HALF_ROUND_STYLE 1
 #include <half/half.hpp>

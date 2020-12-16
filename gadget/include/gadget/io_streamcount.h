@@ -12,9 +12,12 @@
 #ifndef IO_STREAMCOUNT_H
 #define IO_STREAMCOUNT_H
 
-#include <cstdio>  // fread
+#include <cerrno>   // errno
+#include <cstdio>   // fread
+#include <cstring>  // strerror
 
 #include "gadget/macros.h"  // Terminate
+#include "gadgetconfig.h"
 
 class io_streamcount
 {

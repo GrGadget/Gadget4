@@ -26,7 +26,6 @@
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
-#include "../io/hdf5_util.h"
 #include "../lightcone/lightcone.h"
 #include "../lightcone/lightcone_massmap_io.h"
 #include "../main/main.h"
@@ -34,6 +33,7 @@
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/intposconvert.h"
 
 void lightcone::lightcone_init_intposconverter(double linklength)

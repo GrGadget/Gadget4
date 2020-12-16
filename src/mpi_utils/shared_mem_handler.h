@@ -14,6 +14,8 @@
 
 #include <mpi.h>
 
+#include "../data/simparticles.h"  // simparticles
+
 #define MAX_TREE_INFOS 10
 
 class shmem

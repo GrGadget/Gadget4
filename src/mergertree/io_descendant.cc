@@ -27,7 +27,6 @@
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
 #include "../fof/fof.h"
-#include "../io/hdf5_util.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
@@ -37,6 +36,7 @@
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
 descendant_io::descendant_io(mergertree *MergerTree_ptr, MPI_Comm comm, int format) : IO_Def(comm, format)

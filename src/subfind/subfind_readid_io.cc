@@ -27,7 +27,6 @@
 #include "../data/mymalloc.h"
 #include "../data/particle_data.h"
 #include "../fof/fof.h"
-#include "../io/hdf5_util.h"
 #include "../io/io.h"
 #include "../logs/logs.h"
 #include "../main/main.h"
@@ -37,6 +36,7 @@
 #include "../subfind/subfind_readid_io.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
 subreadid_io::subreadid_io(idstoredata *IdStore_ptr, MPI_Comm comm, int format) : IO_Def(comm, format)

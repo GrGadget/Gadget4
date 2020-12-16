@@ -1,5 +1,4 @@
 sources += files([
-    'hdf5_util.cc',
     'io.cc',
     'parameters.cc',
     'restart.cc',
@@ -11,7 +10,6 @@ headers += files([
     'restart.h',
     'snap_io.h',
     'test_io_bandwidth.h',
-    'io.h',
-    'hdf5_util.h'
+    'io.h'
     ])
     

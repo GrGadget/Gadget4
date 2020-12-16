@@ -12,14 +12,14 @@
 #ifndef IO_H
 #define IO_H
 
+#include "gadgetconfig.h"
+
 #include <hdf5.h>  // hid_t
 
 #ifdef LIGHTCONE_PARTICLES
 #include <chealpix.h>
 #endif
 
-#include "../data/simparticles.h"
-#include "../fof/fof.h"
 #include "gadget/io_streamcount.h"  // io_streamcount
 #include "gadget/setcomm.h"         // setcomm
 

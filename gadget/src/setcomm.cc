@@ -34,7 +34,6 @@ void setcomm::mpi_printf(const char *fmt, ...)
       va_list l;
       va_start(l, fmt);
       vprintf(fmt, l);
-      //        myflush(stdout);
       va_end(l);
     }
 }

@@ -11,22 +11,16 @@
 
 #include "gadgetconfig.h"
 
-#include <hdf5.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <hdf5.h>  // hid_t
 
-#include "../data/allvars.h"
-#include "../io/hdf5_util.h"
-#include "gadget/dtypes.h"
+#include "gadget/hdf5_util.h"
 #include "gadget/macros.h"  // Terminate
 
 #define HALF_ROUND_STYLE 1
 #include <half/half.hpp>
 using half_float::half;
 
+// TODO: remove global variables
 hid_t Halfprec_memtype;
 hid_t Int48_memtype;
 hid_t Int128_memtype;
