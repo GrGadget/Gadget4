@@ -14,10 +14,10 @@
 
 #include "gadgetconfig.h"
 
-#include "../data/simparticles.h"
-#include "../io/io.h"
-#include "../mergertree/mergertree.h"
-#include "gadget/intposconvert.h"
+#include <mpi.h>                       // MPI_Comm
+#include "../data/simparticles.h"      // class simparticles;
+#include "../io/io.h"                  // class IO_Def;
+#include "../mergertree/mergertree.h"  // class mergertree
 
 class snap_io : public IO_Def
 {

@@ -11,35 +11,19 @@
 
 #include "gadgetconfig.h"
 
-#include <errno.h>
-#include <hdf5.h>
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
+#include <hdf5.h>      // hid_t
+#include <mpi.h>       // MPI_Allreduce
+#include <sys/stat.h>  // mkdir
 
-#include "../cooling_sfr/cooling.h"
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../fof/fof.h"
-#include "../gitversion/version.h"
-#include "../gravtree/gravtree.h"
-#include "../io/io.h"
+#include "../data/allvars.h"       // extern class All;
+#include "../data/mymalloc.h"      // extern class Mem;
+#include "../data/simparticles.h"  // class simparticles;
 #include "../io/snap_io.h"
-#include "../lightcone/lightcone.h"
-#include "../logs/logs.h"
-#include "../main/main.h"
-#include "../main/simulation.h"
-#include "../pm/pm.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/hdf5_util.h"
-#include "gadget/intposconvert.h"
-#include "gadget/mpi_utils.h"
-#include "gadget/peano.h"
-
+#include "../logs/logs.h"      // extern class Logs; TIMER_START
+#include "gadget/hdf5_util.h"  // my_H5Fopen
+#include "gadget/macros.h"     // Terminate
+#include "version.h"           // GIT_COMMIT, GIT_DATE
+//
 /*!
  * \brief Function for field registering.
  *
