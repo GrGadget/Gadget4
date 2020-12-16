@@ -12,5 +12,6 @@ headers += files([
     'snap_io.h',
     'test_io_bandwidth.h',
     'io.h',
-    'hdf5_util.h',
-    'io_streamcount.h'])
+    'hdf5_util.h'
+    ])
+    

@@ -10,4 +10,5 @@ gadget_headers = files([
     'symtensors.h',
     'sph_particle_data.h',
     'intposconvert.h',
+    'io_streamcount.h',
     'setcomm.h'])

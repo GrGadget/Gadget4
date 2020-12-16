@@ -12,7 +12,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include <hdf5.h>
+#include <hdf5.h>  // hid_t
 
 #ifdef LIGHTCONE_PARTICLES
 #include <chealpix.h>
@@ -20,8 +20,8 @@
 
 #include "../data/simparticles.h"
 #include "../fof/fof.h"
-#include "../io/io_streamcount.h"
-#include "gadget/setcomm.h"
+#include "gadget/io_streamcount.h"  // io_streamcount
+#include "gadget/setcomm.h"         // setcomm
 
 #define LABEL_LEN 4
 #define DATASETNAME_LEN 256

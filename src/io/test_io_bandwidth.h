@@ -21,7 +21,7 @@
 
 #define BLKSIZE (1024 * 1024)
 
-#include "../io/io_streamcount.h"
+#include "gadget/io_streamcount.h"
 
 class test_io_bandwidth : public io_streamcount, public virtual setcomm
 {

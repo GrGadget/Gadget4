@@ -17,8 +17,8 @@
 
 #define BLKSIZE (1024 * 1024)
 
-#include "../io/io_streamcount.h"
 #include "../main/simulation.h"
+#include "gadget/io_streamcount.h"
 
 class sim;
 
