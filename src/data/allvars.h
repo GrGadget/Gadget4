@@ -18,8 +18,8 @@
 
 #include <cmath>  // exp
 
-#include "../io/parameters.h"  // class parameters;
-#include "gadget/constants.h"  // MAXLEN_PATH
+#include "gadget/constants.h"   // MAXLEN_PATH
+#include "gadget/parameters.h"  // class parameters;
 
 /** Data which is the SAME for all tasks (mostly code parameters read
  * from the parameter file).  Holding this data in a structure is

@@ -12,8 +12,11 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
+#include "gadgetconfig.h"
+
+#include <mpi.h>  // MPI_Comm
 #include "gadget/dtypes.h"
-#include "gadget/setcomm.h"
+#include "gadget/setcomm.h"  // setcomm
 
 #define PARAM_DOUBLE 1
 #define PARAM_STRING 2

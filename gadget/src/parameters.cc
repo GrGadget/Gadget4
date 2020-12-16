@@ -11,21 +11,14 @@
 
 #include "gadgetconfig.h"
 
-#include <math.h>
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
+#include <cstring>  // strlen, strcpy, strcmp
+#include "gadget/parameters.h"
 
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../io/io.h"
-#include "../io/parameters.h"
-#include "../main/main.h"
-#include "../mpi_utils/shared_mem_handler.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
+// TODO: substitute old sys library with c++17 system
+#include <sys/stat.h>  // mkdir
+//
+#include "gadget/constants.h"  // MAXLEN_PATH_EXTRA
+#include "gadget/macros.h"     // Terminate
 
 void parameters::add_param(const char *name, void *buf, int type, int flag)
 {

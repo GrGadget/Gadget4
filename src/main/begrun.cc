@@ -32,7 +32,6 @@
 #include "../gravity/ewald.h"
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
-#include "../io/parameters.h"
 #include "../lightcone/lightcone.h"
 #include "../logs/logs.h"
 #include "../main/main.h"
@@ -47,6 +46,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/parameters.h"
 
 /*!
  *  This file contains various functions to initialize a simulation run. In

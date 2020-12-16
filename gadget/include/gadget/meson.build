@@ -1,5 +1,6 @@
 gadget_headers = files([
     'pinning.h',
+    'parameters.h',
     'dtypes.h',
     'macros.h',
     'peano.h',

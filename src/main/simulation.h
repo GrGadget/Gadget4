@@ -29,7 +29,6 @@
 #include "../gravity/grav_forcetest.h"
 #include "../gravtree/gravtree.h"
 #include "../gravtree/gwalk.h"
-#include "../io/parameters.h"
 #include "../io/restart.h"
 #include "../io/test_io_bandwidth.h"
 #include "../lightcone/lightcone.h"
@@ -43,6 +42,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/macros.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/parameters.h"
 #include "gadget/setcomm.h"
 
 class sim : public test_io_bandwidth
