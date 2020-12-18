@@ -17,6 +17,7 @@ fftw3 = dependency('fftw3')
 hdf5 = dependency('hdf5',language: 'cpp')
 gsl = dependency('gsl')
 hwloc = dependency('hwloc')
+healpix = dependency('chealpix')
 
 pkg=import('pkgconfig')
 
@@ -35,7 +36,7 @@ subdir('half')
 subdir('gadget')
 executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
-    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half],
+    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half,healpix],
     install: true)
 
 if (format.found())
