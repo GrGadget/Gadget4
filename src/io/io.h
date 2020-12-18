@@ -20,6 +20,7 @@
 #include <chealpix.h>
 #endif
 
+#include "../fof/fof.h"             // class fof;
 #include "gadget/io_streamcount.h"  // io_streamcount
 #include "gadget/setcomm.h"         // setcomm
 
@@ -232,6 +233,8 @@ class IO_Def : public io_streamcount, public setcomm
   void empty_read_buffer(int blocknr, int offset, int pc, int type, long long nprevious, void *CommBuffer);
 
   void write_dataset_attributes(hid_t hdf5_dataset, int blocknr);
+
+  // write All.* parameters
   void write_parameters_attributes_in_hdf5(hid_t handle);
   void rename_file_to_bak_if_it_exists(char *fname);
 

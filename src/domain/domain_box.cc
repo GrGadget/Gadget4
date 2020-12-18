@@ -11,6 +11,7 @@
 
 #include "gadgetconfig.h"
 
+#include "../data/lcparticles.h"   // lcparticles
 #include "../data/simparticles.h"  // simparticles
 #include "../domain/domain.h"
 #include "gadget/dtypes.h"  // MyIntPosType

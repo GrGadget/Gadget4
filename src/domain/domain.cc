@@ -24,6 +24,7 @@
 
 #include "gadgetconfig.h"
 
+#include "../data/lcparticles.h"  // lcparticles
 #include "../domain/domain.h"
 #include "../logs/logs.h"   // TIMER_START
 #include "gadget/macros.h"  // Terminate

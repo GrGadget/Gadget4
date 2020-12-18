@@ -30,6 +30,7 @@
 #include "../lightcone/lightcone.h"
 #include "../lightcone/lightcone_particle_io.h"
 #include "../main/simulation.h"
+#include "../mergertree/mergertree.h"  // class mergertree;
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/hdf5_util.h"
