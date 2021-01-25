@@ -25,7 +25,6 @@
 #include "../main/simulation.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../ngenic/ngenic.h"
-#include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"

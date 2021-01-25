@@ -31,7 +31,6 @@
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
 #include "../ngenic/ngenic.h"
-#include "../pm/pm.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind_readid_io.h"
 #include "../system/system.h"

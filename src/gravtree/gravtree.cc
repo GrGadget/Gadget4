@@ -26,7 +26,6 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/shared_mem_handler.h"
-#include "../pm/pm.h"
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"

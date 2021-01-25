@@ -38,7 +38,6 @@
 #include "../mergertree/mergertree.h"
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../ngbtree/ngbtree.h"
-#include "../pm/pm.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
 #include "../time_integration/timestep.h"
