@@ -56,10 +56,11 @@ shmem Shmem;
 int main(int argc, char **argv)
 {
   /* find out how many core we have per CPU and which ones we can use */
+#ifdef IMPOSE_PINNING
   pinning Pin;
   Pin.detect_topology();
   Pin.get_core_set();
-
+#endif
   /* initialize MPI, this may already impose some pinning */
   MPI_Init(&argc, &argv);
 
@@ -161,7 +162,9 @@ int main(int argc, char **argv)
   Logs.init_cpu_log(&Sim.Sp);
 
   /* pin the MPI ranks to the available core set */
+#ifdef IMPOSE_PINNING
   Pin.pin_to_core_set(&Sim);
+#endif
 
 #ifdef HOST_MEMORY_REPORTING
   Sim.mpi_report_comittable_memory();
