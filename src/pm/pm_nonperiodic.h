@@ -27,10 +27,18 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
+#define GRID (HRPMGRID)
+#define GRIDz (GRID / 2 + 1)
+#define GRID2 (2 * GRIDz)
+
+#define FI(x, y, z) (((large_array_offset)GRID2) * (GRID * (x) + (y)) + (z))
+#define FC(c, z) (((large_array_offset)GRID2) * ((c)-firstcol_XY) + (z))
+#define TI(x, y, z) (((large_array_offset)GRID) * ((x) + (y)*nslab_x) + (z))
+
 class pm_nonperiodic : public pm_mpi_fft
 {
  public:
-  pm_nonperiodic(MPI_Comm comm) : setcomm(comm), pm_mpi_fft(comm) {}
+  pm_nonperiodic(MPI_Comm comm) : pm_mpi_fft(comm, GRID, GRID, GRID) {}
 
 #if defined(PMGRID) && (!defined(PERIODIC) || defined(PLACEHIGHRESREGION))
 
@@ -60,8 +68,6 @@ class pm_nonperiodic : public pm_mpi_fft
   /* short-cut macros for accessing different 3D arrays */
 
   int NSource;
-
-  fft_plan myplan; /*!< In this structure, various bookkeeping variables for the distributed FFTs are stored */
 
   /*! \var maxfftsize
    *  \brief maximum size of the local fft grid among all tasks

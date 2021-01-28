@@ -16,17 +16,23 @@
 
 #include <fftw3.h>
 
-typedef ptrdiff_t fft_ptrdiff_t;
-
 #include "../pm/pm_nonperiodic.h"
 #include "../pm/pm_periodic.h"
 #include "gadget/setcomm.h"
 
-class pm : public pm_periodic, public pm_nonperiodic
+#ifdef PERIODIC
+class pm : public pm_periodic
 {
  public:
-  pm(MPI_Comm comm) : setcomm(comm), pm_periodic(comm), pm_nonperiodic(comm) {}
+  pm(MPI_Comm comm) : pm_periodic(comm) {}
 };
+#else
+class pm : public pm_nonperiodic
+{
+ public:
+  pm(MPI_Comm comm) : pm_nonperiodic(comm) {}
+};
+#endif
 
 #endif
 

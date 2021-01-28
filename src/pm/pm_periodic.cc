@@ -71,12 +71,12 @@
 
 /* short-cut macros for accessing different 3D arrays */
 #define FI(x, y, z) (((large_array_offset)GRID2) * (GRIDY * (x) + (y)) + (z))
-#define FCxy(c, z) (((large_array_offset)GRID2) * ((c)-myplan.firstcol_XY) + (z))
-#define FCxz(c, y) (((large_array_offset)GRIDY) * ((c)-myplan.firstcol_XZ) + (y))
-#define FCzy(c, x) (((large_array_offset)GRIDX) * ((c)-myplan.firstcol_ZY) + (x))
+#define FCxy(c, z) (((large_array_offset)GRID2) * ((c)-firstcol_XY) + (z))
+#define FCxz(c, y) (((large_array_offset)GRIDY) * ((c)-firstcol_XZ) + (y))
+#define FCzy(c, x) (((large_array_offset)GRIDX) * ((c)-firstcol_ZY) + (x))
 
 #ifndef FFT_COLUMN_BASED
-#define NI(x, y, z) (((large_array_offset)GRIDZ) * ((y) + (x)*myplan.nslab_y) + (z))
+#define NI(x, y, z) (((large_array_offset)GRIDZ) * ((y) + (x)*nslab_y) + (z))
 #endif
 
 /*! \brief This routine generates the FFTW-plans to carry out the FFTs later on.
@@ -108,8 +108,8 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr)
   int alignflag = FFTW_UNALIGNED;
 #endif
 
-  myplan.forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, rhogrid, 0, 1, GRID2, (fft_complex *)forcegrid, 0, 1, GRIDz,
-                                                     FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, rhogrid, 0, 1, GRID2, (fft_complex *)forcegrid, 0, 1, GRIDz,
+                                              FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
 #ifndef FFT_COLUMN_BASED
   int stride = GRIDz;
@@ -117,39 +117,31 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr)
   int stride    = 1;
 #endif
 
-  myplan.forward_plan_ydir =
-      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid, 0, stride,
-                          GRIDz * GRIDY, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_ydir = FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid, 0,
+                                          stride, GRIDz * GRIDY, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.forward_plan_xdir =
-      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid, 0, stride,
-                          GRIDz * GRIDX, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_xdir = FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid, 0,
+                                          stride, GRIDz * GRIDX, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.backward_plan_xdir =
-      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid, 0, stride,
-                          GRIDz * GRIDX, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_xdir = FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid, 0,
+                                           stride, GRIDz * GRIDX, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.backward_plan_ydir =
-      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid, 0, stride,
-                          GRIDz * GRIDY, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_ydir = FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid, 0,
+                                           stride, GRIDz * GRIDY, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)rhogrid, 0, 1, GRIDz, forcegrid, 0, 1, GRID2,
-                                                      FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)rhogrid, 0, 1, GRIDz, forcegrid, 0, 1, GRID2,
+                                               FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
   Mem.myfree(forcegrid);
   Mem.myfree(rhogrid);
 
 #ifndef FFT_COLUMN_BASED
 
-  my_slab_based_fft_init(&myplan, GRIDX, GRIDY, GRIDZ);
-
-  maxfftsize = std::max<int>(myplan.largest_x_slab * GRIDY, myplan.largest_y_slab * GRIDX) * ((size_t)GRID2);
+  maxfftsize = std::max<int>(largest_x_slab * GRIDY, largest_y_slab * GRIDX) * ((size_t)GRID2);
 
 #else
 
-  my_column_based_fft_init(&myplan, GRIDX, GRIDY, GRIDZ);
-
-  maxfftsize = myplan.max_datasize;
+  maxfftsize = max_datasize;
 
 #endif
 
@@ -303,7 +295,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
 #ifndef FFT_COLUMN_BASED
       int slab = part[part_sortindex[i]].globalindex / (GRIDY * GRID2);
-      int task = myplan.slab_to_task[slab];
+      int task = slab_to_task[slab];
 #else
       int task, column = part[part_sortindex[i]].globalindex / (GRID2);
 
@@ -415,10 +407,9 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
             {
               /* determine offset in local FFT slab */
 #ifndef FFT_COLUMN_BASED
-              large_array_offset offset =
-                  import_globalindex[i] - myplan.first_slab_x_of_task[ThisTask] * GRIDY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - first_slab_x_of_task[ThisTask] * GRIDY * ((large_array_offset)GRID2);
 #else
-              large_array_offset offset = import_globalindex[i] - myplan.firstcol_XY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)GRID2);
 #endif
               rhogrid[offset] += import_data[i];
             }
@@ -477,10 +468,9 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
           for(size_t i = 0; i < localfield_recvcount[recvTask]; i++)
             {
 #ifndef FFT_COLUMN_BASED
-              large_array_offset offset =
-                  import_globalindex[i] - myplan.first_slab_x_of_task[ThisTask] * GRIDY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - first_slab_x_of_task[ThisTask] * GRIDY * ((large_array_offset)GRID2);
 #else
-              large_array_offset offset = import_globalindex[i] - myplan.firstcol_XY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)GRID2);
 #endif
               import_data[i] = grid[offset];
             }
@@ -606,8 +596,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
 #ifndef FFT_COLUMN_BASED
           if(rep == 0)
             {
-              int task0 = myplan.slab_to_task[slab_x];
-              int task1 = myplan.slab_to_task[slab_xx];
+              int task0 = slab_to_task[slab_x];
+              int task1 = slab_to_task[slab_xx];
 
               Sndpm_count[task0]++;
 
@@ -616,8 +606,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
             }
           else
             {
-              int task0 = myplan.slab_to_task[slab_x];
-              int task1 = myplan.slab_to_task[slab_xx];
+              int task0 = slab_to_task[slab_x];
+              int task1 = slab_to_task[slab_xx];
 
               size_t ind0 = Sndpm_offset[task0] + Sndpm_count[task0]++;
 #ifndef LEAN
@@ -826,9 +816,9 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
       double mass = partin[i].Mass;
 #endif
 
-      if(myplan.slab_to_task[slab_x] == ThisTask)
+      if(slab_to_task[slab_x] == ThisTask)
         {
-          slab_x -= myplan.first_slab_x_of_task[ThisTask];
+          slab_x -= first_slab_x_of_task[ThisTask];
 
           rhogrid[FI(slab_x, slab_y, slab_z)] += (mass * (1.0 - dx) * (1.0 - dy) * (1.0 - dz));
           rhogrid[FI(slab_x, slab_y, slab_zz)] += (mass * (1.0 - dx) * (1.0 - dy) * (dz));
@@ -837,9 +827,9 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
           rhogrid[FI(slab_x, slab_yy, slab_zz)] += (mass * (1.0 - dx) * (dy) * (dz));
         }
 
-      if(myplan.slab_to_task[slab_xx] == ThisTask)
+      if(slab_to_task[slab_xx] == ThisTask)
         {
-          slab_xx -= myplan.first_slab_x_of_task[ThisTask];
+          slab_xx -= first_slab_x_of_task[ThisTask];
 
           rhogrid[FI(slab_xx, slab_y, slab_z)] += (mass * (dx) * (1.0 - dy) * (1.0 - dz));
           rhogrid[FI(slab_xx, slab_y, slab_zz)] += (mass * (dx) * (1.0 - dy) * (dz));
@@ -851,8 +841,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
 
 #else
 
-  int first_col = myplan.firstcol_XY;
-  int last_col = myplan.firstcol_XY + myplan.ncol_XY - 1;
+  int first_col = firstcol_XY;
+  int last_col = firstcol_XY + ncol_XY - 1;
 
   for(size_t i = 0; i < nimport; i++)
     {
@@ -1009,9 +999,9 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
         slab_zz = 0;
 
 #ifndef FFT_COLUMN_BASED
-      if(myplan.slab_to_task[slab_x] == ThisTask)
+      if(slab_to_task[slab_x] == ThisTask)
         {
-          slab_x -= myplan.first_slab_x_of_task[ThisTask];
+          slab_x -= first_slab_x_of_task[ThisTask];
 
           flistin[i] += grid[FI(slab_x, slab_y, slab_z)] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FI(slab_x, slab_y, slab_zz)] * (1.0 - dx) * (1.0 - dy) * (dz) +
@@ -1019,9 +1009,9 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
                         grid[FI(slab_x, slab_yy, slab_zz)] * (1.0 - dx) * (dy) * (dz);
         }
 
-      if(myplan.slab_to_task[slab_xx] == ThisTask)
+      if(slab_to_task[slab_xx] == ThisTask)
         {
-          slab_xx -= myplan.first_slab_x_of_task[ThisTask];
+          slab_xx -= first_slab_x_of_task[ThisTask];
 
           flistin[i] += grid[FI(slab_xx, slab_y, slab_z)] * (dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FI(slab_xx, slab_y, slab_zz)] * (dx) * (1.0 - dy) * (dz) +
@@ -1034,24 +1024,24 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
       int column2 = slab_xx * GRIDY + slab_y;
       int column3 = slab_xx * GRIDY + slab_yy;
 
-      if(column0 >= myplan.firstcol_XY && column0 <= myplan.lastcol_XY)
+      if(column0 >= firstcol_XY && column0 <= lastcol_XY)
         {
           flistin[i] += grid[FCxy(column0, slab_z)] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FCxy(column0, slab_zz)] * (1.0 - dx) * (1.0 - dy) * (dz);
         }
-      if(column1 >= myplan.firstcol_XY && column1 <= myplan.lastcol_XY)
+      if(column1 >= firstcol_XY && column1 <= lastcol_XY)
         {
           flistin[i] +=
               grid[FCxy(column1, slab_z)] * (1.0 - dx) * (dy) * (1.0 - dz) + grid[FCxy(column1, slab_zz)] * (1.0 - dx) * (dy) * (dz);
         }
 
-      if(column2 >= myplan.firstcol_XY && column2 <= myplan.lastcol_XY)
+      if(column2 >= firstcol_XY && column2 <= lastcol_XY)
         {
           flistin[i] +=
               grid[FCxy(column2, slab_z)] * (dx) * (1.0 - dy) * (1.0 - dz) + grid[FCxy(column2, slab_zz)] * (dx) * (1.0 - dy) * (dz);
         }
 
-      if(column3 >= myplan.firstcol_XY && column3 <= myplan.lastcol_XY)
+      if(column3 >= firstcol_XY && column3 <= lastcol_XY)
         {
           flistin[i] += grid[FCxy(column3, slab_z)] * (dx) * (dy) * (1.0 - dz) + grid[FCxy(column3, slab_zz)] * (dx) * (dy) * (dz);
         }
@@ -1088,8 +1078,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
         slab_xx = 0;
 
 #ifndef FFT_COLUMN_BASED
-      int task0 = myplan.slab_to_task[slab_x];
-      int task1 = myplan.slab_to_task[slab_xx];
+      int task0 = slab_to_task[slab_x];
+      int task1 = slab_to_task[slab_xx];
 
       double value = flistout[Sndpm_offset[task0] + Sndpm_count[task0]++];
 
@@ -1363,24 +1353,24 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
       int column2 = slab_xx * GRID2 + slab_z;
       int column3 = slab_xx * GRID2 + slab_zz;
 
-      if(column0 >= myplan.firstcol_XZ && column0 <= myplan.lastcol_XZ)
+      if(column0 >= firstcol_XZ && column0 <= lastcol_XZ)
         {
           flistin[i] += grid[FCxz(column0, slab_y)] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FCxz(column0, slab_yy)] * (1.0 - dx) * (dy) * (1.0 - dz);
         }
-      if(column1 >= myplan.firstcol_XZ && column1 <= myplan.lastcol_XZ)
+      if(column1 >= firstcol_XZ && column1 <= lastcol_XZ)
         {
           flistin[i] +=
               grid[FCxz(column1, slab_y)] * (1.0 - dx) * (1.0 - dy) * (dz) + grid[FCxz(column1, slab_yy)] * (1.0 - dx) * (dy) * (dz);
         }
 
-      if(column2 >= myplan.firstcol_XZ && column2 <= myplan.lastcol_XZ)
+      if(column2 >= firstcol_XZ && column2 <= lastcol_XZ)
         {
           flistin[i] +=
               grid[FCxz(column2, slab_y)] * (dx) * (1.0 - dy) * (1.0 - dz) + grid[FCxz(column2, slab_yy)] * (dx) * (dy) * (1.0 - dz);
         }
 
-      if(column3 >= myplan.firstcol_XZ && column3 <= myplan.lastcol_XZ)
+      if(column3 >= firstcol_XZ && column3 <= lastcol_XZ)
         {
           flistin[i] += grid[FCxz(column3, slab_y)] * (dx) * (1.0 - dy) * (dz) + grid[FCxz(column3, slab_yy)] * (dx) * (dy) * (dz);
         }
@@ -1670,24 +1660,24 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
       int column2 = slab_zz * GRIDY + slab_y;
       int column3 = slab_zz * GRIDY + slab_yy;
 
-      if(column0 >= myplan.firstcol_ZY && column0 <= myplan.lastcol_ZY)
+      if(column0 >= firstcol_ZY && column0 <= lastcol_ZY)
         {
           flistin[i] += grid[FCzy(column0, slab_x)] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FCzy(column0, slab_xx)] * (dx) * (1.0 - dy) * (1.0 - dz);
         }
-      if(column1 >= myplan.firstcol_ZY && column1 <= myplan.lastcol_ZY)
+      if(column1 >= firstcol_ZY && column1 <= lastcol_ZY)
         {
           flistin[i] +=
               grid[FCzy(column1, slab_x)] * (1.0 - dx) * (dy) * (1.0 - dz) + grid[FCzy(column1, slab_xx)] * (dx) * (dy) * (1.0 - dz);
         }
 
-      if(column2 >= myplan.firstcol_ZY && column2 <= myplan.lastcol_ZY)
+      if(column2 >= firstcol_ZY && column2 <= lastcol_ZY)
         {
           flistin[i] +=
               grid[FCzy(column2, slab_x)] * (1.0 - dx) * (1.0 - dy) * (dz) + grid[FCzy(column2, slab_xx)] * (dx) * (1.0 - dy) * (dz);
         }
 
-      if(column3 >= myplan.firstcol_ZY && column3 <= myplan.lastcol_ZY)
+      if(column3 >= firstcol_ZY && column3 <= lastcol_ZY)
         {
           flistin[i] += grid[FCzy(column3, slab_x)] * (1.0 - dx) * (dy) * (dz) + grid[FCzy(column3, slab_xx)] * (dx) * (dy) * (dz);
         }
@@ -1862,9 +1852,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
   /* Do the FFT of the density field */
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&myplan, &rhogrid[0], &workspace[0], 1);
+  my_slab_based_fft(&&rhogrid[0], &workspace[0], 1);
 #else
-  my_column_based_fft(&myplan, rhogrid, workspace, 1); /* result is in workspace, not in rhogrid ! */
+  my_column_based_fft(&rhogrid, workspace, 1); /* result is in workspace, not in rhogrid ! */
 #endif
 
   if(mode != 0)
@@ -1885,16 +1875,16 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       double kfacz = 2.0 * M_PI / (GRIDZ * d);
 
 #ifdef FFT_COLUMN_BASED
-      for(large_array_offset ip = 0; ip < myplan.second_transposed_ncells; ip++)
+      for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
         {
-          large_array_offset ipcell = ip + ((large_array_offset)myplan.second_transposed_firstcol) * GRIDX;
+          large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
           y                         = ipcell / (GRIDX * GRIDz);
           int yr                    = ipcell % (GRIDX * GRIDz);
           z                         = yr / GRIDX;
           x                         = yr % GRIDX;
 #else
       for(x = 0; x < GRIDX; x++)
-        for(y = myplan.slabstart_y; y < myplan.slabstart_y + myplan.nslab_y; y++)
+        for(y = slabstart_y; y < slabstart_y + nslab_y; y++)
           for(z = 0; z < GRIDz; z++)
             {
 #endif
@@ -1952,7 +1942,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
             }
 
 #ifndef FFT_COLUMN_BASED
-          large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - myplan.slabstart_y) + x) + z;
+          large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
 #endif
 
 #ifdef GRAVITY_TALLBOX
@@ -1969,10 +1959,10 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
 #ifndef GRAVITY_TALLBOX
 #ifdef FFT_COLUMN_BASED
-      if(myplan.second_transposed_firstcol == 0)
+      if(second_transposed_firstcol == 0)
         fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
 #else
-      if(myplan.slabstart_y == 0)
+      if(slabstart_y == 0)
         fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
 #endif
 #endif
@@ -1980,9 +1970,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         /* Do the inverse FFT to get the potential/forces */
 
 #ifndef FFT_COLUMN_BASED
-      my_slab_based_fft(&myplan, &rhogrid[0], &workspace[0], -1);
+      my_slab_based_fft(&&rhogrid[0], &workspace[0], -1);
 #else
-      my_column_based_fft(&myplan, workspace, rhogrid, -1);
+      my_column_based_fft(&workspace, rhogrid, -1);
 #endif
 
       /* Now rhogrid holds the potential/forces */
@@ -2007,7 +1997,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
       /* z-direction */
       for(y = 0; y < GRIDY; y++)
-        for(x = 0; x < myplan.nslab_x; x++)
+        for(x = 0; x < nslab_x; x++)
           for(z = 0; z < GRIDZ; z++)
             {
               int zr = z + 1, zl = z - 1, zrr = z + 2, zll = z - 2;
@@ -2032,7 +2022,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
       /* y-direction */
       for(y = 0; y < GRIDY; y++)
-        for(x = 0; x < myplan.nslab_x; x++)
+        for(x = 0; x < nslab_x; x++)
           for(z = 0; z < GRIDZ; z++)
             {
               int yr = y + 1, yl = y - 1, yrr = y + 2, yll = y - 2;
@@ -2056,11 +2046,11 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* x-direction */
-      my_slab_transposeA(&myplan, rhogrid, forcegrid); /* compute the transpose of the potential field for finite differencing */
-                                                       /* note: for the x-direction, we difference the transposed field */
+      my_slab_transposeA(&rhogrid, forcegrid); /* compute the transpose of the potential field for finite differencing */
+                                               /* note: for the x-direction, we difference the transposed field */
 
       for(x = 0; x < GRIDX; x++)
-        for(y = 0; y < myplan.nslab_y; y++)
+        for(y = 0; y < nslab_y; y++)
           for(z = 0; z < GRIDZ; z++)
             {
               int xrr = x + 2, xll = x - 2, xr = x + 1, xl = x - 1;
@@ -2077,7 +2067,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
                                               (1.0 / 6) * (rhogrid[NI(xll, y, z)] - rhogrid[NI(xrr, y, z)]));
             }
 
-      my_slab_transposeB(&myplan, forcegrid, rhogrid); /* reverse the transpose from above */
+      my_slab_transposeB(&forcegrid, rhogrid); /* reverse the transpose from above */
 
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 0);
@@ -2088,7 +2078,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #else
 
       /* z-direction */
-      for(large_array_offset i = 0; i < myplan.ncol_XY; i++)
+      for(large_array_offset i = 0; i < ncol_XY; i++)
         {
           fft_real *forcep = &forcegrid[GRID2 * i];
           fft_real *potp = &rhogrid[GRID2 * i];
@@ -2124,12 +2114,12 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* y-direction */
-      my_fft_swap23(&myplan, rhogrid, forcegrid);  // rhogrid contains potential field, forcegrid the transposed field
+      my_fft_swap23(rhogrid, forcegrid);  // rhogrid contains potential field, forcegrid the transposed field
 
       /* make an in-place computation */
       fft_real *column = (fft_real *)Mem.mymalloc("column", GRIDY * sizeof(fft_real));
 
-      for(large_array_offset i = 0; i < myplan.ncol_XZ; i++)
+      for(large_array_offset i = 0; i < ncol_XZ; i++)
         {
           memcpy(column, &forcegrid[GRIDY * i], GRIDY * sizeof(fft_real));
 
@@ -2162,9 +2152,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
 #ifdef PM_ZOOM_OPTIMIZED
       /* need a third field as scratch space */
-      fft_real *scratch = (fft_real *)Mem.mymalloc("scratch", myplan.fftsize * sizeof(fft_real));
+      fft_real *scratch = (fft_real *)Mem.mymalloc("scratch", fftsize * sizeof(fft_real));
 
-      my_fft_swap23back(&myplan, forcegrid, scratch);
+      my_fft_swap23back(&forcegrid, scratch);
       pmforce_zoom_optimized_readout_forces_or_potential(scratch, 1);
 
       Mem.myfree(scratch);
@@ -2173,9 +2163,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* x-direction */
-      my_fft_swap13(&myplan, rhogrid, forcegrid);  // rhogrid contains potential field
+      my_fft_swap13(rhogrid, forcegrid);  // rhogrid contains potential field
 
-      for(large_array_offset i = 0; i < myplan.ncol_ZY; i++)
+      for(large_array_offset i = 0; i < ncol_ZY; i++)
         {
           fft_real *forcep = &rhogrid[GRIDX * i];
           fft_real *potp = &forcegrid[GRIDX * i];
@@ -2202,7 +2192,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
         /* now need to read out from forcegrid in a non-standard way */
 #ifdef PM_ZOOM_OPTIMIZED
-      my_fft_swap13back(&myplan, rhogrid, forcegrid);
+      my_fft_swap13back(&rhogrid, forcegrid);
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 0);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid, 0);
@@ -2257,11 +2247,11 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
     kernel[i] = 0;
 
 #ifndef FFT_COLUMN_BASED
-  for(int i = myplan.slabstart_x; i < (myplan.slabstart_x + myplan.nslab_x); i++)
+  for(int i = slabstart_x; i < (slabstart_x + nslab_x); i++)
     for(int j = 0; j < GRIDY; j++)
       {
 #else
-  for(int c = myplan.firstcol_XY; c < (myplan.firstcol_XY + myplan.ncol_XY); c++)
+  for(int c = firstcol_XY; c < (firstcol_XY + ncol_XY); c++)
     {
       int i = c / GRIDY;
       int j = c % GRIDY;
@@ -2291,7 +2281,7 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
             double pot = pmperiodic_tallbox_long_range_potential(xx, yy, zz);
 
 #ifndef FFT_COLUMN_BASED
-            size_t ip = FI(i - myplan.slabstart_x, j, k);
+            size_t ip = FI(i - slabstart_x, j, k);
 #else
           size_t ip = FCxy(c, k);
 #endif
@@ -2309,9 +2299,9 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
   fft_real *workspc = (fft_real *)Mem.mymalloc("workspc", maxfftsize * sizeof(fft_real));
 
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&myplan, kernel, workspc, 1);
+  my_slab_based_fft(&kernel, workspc, 1);
 #else
-  my_column_based_fft(&myplan, kernel, workspc, 1); /* result is in workspace, not in kernel */
+  my_column_based_fft(&kernel, workspc, 1); /* result is in workspace, not in kernel */
   memcpy(kernel, workspc, maxfftsize * sizeof(fft_real));
 #endif
 
@@ -2554,15 +2544,15 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
     }
 
 #ifdef FFT_COLUMN_BASED
-  for(large_array_offset ip = 0; ip < myplan.second_transposed_ncells; ip++)
+  for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
     {
-      large_array_offset ipcell = ip + ((large_array_offset)myplan.second_transposed_firstcol) * GRIDX;
+      large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
       int y                     = ipcell / (GRIDX * GRIDz);
       int yr                    = ipcell % (GRIDX * GRIDz);
       int z                     = yr / GRIDX;
       int x                     = yr % GRIDX;
 #else
-  for(int y = myplan.slabstart_y; y < myplan.slabstart_y + myplan.nslab_y; y++)
+  for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
     for(int x = 0; x < GRIDX; x++)
       for(int z = 0; z < GRIDz; z++)
         {
@@ -2627,7 +2617,7 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
           /* end deconvolution */
 
 #ifndef FFT_COLUMN_BASED
-          large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - myplan.slabstart_y) + x) + z;
+          large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
 #endif
 
           double po = (fft_of_rhogrid[ip][0] * fft_of_rhogrid[ip][0] + fft_of_rhogrid[ip][1] * fft_of_rhogrid[ip][1]);
