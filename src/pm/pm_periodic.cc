@@ -14,27 +14,12 @@
 #if defined(PMGRID) && defined(PERIODIC)
 
 #include <fftw3.h>
-#include <math.h>
 #include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
-#include <algorithm>
 
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../domain/domain.h"
 #include "../logs/logs.h"
-#include "../main/simulation.h"
-#include "../pm/pm.h"
 #include "../pm/pm_periodic.h"
-#include "../sort/cxxsort.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/dtypes.h"
-#include "gadget/intposconvert.h"
-#include "gadget/mpi_utils.h"
+#include "../data/particle_data.h" // particle_data
 
 /*!
  * These routines support two different strategies for doing the particle data exchange to assemble the density field
