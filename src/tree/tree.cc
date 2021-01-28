@@ -13,6 +13,7 @@
 
 #include "../sort/cxxsort.h"
 #include "../tree/tree.h"
+#include "gadget/mpi_utils.h"  // TAG_DENS_A
 
 /*! This file contains the construction of the tree used for calculating the gravitational force
  *  and the neighbor tree for SPH.

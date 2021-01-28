@@ -18,8 +18,9 @@
 
 #include <vectorclass/vectorclass.h>
 
-#include "gadget/dtypes.h"  // MyReal, MyIntPosType
-#include "gadget/macros.h"  // Terminate
+#include "gadget/constants.h"  // MAXITER
+#include "gadget/dtypes.h"     // MyReal, MyIntPosType
+#include "gadget/macros.h"     // Terminate
 
 #define MSB ((MyIntPosType)(~((MyIntPosType)(~((MyIntPosType)0)) >> ((MyIntPosType)1))))
 
@@ -91,22 +92,22 @@ class intposconvert
 
   /* function to determine the nearest periodic image distance vector in MyReal, exploiting integer wrap around */
   template <typename T>
-  inline void diff_intpos_to_pos(MyIntPosType *a, MyIntPosType *b, T *posdiff, offset_tuple off = 0)
+  inline void diff_intpos_to_pos(MyIntPosType *a, MyIntPosType *b, T *posdiff, double BoxSize, offset_tuple off = 0)
   {
     if(a[0] > b[0])
-      posdiff[0] = (a[0] - b[0]) * FacIntToCoord + All.BoxSize * off.n[0];
+      posdiff[0] = (a[0] - b[0]) * FacIntToCoord + BoxSize * off.n[0];
     else
-      posdiff[0] = (b[0] - a[0]) * (-FacIntToCoord) + All.BoxSize * off.n[0];
+      posdiff[0] = (b[0] - a[0]) * (-FacIntToCoord) + BoxSize * off.n[0];
 
     if(a[1] > b[1])
-      posdiff[1] = (a[1] - b[1]) * FacIntToCoord + All.BoxSize * off.n[1];
+      posdiff[1] = (a[1] - b[1]) * FacIntToCoord + BoxSize * off.n[1];
     else
-      posdiff[1] = (b[1] - a[1]) * (-FacIntToCoord) + All.BoxSize * off.n[1];
+      posdiff[1] = (b[1] - a[1]) * (-FacIntToCoord) + BoxSize * off.n[1];
 
     if(a[2] > b[2])
-      posdiff[2] = (a[2] - b[2]) * FacIntToCoord + All.BoxSize * off.n[2];
+      posdiff[2] = (a[2] - b[2]) * FacIntToCoord + BoxSize * off.n[2];
     else
-      posdiff[2] = (b[2] - a[2]) * (-FacIntToCoord) + All.BoxSize * off.n[2];
+      posdiff[2] = (b[2] - a[2]) * (-FacIntToCoord) + BoxSize * off.n[2];
   }
 
   inline MyIntPosType nearest_image_intpos_to_intpos_X(const MyIntPosType a, const MyIntPosType b)

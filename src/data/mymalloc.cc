@@ -14,7 +14,8 @@
 #include "../logs/logs.h"                     // extern logs Logs;
 #include "../mpi_utils/shared_mem_handler.h"  // shmem Shmem; global variable
 
-#include "gadget/macros.h"  // Terminate
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // TAG_N
 
 /** \file mymalloc.cc
  *

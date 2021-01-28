@@ -953,7 +953,8 @@ void fof<partset>::fof_compute_group_properties(int gr, int start, int len)
       Group[gr].Mass += Tp->P[index].getMass();
       int type = Tp->P[index].getType();
 
-      Group[gr].Ascale += Tp->P[index].getMass() * Tp->P[index].getAscale();
+      // Group[gr].Ascale += Tp->P[index].getMass() * Tp->P[index].getAscale();
+      Group[gr].Ascale += Tp->P[index].getMass() * All.Time;
 
       Group[gr].LenType[type]++;
       Group[gr].MassType[type] += Tp->P[index].getMass();

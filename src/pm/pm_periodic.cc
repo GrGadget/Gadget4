@@ -17,9 +17,12 @@
 #include <mpi.h>
 #include <sys/stat.h>
 
-#include "../logs/logs.h"
+//#include "../logs/logs.h"
 #include "../pm/pm_periodic.h"
-#include "gadget/particle_data.h" // particle_data
+#include "gadget/constants.h"      // NTYPES
+#include "gadget/macros.h"         // Terminate
+#include "gadget/mpi_utils.h"      // myMPI_Sendrecv
+#include "gadget/particle_data.h"  // particle_data
 
 /*!
  * These routines support two different strategies for doing the particle data exchange to assemble the density field
@@ -1779,7 +1782,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 {
   int x, y, z;
 
-  double tstart = Logs.second();
+  double tstart = MPI_Wtime();
 
   if(mode == 0)
     mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)  presently allocated=%g MB\n", Sp->Rcut[0],
@@ -2209,10 +2212,10 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   Mem.myfree(Sndpm_count);
 #endif
 
-  double tend = Logs.second();
+  double tend = MPI_Wtime();
 
   if(mode == 0)
-    mpi_printf("PM-PERIODIC: done.  (took %g seconds)\n", Logs.timediff(tstart, tend));
+    mpi_printf("PM-PERIODIC: done.  (took %g seconds)\n", tend - tstart);
 }
 
 #ifdef GRAVITY_TALLBOX
@@ -2470,7 +2473,7 @@ void pm_periodic::pmforce_do_powerspec(int *typeflag)
     mpi_printf(" %d ", typeflag[i]);
   mpi_printf("])\n");
 
-  double tstart = Logs.second();
+  double tstart = MPI_Wtime();
 
   pmforce_periodic(1, typeflag); /* calculate regular power spectrum for selected particle types */
 
@@ -2478,9 +2481,9 @@ void pm_periodic::pmforce_do_powerspec(int *typeflag)
 
   pmforce_periodic(3, typeflag); /* calculate twice folded power spectrum for selected particle types  */
 
-  double tend = Logs.second();
+  double tend = MPI_Wtime();
 
-  mpi_printf("POWERSPEC: End power spectrum. took %g seconds\n", Logs.timediff(tstart, tend));
+  mpi_printf("POWERSPEC: End power spectrum. took %g seconds\n", tend - tstart);
 }
 
 void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)

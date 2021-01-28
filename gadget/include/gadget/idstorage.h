@@ -12,7 +12,9 @@
 #ifndef IDSTORAGE_H
 #define IDSTORAGE_H
 
+#include <gadget/dtypes.h>  // MyLenType
 #include <climits>
+#include <cmath>
 
 #if !defined(IDS_48BIT)
 #define ID_MSB ((MyIDType)(~((MyIDType)(~((MyIDType)0)) >> ((MyIDType)1))))

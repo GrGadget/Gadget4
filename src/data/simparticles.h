@@ -12,23 +12,23 @@
 #ifndef SIMPART_H
 #define SIMPART_H
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>  // log
+//#include <stdlib.h>
+//#include <string.h>
 
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../main/main.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/particle_data.h"
-#include "gadget/constants.h"
-#include "gadget/dtypes.h"
-#include "gadget/intposconvert.h"
-#include "gadget/macros.h"
-#include "gadget/mpi_utils.h"
-#include "gadget/setcomm.h"
-#include "gadget/sph_particle_data.h"
+#include "../data/allvars.h"   // All.
+#include "../data/mymalloc.h"  // Mem.
+//#include "../main/main.h"
+#include "../system/system.h"              // myflush
+#include "../time_integration/timestep.h"  // TimeBinData
+#include "gadget/particle_data.h"          // particle_data
+//#include "gadget/constants.h"
+//#include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"  // intposconvert
+//#include "gadget/macros.h"
+//#include "gadget/mpi_utils.h"
+#include "gadget/setcomm.h"            // setcomm
+#include "gadget/sph_particle_data.h"  // sph_particle_data
 
 #ifdef LIGHTCONE
 class lightcone;

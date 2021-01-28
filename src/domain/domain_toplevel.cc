@@ -15,8 +15,9 @@
 #include "../data/lcparticles.h"  // lcparticles
 #include "../data/mymalloc.h"     // extern class Mem;
 #include "../domain/domain.h"
-#include "../sort/cxxsort.h"  // mycxxsort
-#include "gadget/macros.h"    // Terminate
+#include "../sort/cxxsort.h"   // mycxxsort
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // allreduce_sum
 
 template <typename partset>
 void domain<partset>::domain_do_local_refine(int n, int *list)

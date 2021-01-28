@@ -14,8 +14,9 @@
 #include <mpi.h>  // MPI_Allreduce
 
 #include "../domain/domain.h"
-#include "../sort/cxxsort.h"  // mycxxsort
-#include "gadget/macros.h"    // Terminate
+#include "../sort/cxxsort.h"   // mycxxsort
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // sumup_longs
 
 /*! \file domain_exchange.c
  *  \brief exchanges particle data according to the new domain decomposition

@@ -15,7 +15,8 @@
 #include "../domain/domain.h"
 #include "../sort/cxxsort.h"  // mycxxsort
 
-#include "gadget/macros.h"  // Terminate
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // allreduce_sum
 
 /** This function uses the cumulative cost function (which weights work-load and memory-load equally) to subdivide
  *  the list of top-level leaf nodes into pieces that are (approximately) equal in size.

@@ -15,9 +15,9 @@
 #include <cstring>  // strcpy inside timer.h
 
 #include "gadget/constants.h"  // NTYPES
+#include "gadget/dtypes.h"     // MyIDType
 #include "gadget/macros.h"     // Terminate;
 #include "gadget/setcomm.h"    // class setcomm;
-#include "gadget/dtypes.h"  // MyIDType
 
 #define CPU_STRING_LEN 120
 

@@ -20,7 +20,6 @@
 
 #include "../data/lightcone_particle_data.h"
 #include "../data/mymalloc.h"
-#include "gadget/particle_data.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/constants.h"
@@ -28,6 +27,7 @@
 #include "gadget/intposconvert.h"
 #include "gadget/macros.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/particle_data.h"
 #include "gadget/setcomm.h"
 #include "gadget/sph_particle_data.h"
 
