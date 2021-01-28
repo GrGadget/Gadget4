@@ -28,6 +28,7 @@
 #include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/utils.h"  // subdivide_evenly
 
 /*!
  *  This file contains the computation of the Ewald correction table, and the corresponding lookup functions.

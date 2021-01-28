@@ -12,7 +12,16 @@
 #ifndef PM_MPI_FFT_H
 #define PM_MPI_FFT_H
 
+#include <vector>
 #include "gadget/setcomm.h"
+
+#ifdef DOUBLEPRECISION_FFTW
+typedef double fft_real;
+typedef fftw_complex fft_complex;
+#else
+typedef float fft_real;
+typedef fftwf_complex fft_complex;
+#endif
 
 #ifndef FFTW
 #define CONCAT(prefix, name) prefix##name
@@ -22,6 +31,9 @@
 #define FFTW(x) CONCAT(fftwf_, x)
 #endif
 #endif
+
+extern template class std::vector<size_t>;
+extern template class std::vector<int>;
 
 class pm_mpi_fft : public virtual setcomm
 {
@@ -43,11 +55,11 @@ class pm_mpi_fft : public virtual setcomm
 
 #ifndef FFT_COLUMN_BASED
 
-    int *slab_to_task; /*!< Maps a slab index to the task responsible for the slab */
-    int *slabs_x_per_task;
-    int *first_slab_x_of_task; /*!< Array containing the index of the first slab of each task */
-    int *slabs_y_per_task;     /*!< Array containing the number of slabs each task is responsible for */
-    int *first_slab_y_of_task; /*!< Array containing the index of the first slab of each task */
+    std::vector<int> slab_to_task; /*!< Maps a slab index to the task responsible for the slab */
+    std::vector<int> slabs_x_per_task;
+    std::vector<int> first_slab_x_of_task; /*!< Array containing the index of the first slab of each task */
+    std::vector<int> slabs_y_per_task;     /*!< Array containing the number of slabs each task is responsible for */
+    std::vector<int> first_slab_y_of_task; /*!< Array containing the index of the first slab of each task */
 
     int nslab_x, slabstart_x, nslab_y, slabstart_y;
     int largest_x_slab; /*!< size of the largest slab in x direction */
@@ -69,31 +81,12 @@ class pm_mpi_fft : public virtual setcomm
     //   int avg;
     //   int tasklastsection;
 
-    size_t *offsets_send_A;
-    size_t *offsets_recv_A;
-    size_t *offsets_send_B;
-    size_t *offsets_recv_B;
-    size_t *offsets_send_C;
-    size_t *offsets_recv_C;
-    size_t *offsets_send_D;
-    size_t *offsets_recv_D;
+    std::vector<size_t> offsets_send_A, offsets_recv_A, offsets_send_B, offsets_recv_B, offsets_send_C, offsets_recv_C, offsets_send_D,
+        offsets_recv_D;
 
-    size_t *count_send_A;
-    size_t *count_recv_A;
-    size_t *count_send_B;
-    size_t *count_recv_B;
-    size_t *count_send_C;
-    size_t *count_recv_C;
-    size_t *count_send_D;
-    size_t *count_recv_D;
-    size_t *count_send_13;
-    size_t *count_recv_13;
-    size_t *count_send_23;
-    size_t *count_recv_23;
-    size_t *count_send_13back;
-    size_t *count_recv_13back;
-    size_t *count_send_23back;
-    size_t *count_recv_23back;
+    std::vector<size_t> count_send_A, count_recv_A, count_send_B, count_recv_B, count_send_C, count_recv_C, count_send_D, count_recv_D,
+        count_send_13, count_recv_13, count_send_23, count_recv_23, count_send_13back, count_recv_13back, count_send_23back,
+        count_recv_23back;
 #endif
   };
 

@@ -18,14 +18,6 @@
 
 typedef ptrdiff_t fft_ptrdiff_t;
 
-#ifdef DOUBLEPRECISION_FFTW
-typedef double fft_real;
-typedef fftw_complex fft_complex;
-#else
-typedef float fft_real;
-typedef fftwf_complex fft_complex;
-#endif
-
 #include "../pm/pm_nonperiodic.h"
 #include "../pm/pm_periodic.h"
 #include "gadget/setcomm.h"

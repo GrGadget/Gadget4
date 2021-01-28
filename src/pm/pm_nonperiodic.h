@@ -19,12 +19,13 @@
 #include "../data/simparticles.h"
 #include "../domain/domain.h"
 #include "../logs/logs.h"
-#include "../pm/pm_mpi_fft.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
 class pm_nonperiodic : public pm_mpi_fft
 {

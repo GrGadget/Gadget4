@@ -23,19 +23,7 @@ void enable_core_dumps_and_fpu_exceptions(void);
 
 void permutate_chunks_in_list(int ncount, int *list);
 
-void subdivide_evenly(long long N, int pieces, int index_bin, long long *first, int *count);
-void subdivide_evenly(int N, int pieces, int index, int *first, int *count);
-void subdivide_evenly_get_bin(int N, int pieces, int index, int *bin);
-
 void init_rng(int thistask);
 double get_random_number(void);
-
-int my_fls(unsigned int x);
-
-template <typename T>
-inline T square(T const value)
-{
-  return value * value;
-}
 
 #endif

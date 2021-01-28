@@ -14,20 +14,19 @@
 #if defined(PMGRID) || defined(NGENIC)
 
 #include <fftw3.h>
-#include <math.h>
 #include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <algorithm>
+#include <cstdint>  // SIZE_MAX
+#include <cstring>  // memset
+#include <vector>
 
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../main/simulation.h"
-#include "../pm/pm.h"
-#include "../system/system.h"
-#include "gadget/dtypes.h"
-#include "gadget/mpi_utils.h"
+#include "gadget/constants.h"  // MPI_MESSAGE_SIZELIMIT_IN_BYTES
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // myMPI_Alltoallv
+#include "gadget/pm_mpi_fft.h"
+#include "gadget/utils.h"  // subdivide_evenly
+
+extern template class std::vector<size_t>;
+extern template class std::vector<int>;
 
 /* We only use the one-dimensional FFTW3 routines, because the MPI versions of FFTW3
  * allocated memory for themselves during the transforms (which we want to strictly avoid),
@@ -42,7 +41,8 @@ void pm_mpi_fft::my_slab_based_fft_init(fft_plan *plan, int NgridX, int NgridY, 
   subdivide_evenly(NgridX, NTask, ThisTask, &plan->slabstart_x, &plan->nslab_x);
   subdivide_evenly(NgridY, NTask, ThisTask, &plan->slabstart_y, &plan->nslab_y);
 
-  plan->slab_to_task = (int *)Mem.mymalloc_movable(&plan->slab_to_task, "slab_to_task", NgridX * sizeof(int));
+  // plan->slab_to_task = (int *)Mem.mymalloc_movable(&plan->slab_to_task, "slab_to_task", NgridX * sizeof(int));
+  plan->slab_to_task.resize(NgridX);
 
   for(int task = 0; task < NTask; task++)
     {
@@ -57,17 +57,24 @@ void pm_mpi_fft::my_slab_based_fft_init(fft_plan *plan, int NgridX, int NgridY, 
   MPI_Allreduce(&plan->nslab_x, &plan->largest_x_slab, 1, MPI_INT, MPI_MAX, Communicator);
   MPI_Allreduce(&plan->nslab_y, &plan->largest_y_slab, 1, MPI_INT, MPI_MAX, Communicator);
 
-  plan->slabs_x_per_task = (int *)Mem.mymalloc_movable(&plan->slabs_x_per_task, "slabs_x_per_task", NTask * sizeof(int));
-  MPI_Allgather(&plan->nslab_x, 1, MPI_INT, plan->slabs_x_per_task, 1, MPI_INT, Communicator);
+  // plan->slabs_x_per_task = (int *)Mem.mymalloc_movable(&plan->slabs_x_per_task, "slabs_x_per_task", NTask * sizeof(int));
+  plan->slabs_x_per_task.resize(NTask);
 
-  plan->first_slab_x_of_task = (int *)Mem.mymalloc_movable(&plan->first_slab_x_of_task, "first_slab_x_of_task", NTask * sizeof(int));
-  MPI_Allgather(&plan->slabstart_x, 1, MPI_INT, plan->first_slab_x_of_task, 1, MPI_INT, Communicator);
+  MPI_Allgather(&plan->nslab_x, 1, MPI_INT, plan->slabs_x_per_task.data(), 1, MPI_INT, Communicator);
 
-  plan->slabs_y_per_task = (int *)Mem.mymalloc_movable(&plan->slabs_y_per_task, "slabs_y_per_task", NTask * sizeof(int));
-  MPI_Allgather(&plan->nslab_y, 1, MPI_INT, plan->slabs_y_per_task, 1, MPI_INT, Communicator);
+  // plan->first_slab_x_of_task = (int *)Mem.mymalloc_movable(&plan->first_slab_x_of_task, "first_slab_x_of_task", NTask *
+  // sizeof(int));
+  plan->first_slab_x_of_task.resize(NTask);
+  MPI_Allgather(&plan->slabstart_x, 1, MPI_INT, plan->first_slab_x_of_task.data(), 1, MPI_INT, Communicator);
 
-  plan->first_slab_y_of_task = (int *)Mem.mymalloc_movable(&plan->first_slab_y_of_task, "first_slab_y_of_task", NTask * sizeof(int));
-  MPI_Allgather(&plan->slabstart_y, 1, MPI_INT, plan->first_slab_y_of_task, 1, MPI_INT, Communicator);
+  // plan->slabs_y_per_task = (int *)Mem.mymalloc_movable(&plan->slabs_y_per_task, "slabs_y_per_task", NTask * sizeof(int));
+  plan->slabs_y_per_task.resize(NTask);
+  MPI_Allgather(&plan->nslab_y, 1, MPI_INT, plan->slabs_y_per_task.data(), 1, MPI_INT, Communicator);
+
+  // plan->first_slab_y_of_task = (int *)Mem.mymalloc_movable(&plan->first_slab_y_of_task, "first_slab_y_of_task", NTask *
+  // sizeof(int));
+  plan->first_slab_y_of_task.resize(NTask);
+  MPI_Allgather(&plan->slabstart_y, 1, MPI_INT, plan->first_slab_y_of_task.data(), 1, MPI_INT, Communicator);
 
   plan->NgridX = NgridX;
   plan->NgridY = NgridY;
@@ -81,11 +88,11 @@ void pm_mpi_fft::my_slab_based_fft_init(fft_plan *plan, int NgridX, int NgridY, 
 
 void pm_mpi_fft::my_slab_based_fft_free(fft_plan *plan)
 {
-  Mem.myfree(plan->first_slab_y_of_task);
-  Mem.myfree(plan->slabs_y_per_task);
-  Mem.myfree(plan->first_slab_x_of_task);
-  Mem.myfree(plan->slabs_x_per_task);
-  Mem.myfree(plan->slab_to_task);
+  // Mem.myfree(plan->first_slab_y_of_task);
+  // Mem.myfree(plan->slabs_y_per_task);
+  // Mem.myfree(plan->first_slab_x_of_task);
+  // Mem.myfree(plan->slabs_x_per_task);
+  // Mem.myfree(plan->slab_to_task);
 }
 
 /*! \brief Transposes the array field
@@ -117,10 +124,11 @@ void pm_mpi_fft::my_slab_transposeA(fft_plan *plan, fft_real *field, fft_real *s
                field + ((size_t)plan->Ngrid2) * (plan->NgridY * x + y), plan->NgridZ * sizeof(fft_real));
     }
 
-  size_t *scount = (size_t *)Mem.mymalloc("scount", NTask * sizeof(size_t));
-  size_t *rcount = (size_t *)Mem.mymalloc("rcount", NTask * sizeof(size_t));
-  size_t *soff   = (size_t *)Mem.mymalloc("soff", NTask * sizeof(size_t));
-  size_t *roff   = (size_t *)Mem.mymalloc("roff", NTask * sizeof(size_t));
+  std::vector<size_t> scount(NTask), rcount(NTask), soff(NTask), roff(NTask);
+  // size_t *scount = (size_t *)Mem.mymalloc("scount", NTask * sizeof(size_t));
+  // size_t *rcount = (size_t *)Mem.mymalloc("rcount", NTask * sizeof(size_t));
+  // size_t *soff   = (size_t *)Mem.mymalloc("soff", NTask * sizeof(size_t));
+  // size_t *roff   = (size_t *)Mem.mymalloc("roff", NTask * sizeof(size_t));
 
   for(task = 0; task < NTask; task++)
     {
@@ -136,12 +144,12 @@ void pm_mpi_fft::my_slab_transposeA(fft_plan *plan, fft_real *field, fft_real *s
 
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
-  myMPI_Alltoallv(scratch, scount, soff, field, rcount, roff, 1, flag_big_all, Communicator);
+  myMPI_Alltoallv(scratch, scount.data(), soff.data(), field, rcount.data(), roff.data(), 1, flag_big_all, Communicator);
 
-  Mem.myfree(roff);
-  Mem.myfree(soff);
-  Mem.myfree(rcount);
-  Mem.myfree(scount);
+  // Mem.myfree(roff);
+  // Mem.myfree(soff);
+  // Mem.myfree(rcount);
+  // Mem.myfree(scount);
 }
 
 /*! \brief Undo the transposition of the array field
@@ -157,10 +165,11 @@ void pm_mpi_fft::my_slab_transposeB(fft_plan *plan, fft_real *field, fft_real *s
 {
   int n, prod, task, flag_big = 0, flag_big_all = 0;
 
-  size_t *scount = (size_t *)Mem.mymalloc("scount", NTask * sizeof(size_t));
-  size_t *rcount = (size_t *)Mem.mymalloc("rcount", NTask * sizeof(size_t));
-  size_t *soff   = (size_t *)Mem.mymalloc("soff", NTask * sizeof(size_t));
-  size_t *roff   = (size_t *)Mem.mymalloc("roff", NTask * sizeof(size_t));
+  std::vector<size_t> scount(NTask), rcount(NTask), soff(NTask), roff(NTask);
+  // size_t *scount = (size_t *)Mem.mymalloc("scount", NTask * sizeof(size_t));
+  // size_t *rcount = (size_t *)Mem.mymalloc("rcount", NTask * sizeof(size_t));
+  // size_t *soff   = (size_t *)Mem.mymalloc("soff", NTask * sizeof(size_t));
+  // size_t *roff   = (size_t *)Mem.mymalloc("roff", NTask * sizeof(size_t));
 
   for(task = 0; task < NTask; task++)
     {
@@ -176,12 +185,12 @@ void pm_mpi_fft::my_slab_transposeB(fft_plan *plan, fft_real *field, fft_real *s
 
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
-  myMPI_Alltoallv(field, scount, soff, scratch, rcount, roff, 1, flag_big_all, Communicator);
+  myMPI_Alltoallv(field, scount.data(), soff.data(), scratch, rcount.data(), roff.data(), 1, flag_big_all, Communicator);
 
-  Mem.myfree(roff);
-  Mem.myfree(soff);
-  Mem.myfree(rcount);
-  Mem.myfree(scount);
+  // Mem.myfree(roff);
+  // Mem.myfree(soff);
+  // Mem.myfree(rcount);
+  // Mem.myfree(scount);
 
   prod = NTask * plan->nslab_x;
 
@@ -215,10 +224,11 @@ void pm_mpi_fft::my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int
   char *a = (char *)av;
   char *b = (char *)bv;
 
-  size_t *scount = (size_t *)Mem.mymalloc("scount", NTask * sizeof(size_t));
-  size_t *rcount = (size_t *)Mem.mymalloc("rcount", NTask * sizeof(size_t));
-  size_t *soff   = (size_t *)Mem.mymalloc("soff", NTask * sizeof(size_t));
-  size_t *roff   = (size_t *)Mem.mymalloc("roff", NTask * sizeof(size_t));
+  std::vector<size_t> scount(NTask), rcount(NTask), soff(NTask), roff(NTask);
+  // size_t *scount = (size_t *)Mem.mymalloc("scount", NTask * sizeof(size_t));
+  // size_t *rcount = (size_t *)Mem.mymalloc("rcount", NTask * sizeof(size_t));
+  // size_t *soff   = (size_t *)Mem.mymalloc("soff", NTask * sizeof(size_t));
+  // size_t *roff   = (size_t *)Mem.mymalloc("roff", NTask * sizeof(size_t));
   int i, n, prod, flag_big = 0, flag_big_all = 0;
 
   for(i = 0; i < NTask; i++)
@@ -253,7 +263,7 @@ void pm_mpi_fft::my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int
         }
 
       /* tranfer the data */
-      myMPI_Alltoallv(b, scount, soff, a, rcount, roff, sizeof(fft_complex), flag_big_all, Communicator);
+      myMPI_Alltoallv(b, scount.data(), soff.data(), a, rcount.data(), roff.data(), sizeof(fft_complex), flag_big_all, Communicator);
 
       /* unpack the data into the right order */
       prod = NTask * sy[ThisTask];
@@ -284,7 +294,7 @@ void pm_mpi_fft::my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int
         }
 
       /* tranfer the data */
-      myMPI_Alltoallv(b, rcount, roff, a, scount, soff, sizeof(fft_complex), flag_big_all, Communicator);
+      myMPI_Alltoallv(b, rcount.data(), roff.data(), a, scount.data(), soff.data(), sizeof(fft_complex), flag_big_all, Communicator);
 
       /* unpack the data into the right order */
       prod = NTask * sx[ThisTask];
@@ -302,10 +312,10 @@ void pm_mpi_fft::my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int
 
   /* now the result is in b[] */
 
-  Mem.myfree(roff);
-  Mem.myfree(soff);
-  Mem.myfree(rcount);
-  Mem.myfree(scount);
+  // Mem.myfree(roff);
+  // Mem.myfree(soff);
+  // Mem.myfree(rcount);
+  // Mem.myfree(scount);
 }
 
 void pm_mpi_fft::my_slab_based_fft(fft_plan *plan, void *data, void *workspace, int forward)
@@ -350,8 +360,8 @@ void pm_mpi_fft::my_slab_based_fft(fft_plan *plan, void *data, void *workspace, 
       /* now our data resides in data_complex[] */
 
       /* do the transpose */
-      my_slab_transpose(data_complex, workspace_complex, plan->slabs_x_per_task, plan->first_slab_x_of_task, plan->slabs_y_per_task,
-                        plan->first_slab_y_of_task, ngridx, ngridy, ngridz, 0);
+      my_slab_transpose(data_complex, workspace_complex, plan->slabs_x_per_task.data(), plan->first_slab_x_of_task.data(),
+                        plan->slabs_y_per_task.data(), plan->first_slab_y_of_task.data(), ngridx, ngridy, ngridz, 0);
 
       /* now the data is in workspace_complex[] */
 
@@ -381,8 +391,8 @@ void pm_mpi_fft::my_slab_based_fft(fft_plan *plan, void *data, void *workspace, 
           (plan->backward_plan_xdir, data_complex + i * ngridz * ngridx_long + j, workspace_complex + i * ngridz * ngridx_long + j);
         }
 
-      my_slab_transpose(workspace_complex, data_complex, plan->slabs_x_per_task, plan->first_slab_x_of_task, plan->slabs_y_per_task,
-                        plan->first_slab_y_of_task, ngridx, ngridy, ngridz, 1);
+      my_slab_transpose(workspace_complex, data_complex, plan->slabs_x_per_task.data(), plan->first_slab_x_of_task.data(),
+                        plan->slabs_y_per_task.data(), plan->first_slab_y_of_task.data(), ngridx, ngridy, ngridz, 1);
 
       prod = slabsx * ngridz;
 
@@ -440,114 +450,126 @@ void pm_mpi_fft::my_column_based_fft_init(fft_plan *plan, int NgridX, int NgridY
 
   plan->fftsize = plan->max_datasize;
 
-  plan->offsets_send_A = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_A, "offsets_send_A", NTask * sizeof(size_t));
-  plan->offsets_recv_A = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_A, "offsets_recv_A", NTask * sizeof(size_t));
-  plan->offsets_send_B = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_B, "offsets_send_B", NTask * sizeof(size_t));
-  plan->offsets_recv_B = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_B, "offsets_recv_B", NTask * sizeof(size_t));
-  plan->offsets_send_C = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_C, "offsets_send_C", NTask * sizeof(size_t));
-  plan->offsets_recv_C = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_C, "offsets_recv_C", NTask * sizeof(size_t));
-  plan->offsets_send_D = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_D, "offsets_send_D", NTask * sizeof(size_t));
-  plan->offsets_recv_D = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_D, "offsets_recv_D", NTask * sizeof(size_t));
+  plan->offsets_send_A.resize(NTask), plan->offsets_recv_A.resize(NTask), plan->offsets_send_B.resize(NTask),
+      plan->offsets_recv_B.resize(NTask), plan->offsets_send_C.resize(NTask), plan->offsets_recv_C.resize(NTask),
+      plan->offsets_send_D.resize(NTask), plan->offsets_recv_D.resize(NTask);
 
-  plan->count_send_A  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_A, "count_send_A", NTask * sizeof(size_t));
-  plan->count_recv_A  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_A, "count_recv_A", NTask * sizeof(size_t));
-  plan->count_send_B  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_B, "count_send_B", NTask * sizeof(size_t));
-  plan->count_recv_B  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_B, "count_recv_B", NTask * sizeof(size_t));
-  plan->count_send_C  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_C, "count_send_C", NTask * sizeof(size_t));
-  plan->count_recv_C  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_C, "count_recv_C", NTask * sizeof(size_t));
-  plan->count_send_D  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_D, "count_send_D", NTask * sizeof(size_t));
-  plan->count_recv_D  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_D, "count_recv_D", NTask * sizeof(size_t));
-  plan->count_send_13 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_13, "count_send_13", NTask * sizeof(size_t));
-  plan->count_recv_13 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_13, "count_recv_13", NTask * sizeof(size_t));
-  plan->count_send_23 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_23, "count_send_23", NTask * sizeof(size_t));
-  plan->count_recv_23 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_23, "count_recv_23", NTask * sizeof(size_t));
-  plan->count_send_13back =
-      (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_13back, "count_send_13back", NTask * sizeof(size_t));
-  plan->count_recv_13back =
-      (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_13back, "count_recv_13back", NTask * sizeof(size_t));
-  plan->count_send_23back =
-      (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_23back, "count_send_23back", NTask * sizeof(size_t));
-  plan->count_recv_23back =
-      (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_23back, "count_recv_23back", NTask * sizeof(size_t));
+  plan->count_send_A.resize(NTask), plan->count_recv_A.resize(NTask), plan->count_send_B.resize(NTask),
+      plan->count_recv_B.resize(NTask), plan->count_send_C.resize(NTask), plan->count_recv_C.resize(NTask),
+      plan->count_send_D.resize(NTask), plan->count_recv_D.resize(NTask), plan->count_send_13.resize(NTask),
+      plan->count_recv_13.resize(NTask), plan->count_send_23.resize(NTask), plan->count_recv_23.resize(NTask),
+      plan->count_send_13back.resize(NTask), plan->count_recv_13back.resize(NTask), plan->count_send_23back.resize(NTask),
+      plan->count_recv_23back.resize(NTask);
+  // plan->offsets_send_A = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_A, "offsets_send_A", NTask * sizeof(size_t));
+  // plan->offsets_recv_A = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_A, "offsets_recv_A", NTask * sizeof(size_t));
+  // plan->offsets_send_B = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_B, "offsets_send_B", NTask * sizeof(size_t));
+  // plan->offsets_recv_B = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_B, "offsets_recv_B", NTask * sizeof(size_t));
+  // plan->offsets_send_C = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_C, "offsets_send_C", NTask * sizeof(size_t));
+  // plan->offsets_recv_C = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_C, "offsets_recv_C", NTask * sizeof(size_t));
+  // plan->offsets_send_D = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_send_D, "offsets_send_D", NTask * sizeof(size_t));
+  // plan->offsets_recv_D = (size_t *)Mem.mymalloc_movable_clear(&plan->offsets_recv_D, "offsets_recv_D", NTask * sizeof(size_t));
+
+  // plan->count_send_A  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_A, "count_send_A", NTask * sizeof(size_t));
+  // plan->count_recv_A  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_A, "count_recv_A", NTask * sizeof(size_t));
+  // plan->count_send_B  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_B, "count_send_B", NTask * sizeof(size_t));
+  // plan->count_recv_B  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_B, "count_recv_B", NTask * sizeof(size_t));
+  // plan->count_send_C  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_C, "count_send_C", NTask * sizeof(size_t));
+  // plan->count_recv_C  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_C, "count_recv_C", NTask * sizeof(size_t));
+  // plan->count_send_D  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_D, "count_send_D", NTask * sizeof(size_t));
+  // plan->count_recv_D  = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_D, "count_recv_D", NTask * sizeof(size_t));
+  // plan->count_send_13 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_13, "count_send_13", NTask * sizeof(size_t));
+  // plan->count_recv_13 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_13, "count_recv_13", NTask * sizeof(size_t));
+  // plan->count_send_23 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_23, "count_send_23", NTask * sizeof(size_t));
+  // plan->count_recv_23 = (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_23, "count_recv_23", NTask * sizeof(size_t));
+  // plan->count_send_13back =
+  //     (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_13back, "count_send_13back", NTask * sizeof(size_t));
+  // plan->count_recv_13back =
+  //     (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_13back, "count_recv_13back", NTask * sizeof(size_t));
+  // plan->count_send_23back =
+  //     (size_t *)Mem.mymalloc_movable_clear(&plan->count_send_23back, "count_send_23back", NTask * sizeof(size_t));
+  // plan->count_recv_23back =
+  //     (size_t *)Mem.mymalloc_movable_clear(&plan->count_recv_23back, "count_recv_23back", NTask * sizeof(size_t));
 
   int dimA[3]  = {plan->NgridX, plan->NgridY, plan->Ngridz};
   int permA[3] = {0, 2, 1};
 
   my_fft_column_remap(NULL, dimA, plan->firstcol_XY, plan->ncol_XY, NULL, permA, plan->transposed_firstcol, plan->transposed_ncol,
-                      plan->offsets_send_A, plan->offsets_recv_A, plan->count_send_A, plan->count_recv_A, 1);
+                      plan->offsets_send_A.data(), plan->offsets_recv_A.data(), plan->count_send_A.data(), plan->count_recv_A.data(),
+                      1);
 
   int dimB[3]  = {plan->NgridX, plan->Ngridz, plan->NgridY};
   int permB[3] = {2, 1, 0};
 
   my_fft_column_remap(NULL, dimB, plan->transposed_firstcol, plan->transposed_ncol, NULL, permB, plan->second_transposed_firstcol,
-                      plan->second_transposed_ncol, plan->offsets_send_B, plan->offsets_recv_B, plan->count_send_B, plan->count_recv_B,
-                      1);
+                      plan->second_transposed_ncol, plan->offsets_send_B.data(), plan->offsets_recv_B.data(),
+                      plan->count_send_B.data(), plan->count_recv_B.data(), 1);
 
   int dimC[3]  = {plan->NgridY, plan->Ngridz, plan->NgridX};
   int permC[3] = {2, 1, 0};
 
   my_fft_column_remap(NULL, dimC, plan->second_transposed_firstcol, plan->second_transposed_ncol, NULL, permC,
-                      plan->transposed_firstcol, plan->transposed_ncol, plan->offsets_send_C, plan->offsets_recv_C, plan->count_send_C,
-                      plan->count_recv_C, 1);
+                      plan->transposed_firstcol, plan->transposed_ncol, plan->offsets_send_C.data(), plan->offsets_recv_C.data(),
+                      plan->count_send_C.data(), plan->count_recv_C.data(), 1);
 
   int dimD[3]  = {plan->NgridX, plan->Ngridz, plan->NgridY};
   int permD[3] = {0, 2, 1};
 
   my_fft_column_remap(NULL, dimD, plan->transposed_firstcol, plan->transposed_ncol, NULL, permD, plan->firstcol_XY, plan->ncol_XY,
-                      plan->offsets_send_D, plan->offsets_recv_D, plan->count_send_D, plan->count_recv_D, 1);
+                      plan->offsets_send_D.data(), plan->offsets_recv_D.data(), plan->count_send_D.data(), plan->count_recv_D.data(),
+                      1);
 
   int dim23[3]  = {plan->NgridX, plan->NgridY, plan->Ngrid2};
   int perm23[3] = {0, 2, 1};
 
   my_fft_column_transpose(NULL, dim23, plan->firstcol_XY, plan->ncol_XY, NULL, perm23, plan->firstcol_XZ, plan->ncol_XZ,
-                          plan->count_send_23, plan->count_recv_23, 1);
+                          plan->count_send_23.data(), plan->count_recv_23.data(), 1);
 
   int dim23back[3]  = {plan->NgridX, plan->Ngrid2, plan->NgridY};
   int perm23back[3] = {0, 2, 1};
 
   my_fft_column_transpose(NULL, dim23back, plan->firstcol_XZ, plan->ncol_XZ, NULL, perm23back, plan->firstcol_XY, plan->ncol_XY,
-                          plan->count_send_23back, plan->count_recv_23back, 1);
+                          plan->count_send_23back.data(), plan->count_recv_23back.data(), 1);
 
   int dim13[3]  = {plan->NgridX, plan->NgridY, plan->Ngrid2};
   int perm13[3] = {2, 1, 0};
 
   my_fft_column_transpose(NULL, dim13, plan->firstcol_XY, plan->ncol_XY, NULL, perm13, plan->firstcol_ZY, plan->ncol_ZY,
-                          plan->count_send_13, plan->count_recv_13, 1);
+                          plan->count_send_13.data(), plan->count_recv_13.data(), 1);
 
   int dim13back[3]  = {plan->Ngrid2, plan->NgridY, plan->NgridX};
   int perm13back[3] = {2, 1, 0};
 
   my_fft_column_transpose(NULL, dim13back, plan->firstcol_ZY, plan->ncol_ZY, NULL, perm13back, plan->firstcol_XY, plan->ncol_XY,
-                          plan->count_send_13back, plan->count_recv_13back, 1);
+                          plan->count_send_13back.data(), plan->count_recv_13back.data(), 1);
 }
 
 void pm_mpi_fft::my_column_based_fft_free(fft_plan *plan)
 {
-  Mem.myfree(plan->count_recv_23back);
-  Mem.myfree(plan->count_send_23back);
-  Mem.myfree(plan->count_recv_13back);
-  Mem.myfree(plan->count_send_13back);
-  Mem.myfree(plan->count_recv_23);
-  Mem.myfree(plan->count_send_23);
-  Mem.myfree(plan->count_recv_13);
-  Mem.myfree(plan->count_send_13);
-  Mem.myfree(plan->count_recv_D);
-  Mem.myfree(plan->count_send_D);
-  Mem.myfree(plan->count_recv_C);
-  Mem.myfree(plan->count_send_C);
-  Mem.myfree(plan->count_recv_B);
-  Mem.myfree(plan->count_send_B);
-  Mem.myfree(plan->count_recv_A);
-  Mem.myfree(plan->count_send_A);
+  // Mem.myfree(plan->count_recv_23back);
+  // Mem.myfree(plan->count_send_23back);
+  // Mem.myfree(plan->count_recv_13back);
+  // Mem.myfree(plan->count_send_13back);
+  // Mem.myfree(plan->count_recv_23);
+  // Mem.myfree(plan->count_send_23);
+  // Mem.myfree(plan->count_recv_13);
+  // Mem.myfree(plan->count_send_13);
+  // Mem.myfree(plan->count_recv_D);
+  // Mem.myfree(plan->count_send_D);
+  // Mem.myfree(plan->count_recv_C);
+  // Mem.myfree(plan->count_send_C);
+  // Mem.myfree(plan->count_recv_B);
+  // Mem.myfree(plan->count_send_B);
+  // Mem.myfree(plan->count_recv_A);
+  // Mem.myfree(plan->count_send_A);
 
-  Mem.myfree(plan->offsets_recv_D);
-  Mem.myfree(plan->offsets_send_D);
-  Mem.myfree(plan->offsets_recv_C);
-  Mem.myfree(plan->offsets_send_C);
-  Mem.myfree(plan->offsets_recv_B);
-  Mem.myfree(plan->offsets_send_B);
-  Mem.myfree(plan->offsets_recv_A);
-  Mem.myfree(plan->offsets_send_A);
+  // Mem.myfree(plan->offsets_recv_D);
+  // Mem.myfree(plan->offsets_send_D);
+  // Mem.myfree(plan->offsets_recv_C);
+  // Mem.myfree(plan->offsets_send_C);
+  // Mem.myfree(plan->offsets_recv_B);
+  // Mem.myfree(plan->offsets_send_B);
+  // Mem.myfree(plan->offsets_recv_A);
+  // Mem.myfree(plan->offsets_send_A);
 }
 
 void pm_mpi_fft::my_fft_swap23(fft_plan *plan, fft_real *data, fft_real *out)
@@ -556,7 +578,7 @@ void pm_mpi_fft::my_fft_swap23(fft_plan *plan, fft_real *data, fft_real *out)
   int perm23[3] = {0, 2, 1};
 
   my_fft_column_transpose(data, dim23, plan->firstcol_XY, plan->ncol_XY, out, perm23, plan->firstcol_XZ, plan->ncol_XZ,
-                          plan->count_send_23, plan->count_recv_23, 0);
+                          plan->count_send_23.data(), plan->count_recv_23.data(), 0);
 }
 
 void pm_mpi_fft::my_fft_swap23back(fft_plan *plan, fft_real *data, fft_real *out)
@@ -565,7 +587,7 @@ void pm_mpi_fft::my_fft_swap23back(fft_plan *plan, fft_real *data, fft_real *out
   int perm23back[3] = {0, 2, 1};
 
   my_fft_column_transpose(data, dim23back, plan->firstcol_XZ, plan->ncol_XZ, out, perm23back, plan->firstcol_XY, plan->ncol_XY,
-                          plan->count_send_23back, plan->count_recv_23back, 0);
+                          plan->count_send_23back.data(), plan->count_recv_23back.data(), 0);
 }
 
 void pm_mpi_fft::my_fft_swap13(fft_plan *plan, fft_real *data, fft_real *out)
@@ -574,7 +596,7 @@ void pm_mpi_fft::my_fft_swap13(fft_plan *plan, fft_real *data, fft_real *out)
   int perm13[3] = {2, 1, 0};
 
   my_fft_column_transpose(data, dim13, plan->firstcol_XY, plan->ncol_XY, out, perm13, plan->firstcol_ZY, plan->ncol_ZY,
-                          plan->count_send_13, plan->count_recv_13, 0);
+                          plan->count_send_13.data(), plan->count_recv_13.data(), 0);
 }
 
 void pm_mpi_fft::my_fft_swap13back(fft_plan *plan, fft_real *data, fft_real *out)
@@ -583,7 +605,7 @@ void pm_mpi_fft::my_fft_swap13back(fft_plan *plan, fft_real *data, fft_real *out
   int perm13back[3] = {2, 1, 0};
 
   my_fft_column_transpose(data, dim13back, plan->firstcol_ZY, plan->ncol_ZY, out, perm13back, plan->firstcol_XY, plan->ncol_XY,
-                          plan->count_send_13back, plan->count_recv_13back, 0);
+                          plan->count_send_13back.data(), plan->count_recv_13back.data(), 0);
 }
 
 void pm_mpi_fft::my_column_based_fft(fft_plan *plan, void *data, void *workspace, int forward)
@@ -602,8 +624,8 @@ void pm_mpi_fft::my_column_based_fft(fft_plan *plan, void *data, void *workspace
       int permA[3] = {0, 2, 1};
 
       my_fft_column_remap(workspace_complex, dimA, plan->firstcol_XY, plan->ncol_XY, data_complex, permA, plan->transposed_firstcol,
-                          plan->transposed_ncol, plan->offsets_send_A, plan->offsets_recv_A, plan->count_send_A, plan->count_recv_A,
-                          0);
+                          plan->transposed_ncol, plan->offsets_send_A.data(), plan->offsets_recv_A.data(), plan->count_send_A.data(),
+                          plan->count_recv_A.data(), 0);
 
       /* do the y-direction FFT in 'data', complex to complex */
       for(n = 0; n < plan->transposed_ncol; n++)
@@ -613,8 +635,8 @@ void pm_mpi_fft::my_column_based_fft(fft_plan *plan, void *data, void *workspace
       int permB[3] = {2, 1, 0};
 
       my_fft_column_remap(workspace_complex, dimB, plan->transposed_firstcol, plan->transposed_ncol, data_complex, permB,
-                          plan->second_transposed_firstcol, plan->second_transposed_ncol, plan->offsets_send_B, plan->offsets_recv_B,
-                          plan->count_send_B, plan->count_recv_B, 0);
+                          plan->second_transposed_firstcol, plan->second_transposed_ncol, plan->offsets_send_B.data(),
+                          plan->offsets_recv_B.data(), plan->count_send_B.data(), plan->count_recv_B.data(), 0);
 
       /* do the x-direction FFT in 'data', complex to complex */
       for(n = 0; n < plan->second_transposed_ncol; n++)
@@ -632,8 +654,8 @@ void pm_mpi_fft::my_column_based_fft(fft_plan *plan, void *data, void *workspace
       int permC[3] = {2, 1, 0};
 
       my_fft_column_remap(workspace_complex, dimC, plan->second_transposed_firstcol, plan->second_transposed_ncol, data_complex, permC,
-                          plan->transposed_firstcol, plan->transposed_ncol, plan->offsets_send_C, plan->offsets_recv_C,
-                          plan->count_send_C, plan->count_recv_C, 0);
+                          plan->transposed_firstcol, plan->transposed_ncol, plan->offsets_send_C.data(), plan->offsets_recv_C.data(),
+                          plan->count_send_C.data(), plan->count_recv_C.data(), 0);
 
       /* do inverse FFT in 'data' */
       for(n = 0; n < plan->transposed_ncol; n++)
@@ -643,8 +665,8 @@ void pm_mpi_fft::my_column_based_fft(fft_plan *plan, void *data, void *workspace
       int permD[3] = {0, 2, 1};
 
       my_fft_column_remap(workspace_complex, dimD, plan->transposed_firstcol, plan->transposed_ncol, data_complex, permD,
-                          plan->firstcol_XY, plan->ncol_XY, plan->offsets_send_D, plan->offsets_recv_D, plan->count_send_D,
-                          plan->count_recv_D, 0);
+                          plan->firstcol_XY, plan->ncol_XY, plan->offsets_send_D.data(), plan->offsets_recv_D.data(),
+                          plan->count_send_D.data(), plan->count_recv_D.data(), 0);
 
       /* do complex-to-real inverse transform on z-coordinates */
       for(n = 0; n < plan->ncol_XY; n++)
@@ -1053,16 +1075,20 @@ void pm_mpi_fft::my_fft_column_transpose(fft_real *data, int Ndims[3], /* global
           size_t tot_count_recv = 0;
 
           /* now check how much free memory there is on the two partners, use at most half of it */
-          size_t parnter_freebytes;
-          myMPI_Sendrecv(&Mem.FreeBytes, sizeof(size_t), MPI_BYTE, target, TAG_DENS_B, &parnter_freebytes, sizeof(size_t), MPI_BYTE,
-                         target, TAG_DENS_B, Communicator, MPI_STATUS_IGNORE);
 
-          size_t freeb = std::min<size_t>(parnter_freebytes, Mem.FreeBytes);
+          // size_t parnter_freebytes;
+          // myMPI_Sendrecv(
+          //   &Mem.FreeBytes, sizeof(size_t), MPI_BYTE, target, TAG_DENS_B,
+          //   &parnter_freebytes, sizeof(size_t), MPI_BYTE,target, TAG_DENS_B,
+          //   Communicator, MPI_STATUS_IGNORE);
 
-          size_t limit = 0.5 * freeb / (sizeof(fft_real) + sizeof(fft_real));
+          // size_t freeb = std::min<size_t>(parnter_freebytes, Mem.FreeBytes);
 
-          if(just_count_flag)
-            limit = SIZE_MAX;
+          // size_t limit = 0.5 * freeb / (sizeof(fft_real) + sizeof(fft_real));
+
+          // if(just_count_flag)
+          //   limit = SIZE_MAX;
+          size_t limit = SIZE_MAX;
 
           int iter = 0;
           do
@@ -1084,13 +1110,16 @@ void pm_mpi_fft::my_fft_column_transpose(fft_real *data, int Ndims[3], /* global
                     limit_recv = limit;
                 }
 
-              fft_real *buffer_send = NULL;
-              fft_real *buffer_recv = NULL;
+              std::vector<fft_real> buffer_send;
+              std::vector<fft_real> buffer_recv;
 
               if(just_count_flag == 0)
                 {
-                  buffer_send = (fft_real *)Mem.mymalloc("buffer_send", limit_send * sizeof(fft_real));
-                  buffer_recv = (fft_real *)Mem.mymalloc("buffer_recv", limit_recv * sizeof(fft_real));
+                  // buffer_send = (fft_real *)Mem.mymalloc("buffer_send", limit_send * sizeof(fft_real));
+                  // buffer_recv = (fft_real *)Mem.mymalloc("buffer_recv",
+                  // limit_recv * sizeof(fft_real));
+                  buffer_send.resize(limit_send);
+                  buffer_recv.resize(limit_recv);
                 }
 
               /* traverse the common box between the new and old layout  */
@@ -1142,7 +1171,7 @@ void pm_mpi_fft::my_fft_column_transpose(fft_real *data, int Ndims[3], /* global
 
               if(just_count_flag == 0)
                 {
-                  myMPI_Sendrecv(buffer_send, limit_send * sizeof(fft_real), MPI_BYTE, target, TAG_DENS_A, buffer_recv,
+                  myMPI_Sendrecv(buffer_send.data(), limit_send * sizeof(fft_real), MPI_BYTE, target, TAG_DENS_A, buffer_recv.data(),
                                  limit_recv * sizeof(fft_real), MPI_BYTE, target, TAG_DENS_A, Communicator, MPI_STATUS_IGNORE);
 
                   size_t count = 0;
@@ -1185,8 +1214,8 @@ void pm_mpi_fft::my_fft_column_transpose(fft_real *data, int Ndims[3], /* global
                         }
                     }
 
-                  Mem.myfree(buffer_recv);
-                  Mem.myfree(buffer_send);
+                  // Mem.myfree(buffer_recv);
+                  // Mem.myfree(buffer_send);
                 }
               else
                 break;

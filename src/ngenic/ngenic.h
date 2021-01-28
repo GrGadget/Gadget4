@@ -29,7 +29,7 @@ typedef fftwf_complex fft_complex;
 #endif
 
 #include "../data/simparticles.h"
-#include "../pm/pm_mpi_fft.h"
+#include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
 class ngenic : public pm_mpi_fft
 {
