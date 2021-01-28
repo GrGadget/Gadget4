@@ -9,6 +9,5 @@ headers += files(['allvars.h',
     'lightcone_particle_data.h',
     'mmparticles.h',
     'mymalloc.h',
-    'particle_data.h',
     'simparticles.h'
     ])

@@ -19,7 +19,7 @@
 
 #include "../logs/logs.h"
 #include "../pm/pm_periodic.h"
-#include "../data/particle_data.h" // particle_data
+#include "gadget/particle_data.h" // particle_data
 
 /*!
  * These routines support two different strategies for doing the particle data exchange to assemble the density field

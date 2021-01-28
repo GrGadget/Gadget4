@@ -18,7 +18,7 @@
 #include <cstring>  // memcpy
 
 #include "gadget/idstorage.h"  // MyIDStorage
-#include "gadget/peano.h"
+#include "gadget/peano.h" // peanokey
 #include "gadget/symtensors.h"  // vector
 
 /** This structure holds all the information that is
@@ -286,13 +286,11 @@ struct subfind_data
 #endif
 };
 
-#ifdef SUBFIND_ORPHAN_TREATMENT
+// SUBFIND_ORPHAN_TREATMENT
 struct idstoredata
 {
   int NumPart;
   MyIDType* ID;
 };
-
-#endif
 
 #endif

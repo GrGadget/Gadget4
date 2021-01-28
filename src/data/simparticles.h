@@ -18,10 +18,10 @@
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
-#include "../data/particle_data.h"
 #include "../main/main.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
+#include "gadget/particle_data.h"
 #include "gadget/constants.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"

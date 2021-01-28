@@ -15,4 +15,5 @@ gadget_headers = files([
     'hdf5_util.h',
     'setcomm.h',
     'pm_mpi_fft.h',
+    'particle_data.h',
     'utils.h'])
