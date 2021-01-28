@@ -212,8 +212,10 @@ void sim::find_timesteps_and_do_gravity_step_first_half(void)
             {
               int target = Sp.TimeBinsGravity.ActiveParticleList[i];
 
+#ifndef PM_ONLY
               for(int j = 0; j < 3; j++)
                 Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
+#endif
             }
         }
 
@@ -254,8 +256,10 @@ void sim::find_timesteps_and_do_gravity_step_first_half(void)
       else
         dt_gravkick = (tend - tstart) * All.Timebase_interval;
 
+#ifndef PM_ONLY
       for(int j = 0; j < 3; j++)
         Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
+#endif
     }
 
 #endif
@@ -350,15 +354,20 @@ void sim::do_gravity_step_second_half(void)
                 {
                   int target = Sp.TimeBinsGravity.ActiveParticleList[i];
 
+#ifndef PM_ONLY
                   for(int j = 0; j < 3; j++)
                     Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
-
+#endif
                   if(Sp.P[target].getType() == 0 && All.HighestOccupiedGravTimeBin == timebin)
                     {
                       for(int j = 0; j < 3; j++)
                         {
                           Sp.SphP[target].VelPred[j]       = Sp.P[target].Vel[j];
+#ifndef PM_ONLY
                           Sp.SphP[target].FullGravAccel[j] = Sp.P[target].GravAccel[j];
+#else
+                          Sp.SphP[target].FullGravAccel[j] = 0;
+#endif
                         }
                     }
                 }
@@ -395,10 +404,10 @@ void sim::do_gravity_step_second_half(void)
             dt_gravkick = Driftfac.get_gravkick_factor(tstart, tend);
           else
             dt_gravkick = (tend - tstart) * All.Timebase_interval;
-
+#ifndef PM_ONLY
           for(int j = 0; j < 3; j++)
             Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
-
+#endif
           if(Sp.P[target].getType() == 0)
             {
               for(int j = 0; j < 3; j++)
