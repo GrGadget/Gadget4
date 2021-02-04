@@ -13,6 +13,7 @@
 #define PM_PERIODIC_H
 
 #include <gsl/gsl_integration.h>   // gsl_integration_workspace
+#include "../data/allvars.h"       // All.
 #include "../data/simparticles.h"  // simparticles
 #include "gadget/constants.h"      // MAXLEN_PATH_EXTRA
 #include "gadget/dtypes.h"         // LONG_X

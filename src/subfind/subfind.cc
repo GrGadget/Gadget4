@@ -95,7 +95,7 @@ void fof<partset>::subfind_find_subhalos(int num, const char *basename, const ch
 #ifndef LEAN
   for(int i = 0; i < Tp->NumPart; i++)
     if(Tp->P[i].getType() == 0)
-      Tp->PS[i].Utherm = Tp->get_utherm_from_entropy(i);
+      Tp->PS[i].Utherm = Tp->get_utherm_from_entropy(i, All.cf_a3inv);
     else
       Tp->PS[i].Utherm = 0;
 #endif

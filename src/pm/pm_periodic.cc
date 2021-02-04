@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 
 //#include "../logs/logs.h"
+#include "../data/allvars.h"  // All.
 #include "../pm/pm_periodic.h"
 #include "gadget/constants.h"      // NTYPES
 #include "gadget/macros.h"         // Terminate

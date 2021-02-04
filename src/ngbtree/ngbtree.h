@@ -12,6 +12,7 @@
 #ifndef NGBTREE_H_
 #define NGBTREE_H_
 
+#include "../data/allvars.h"  // All.
 #include "../data/simparticles.h"
 #include "../time_integration/driftfac.h"
 #include "../tree/tree.h"

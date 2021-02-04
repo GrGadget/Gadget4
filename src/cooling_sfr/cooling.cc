@@ -16,6 +16,7 @@
 #include <gsl/gsl_math.h>  // gsl_finite
 
 #include "../cooling_sfr/cooling.h"
+#include "../data/allvars.h"   // All.
 #include "../data/mymalloc.h"  // extern class Mem;
 #include "../logs/logs.h"      // TIMER_START
 #include "gadget/macros.h"     // Terminate
@@ -706,7 +707,7 @@ void coolsfr::cool_sph_particle(simparticles *Sp, int i, gas_state *gs, do_cool_
 
   double dtime = All.cf_atime * dt / All.cf_atime_hubble_a;
 
-  double utherm = Sp->get_utherm_from_entropy(i);
+  double utherm = Sp->get_utherm_from_entropy(i, All.cf_a3inv);
 
   double ne      = Sp->SphP[i].Ne; /* electron abundance (gives ionization state and mean molecular weight) */
   double unew    = DoCooling(std::max<double>(All.MinEgySpec, utherm), dens * All.cf_a3inv, dtime, &ne, gs, DoCool);
@@ -727,7 +728,7 @@ void coolsfr::cool_sph_particle(simparticles *Sp, int i, gas_state *gs, do_cool_
     Sp->SphP[i].CoolHeat = du * Sp->P[i].getMass() / dtime;
 #endif
 
-  Sp->set_entropy_from_utherm(utherm, i);
+  Sp->set_entropy_from_utherm(utherm, i, All.cf_a3inv);
   Sp->SphP[i].set_thermodynamic_variables();
 }
 

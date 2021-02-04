@@ -10,6 +10,7 @@
 
 #include <mpi.h>
 
+#include "../data/allvars.h"  // All.
 #include "../data/mymalloc.h"
 #include "../logs/logs.h"                     // extern logs Logs;
 #include "../mpi_utils/shared_mem_handler.h"  // shmem Shmem; global variable

@@ -12,6 +12,7 @@
 #include "gadgetconfig.h"
 
 #include <mpi.h>                  // MPI_Allreduce
+#include "../data/allvars.h"      // All.
 #include "../data/lcparticles.h"  // lcparticles
 #include "../data/mymalloc.h"     // extern class Mem;
 #include "../domain/domain.h"

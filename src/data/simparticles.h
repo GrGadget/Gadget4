@@ -16,7 +16,6 @@
 //#include <stdlib.h>
 //#include <string.h>
 
-#include "../data/allvars.h"   // All.
 #include "../data/mymalloc.h"  // Mem.
 //#include "../main/main.h"
 #include "../system/system.h"              // myflush
@@ -234,20 +233,20 @@ class simparticles : public intposconvert, public setcomm
   inline MyFloat get_OldAcc(int i) { return P[i].OldAcc; }
 
   /* sets the internal energy per unit mass of particle i  from its entropy */
-  inline double get_utherm_from_entropy(int i)
+  inline double get_utherm_from_entropy(int i, const double cf_a3inv)
   {
 #ifdef ISOTHERM_EQS
     return SphP[i].Entropy;
 #else
-    double fact_entropy_to_u = pow(SphP[i].Density * All.cf_a3inv, GAMMA_MINUS1) / GAMMA_MINUS1;
+    double fact_entropy_to_u = pow(SphP[i].Density * cf_a3inv, GAMMA_MINUS1) / GAMMA_MINUS1;
     return SphP[i].Entropy * fact_entropy_to_u;
 #endif
   }
 
   /* sets the entropy of particle i from its internal energy per unit mass */
-  inline void set_entropy_from_utherm(double utherm, int i)
+  inline void set_entropy_from_utherm(double utherm, int i, const double cf_a3inv)
   {
-    double fact_u_to_entropy = GAMMA_MINUS1 / pow(SphP[i].Density * All.cf_a3inv, GAMMA_MINUS1);
+    double fact_u_to_entropy = GAMMA_MINUS1 / pow(SphP[i].Density * cf_a3inv, GAMMA_MINUS1);
     SphP[i].Entropy          = utherm * fact_u_to_entropy;
     SphP[i].EntropyPred      = SphP[i].Entropy;
 

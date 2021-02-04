@@ -11,6 +11,7 @@
 
 #include "gadgetconfig.h"
 
+#include "../data/allvars.h"  // All.
 #include "../sort/cxxsort.h"
 #include "../tree/tree.h"
 #include "gadget/mpi_utils.h"  // TAG_DENS_A

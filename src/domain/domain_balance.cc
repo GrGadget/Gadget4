@@ -11,6 +11,7 @@
 
 #include "gadgetconfig.h"
 
+#include "../data/allvars.h"      // All.
 #include "../data/lcparticles.h"  // lcparticles
 #include "../domain/domain.h"
 #include "../sort/cxxsort.h"  // mycxxsort

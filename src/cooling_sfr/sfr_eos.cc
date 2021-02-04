@@ -96,7 +96,7 @@ void coolsfr::cooling_and_starformation(simparticles *Sp)
               double egyeff = egyhot * (1 - x) + All.EgySpecCold * x;
 
               double cloudmass = x * Sp->P[target].getMass();
-              double utherm    = Sp->get_utherm_from_entropy(target);
+              double utherm    = Sp->get_utherm_from_entropy(target, All.cf_a3inv);
 
               if(tsfr < dtime)
                 tsfr = dtime;
@@ -129,7 +129,7 @@ void coolsfr::cooling_and_starformation(simparticles *Sp)
                         du = All.MinEgySpec - utherm;
 
                       utherm += du;
-                      Sp->set_entropy_from_utherm(utherm, target);
+                      Sp->set_entropy_from_utherm(utherm, target, All.cf_a3inv);
                       Sp->SphP[target].DtEntropy = 0.0;
 
 #ifdef OUTPUT_COOLHEAT

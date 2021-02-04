@@ -261,7 +261,7 @@ class snap_io : public IO_Def
     if(mode == 0)
       {
         MyFloat *out_buffer = (MyFloat *)buffer;
-        out_buffer[0]       = thisobj->Sp->get_utherm_from_entropy(particle);
+        out_buffer[0]       = thisobj->Sp->get_utherm_from_entropy(particle, All.cf_a3inv);
       }
     else
       {
