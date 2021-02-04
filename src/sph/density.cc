@@ -423,7 +423,7 @@ void sph::compute_densities(void)
         }
 
       /* compute density (and updates pressure) */
-      density(Tp->TimeBinsHydro.ActiveParticleList, Tp->TimeBinsHydro.NActiveParticles);
+      density(Tp->TimeBinsHydro.ActiveParticleList.data(), Tp->TimeBinsHydro.NActiveParticles);
     }
 }
 

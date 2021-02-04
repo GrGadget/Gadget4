@@ -27,8 +27,9 @@
 #include "../data/allvars.h"      // All.
 #include "../data/lcparticles.h"  // lcparticles
 #include "../domain/domain.h"
-#include "../logs/logs.h"   // TIMER_START
-#include "gadget/macros.h"  // Terminate
+#include "../logs/logs.h"      // TIMER_START
+#include "../system/system.h"  // myflush
+#include "gadget/macros.h"     // Terminate
 
 /*! This is the main routine for the domain decomposition.  It acts as a
  *  driver routine that allocates various temporary buffers, maps the

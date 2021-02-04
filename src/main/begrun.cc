@@ -40,11 +40,11 @@
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 #include "gadget/parameters.h"
+#include "gadget/timebindata.h"
 #include "version.h"
 
 /*!
@@ -202,8 +202,8 @@ void sim::begrun1(const char *parameterFile)
   GravTree.short_range_init();
 #endif
 
-  Sp.TimeBinsHydro.timebins_init("Hydro", &Sp.MaxPartSph);
-  Sp.TimeBinsGravity.timebins_init("Gravity", &Sp.MaxPart);
+  Sp.TimeBinsHydro.timebins_init("Hydro", Sp.MaxPartSph);
+  Sp.TimeBinsGravity.timebins_init("Gravity", Sp.MaxPart);
 
 #ifdef COOLING
   All.Time = All.TimeBegin;

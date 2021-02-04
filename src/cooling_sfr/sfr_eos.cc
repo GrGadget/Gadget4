@@ -13,6 +13,8 @@
 
 #ifdef STARFORMATION
 
+#include "../system/system.h"  // myflush
+
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"  // extern global_data_all_processes All;
 #include "../logs/logs.h"     // TIMER_START

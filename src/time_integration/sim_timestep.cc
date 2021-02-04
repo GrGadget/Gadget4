@@ -25,9 +25,9 @@
 #include "../main/simulation.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
+#include "gadget/timebindata.h"
 
 /*! This function advances the system in momentum space, i.e. it does apply the 'kick' operation after the
  *  forces have been computed. Additionally, it assigns new timesteps to particles. At start-up, a
@@ -434,61 +434,6 @@ int simparticles::get_timestep_bin(integertime ti_step)
   return bin;
 }
 
-void TimeBinData::timebins_init(const char *name, int *maxPart)
-{
-  NActiveParticles   = 0;
-  ActiveParticleList = 0;
-
-  for(int i = 0; i < TIMEBINS; i++)
-    {
-      FirstInTimeBin[i] = -1;
-      LastInTimeBin[i]  = -1;
-    }
-
-  NextInTimeBin = 0;
-  PrevInTimeBin = 0;
-
-  strncpy(Name, name, 99);
-  Name[99] = 0;
-  MaxPart  = maxPart;
-}
-
-void TimeBinData::timebins_allocate(void)
-{
-  char Identifier[200];
-  Identifier[199] = 0;
-
-  snprintf(Identifier, 199, "NextActiveParticle%s", Name);
-  ActiveParticleList = (int *)Mem.mymalloc_movable(&ActiveParticleList, Identifier, *(MaxPart) * sizeof(int));
-
-  snprintf(Identifier, 199, "NextInTimeBin%s", Name);
-  NextInTimeBin = (int *)Mem.mymalloc_movable(&NextInTimeBin, Identifier, *(MaxPart) * sizeof(int));
-
-  snprintf(Identifier, 199, "PrevInTimeBin%s", Name);
-  PrevInTimeBin = (int *)Mem.mymalloc_movable(&PrevInTimeBin, Identifier, *(MaxPart) * sizeof(int));
-}
-
-void TimeBinData::timebins_free(void)
-{
-  Mem.myfree_movable(PrevInTimeBin);
-  Mem.myfree_movable(NextInTimeBin);
-  Mem.myfree_movable(ActiveParticleList);
-
-  PrevInTimeBin      = NULL;
-  NextInTimeBin      = NULL;
-  ActiveParticleList = NULL;
-}
-
-void TimeBinData::timebins_reallocate(void)
-{
-  if(ActiveParticleList != NULL)
-    {
-      ActiveParticleList = (int *)Mem.myrealloc_movable(ActiveParticleList, *(MaxPart) * sizeof(int));
-      NextInTimeBin      = (int *)Mem.myrealloc_movable(NextInTimeBin, *(MaxPart) * sizeof(int));
-      PrevInTimeBin      = (int *)Mem.myrealloc_movable(PrevInTimeBin, *(MaxPart) * sizeof(int));
-    }
-}
-
 void simparticles::timebins_get_bin_and_do_validity_checks(integertime ti_step, int *bin_new, int bin_old)
 {
   /* make it a power 2 subdivision */
@@ -534,104 +479,6 @@ void simparticles::timebins_get_bin_and_do_validity_checks(integertime ti_step, 
   *bin_new = bin;
 }
 
-void TimeBinData::timebin_move_particle(int p, int timeBin_old, int timeBin_new)
-{
-  if(timeBin_old == timeBin_new)
-    return;
-
-  TimeBinCount[timeBin_old]--;
-
-  int prev = PrevInTimeBin[p];
-  int next = NextInTimeBin[p];
-
-  if(FirstInTimeBin[timeBin_old] == p)
-    FirstInTimeBin[timeBin_old] = next;
-  if(LastInTimeBin[timeBin_old] == p)
-    LastInTimeBin[timeBin_old] = prev;
-  if(prev >= 0)
-    NextInTimeBin[prev] = next;
-  if(next >= 0)
-    PrevInTimeBin[next] = prev;
-
-  if(TimeBinCount[timeBin_new] > 0)
-    {
-      PrevInTimeBin[p]                          = LastInTimeBin[timeBin_new];
-      NextInTimeBin[LastInTimeBin[timeBin_new]] = p;
-      NextInTimeBin[p]                          = -1;
-      LastInTimeBin[timeBin_new]                = p;
-    }
-  else
-    {
-      FirstInTimeBin[timeBin_new] = LastInTimeBin[timeBin_new] = p;
-      PrevInTimeBin[p] = NextInTimeBin[p] = -1;
-    }
-
-  TimeBinCount[timeBin_new]++;
-}
-
-void TimeBinData::timebin_remove_particle(int idx, int bin)
-{
-  int p                   = ActiveParticleList[idx];
-  ActiveParticleList[idx] = -1;
-
-  TimeBinCount[bin]--;
-
-  if(p >= 0)
-    {
-      int prev = PrevInTimeBin[p];
-      int next = NextInTimeBin[p];
-
-      if(prev >= 0)
-        NextInTimeBin[prev] = next;
-      if(next >= 0)
-        PrevInTimeBin[next] = prev;
-
-      if(FirstInTimeBin[bin] == p)
-        FirstInTimeBin[bin] = next;
-      if(LastInTimeBin[bin] == p)
-        LastInTimeBin[bin] = prev;
-    }
-}
-
-/* insert a particle into the timebin struct behind another already existing particle */
-void TimeBinData::timebin_add_particle(int i_new, int i_old, int timeBin, int addToListOfActiveParticles)
-{
-  TimeBinCount[timeBin]++;
-
-  if(i_old < 0)
-    {
-      /* if we don't have an existing particle to add if after, let's take the last one in this timebin */
-      i_old = LastInTimeBin[timeBin];
-
-      if(i_old < 0)
-        {
-          /* the timebin is empty at the moment, so just add the new particle */
-          FirstInTimeBin[timeBin] = i_new;
-          LastInTimeBin[timeBin]  = i_new;
-          NextInTimeBin[i_new]    = -1;
-          PrevInTimeBin[i_new]    = -1;
-        }
-    }
-
-  if(i_old >= 0)
-    {
-      /* otherwise we added it already */
-      PrevInTimeBin[i_new] = i_old;
-      NextInTimeBin[i_new] = NextInTimeBin[i_old];
-      if(NextInTimeBin[i_old] >= 0)
-        PrevInTimeBin[NextInTimeBin[i_old]] = i_new;
-      NextInTimeBin[i_old] = i_new;
-      if(LastInTimeBin[timeBin] == i_old)
-        LastInTimeBin[timeBin] = i_new;
-    }
-
-  if(addToListOfActiveParticles)
-    {
-      ActiveParticleList[NActiveParticles] = i_new;
-      NActiveParticles++;
-    }
-}
-
 void simparticles::timebin_cleanup_list_of_active_particles(void)
 {
   for(int idx = 0; idx < TimeBinsGravity.NActiveParticles; idx++)
@@ -656,21 +503,5 @@ void simparticles::timebin_cleanup_list_of_active_particles(void)
         {
           TimeBinsHydro.timebin_remove_particle(idx, P[i].getTimeBinHydro());
         }
-    }
-}
-
-void TimeBinData::timebin_make_list_of_active_particles_up_to_timebin(int timebin)
-{
-  NActiveParticles = 0;
-  for(int tbin = timebin; tbin >= 0; tbin--)
-    timebin_add_particles_of_timebin_to_list_of_active_particles(tbin);
-}
-
-void TimeBinData::timebin_add_particles_of_timebin_to_list_of_active_particles(int timebin)
-{
-  for(int i = FirstInTimeBin[timebin]; i >= 0; i = NextInTimeBin[i])
-    {
-      ActiveParticleList[NActiveParticles] = i;
-      NActiveParticles++;
     }
 }

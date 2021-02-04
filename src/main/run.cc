@@ -524,8 +524,6 @@ void sim::create_snapshot_if_desired(void)
 
 #ifndef OUTPUT_NON_SYNCHRONIZED_ALLOWED
         NgbTree.treefree();
-        Sp.TimeBinsGravity.timebins_free();
-        Sp.TimeBinsHydro.timebins_free();
 #endif
 
 #ifdef FOF
@@ -610,8 +608,8 @@ void sim::create_snapshot_if_desired(void)
         All.Ti_nextoutput = find_next_outputtime(All.Ti_Current + 1);
 
 #ifndef OUTPUT_NON_SYNCHRONIZED_ALLOWED
-        Sp.TimeBinsHydro.timebins_allocate();
-        Sp.TimeBinsGravity.timebins_allocate();
+        // Sp.TimeBinsHydro.timebins_allocate(Sp.MaxPartSph);
+        // Sp.TimeBinsGravity.timebins_allocate(Sp.MaxPart);
 
         /* we need to reconstruct the timebins here. Even though the particles are in the same place again,
          * it could have happened that Sp.P was reduced in size temporarily below NumPart on a certain task,

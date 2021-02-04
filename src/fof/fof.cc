@@ -34,11 +34,11 @@
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 #include "gadget/peano.h"
+#include "gadget/timebindata.h"
 
 /*! Computation of a FOF group catalogue.
  *

@@ -20,7 +20,7 @@
 #include "../domain/domain.h"
 #include "../logs/logs.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
+#include "gadget/timebindata.h"
 
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"

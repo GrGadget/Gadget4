@@ -25,10 +25,10 @@
 #include "../main/simulation.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*
  * It counts the number of particles in each timebin and updates the

@@ -12,22 +12,18 @@
 #ifndef SIMPART_H
 #define SIMPART_H
 
-#include <cmath>  // log, pow
-//#include <stdlib.h>
-//#include <string.h>
+#include <cmath>    // log, pow
+#include <cstring>  // memset
 
-#include "../data/mymalloc.h"  // Mem.
-//#include "../main/main.h"
-#include "../system/system.h"              // myflush
-#include "../time_integration/timestep.h"  // TimeBinData
-#include "gadget/constants.h"              // GAMMA_MINUS1
-#include "gadget/particle_data.h"          // particle_data
-//#include "gadget/dtypes.h"
+#include "../data/mymalloc.h"          // Mem.
+#include "gadget/constants.h"          // GAMMA_MINUS1
 #include "gadget/intposconvert.h"      // intposconvert
 #include "gadget/macros.h"             // Terminate
 #include "gadget/mpi_utils.h"          // sumup_large_ints
+#include "gadget/particle_data.h"      // particle_data
 #include "gadget/setcomm.h"            // setcomm
 #include "gadget/sph_particle_data.h"  // sph_particle_data
+#include "gadget/timebindata.h"        // TimeBinData
 
 #ifdef LIGHTCONE
 class lightcone;
@@ -274,15 +270,12 @@ class simparticles : public intposconvert, public setcomm
     P    = (particle_data *)Mem.mymalloc_movable_clear(&P, "P", MaxPart * sizeof(particle_data));
     SphP = (sph_particle_data *)Mem.mymalloc_movable_clear(&SphP, "SphP", MaxPartSph * sizeof(sph_particle_data));
 
-    TimeBinsHydro.timebins_allocate();
-    TimeBinsGravity.timebins_allocate();
+    TimeBinsHydro.timebins_reallocate(MaxPartSph);
+    TimeBinsGravity.timebins_reallocate(MaxPart);
   }
 
   void free_memory(void)
   {
-    TimeBinsGravity.timebins_free();
-    TimeBinsHydro.timebins_free();
-
     Mem.myfree(SphP);
     Mem.myfree(P);
   }
@@ -296,7 +289,7 @@ class simparticles : public intposconvert, public setcomm
       memset(((char *)P) + MaxPart * sizeof(particle_data), 0, (maxpartNew - MaxPart) * sizeof(particle_data));
     MaxPart = maxpartNew;
 
-    TimeBinsGravity.timebins_reallocate();
+    TimeBinsGravity.timebins_reallocate(MaxPart);
   }
 
   void reallocate_memory_maxpartsph(int maxpartsphNew)
@@ -308,7 +301,7 @@ class simparticles : public intposconvert, public setcomm
       memset(((char *)SphP) + MaxPartSph * sizeof(sph_particle_data), 0, (maxpartsphNew - MaxPartSph) * sizeof(sph_particle_data));
     MaxPartSph = maxpartsphNew;
 
-    TimeBinsHydro.timebins_reallocate();
+    TimeBinsHydro.timebins_reallocate(MaxPartSph);
   }
 
   /*! This function dumps some of the basic particle data to a file. In case

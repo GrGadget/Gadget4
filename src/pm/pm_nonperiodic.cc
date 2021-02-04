@@ -29,11 +29,11 @@
 #include "../pm/pm_nonperiodic.h"
 #include "../sort/cxxsort.h"
 #include "../src/gravtree/gravtree.h"
-#include "../src/time_integration/timestep.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*! This function determines the particle extension of all particles, and for
  *  those types selected with PLACEHIGHRESREGION if this is used, and then

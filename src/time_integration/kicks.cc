@@ -26,9 +26,9 @@
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*! \brief performs the first half step kick operator for the gravity
  *

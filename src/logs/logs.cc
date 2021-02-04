@@ -22,9 +22,9 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*! \brief Open files for logging.
  *

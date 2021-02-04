@@ -34,9 +34,9 @@
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind_readid_io.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*! \brief Prepares the loaded initial conditions for the run
  *
@@ -584,7 +584,7 @@ void sim::setup_smoothinglengths(void)
       mpi_printf("INIT: Setup smoothing lengths.\n");
 
       GravTree.treeallocate(Sp.NumPart, &Sp, &Domain);
-      GravTree.treebuild(Sp.TimeBinsGravity.NActiveParticles, Sp.TimeBinsGravity.ActiveParticleList);
+      GravTree.treebuild(Sp.TimeBinsGravity.NActiveParticles, Sp.TimeBinsGravity.ActiveParticleList.data());
 
       for(int i = 0; i < Sp.NumGas; i++)
         {
@@ -613,7 +613,7 @@ void sim::setup_smoothinglengths(void)
       for(int i = 0; i < Sp.NumGas; i++)
         Sp.TimeBinsGravity.ActiveParticleList[Sp.TimeBinsHydro.NActiveParticles++] = i;
 
-      NgbTree.density(Sp.TimeBinsGravity.ActiveParticleList, Sp.TimeBinsHydro.NActiveParticles);
+      NgbTree.density(Sp.TimeBinsGravity.ActiveParticleList.data(), Sp.TimeBinsHydro.NActiveParticles);
 
 #ifdef PRESSURE_ENTROPY_SPH
       for(int i = 0; i < Sp.NumGas; i++)

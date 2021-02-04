@@ -14,4 +14,5 @@ gadget_src = files([
     'parameters.cc',
     'setcomm.cc',
     'pm_mpi_fft.cc',
+    'timebindata.cc',
     'utils.cc'])

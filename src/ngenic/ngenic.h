@@ -19,6 +19,7 @@
 #endif
 
 #include <fftw3.h>
+#include <gsl/gsl_rng.h>  // gsl_rng
 
 #ifdef DOUBLEPRECISION_FFTW
 typedef double fft_real;
