@@ -14,10 +14,11 @@
 #ifdef STARFORMATION
 
 #include "../cooling_sfr/cooling.h"
-#include "../data/allvars.h"   // extern All
-#include "../data/mymalloc.h"  // extern Mem
-#include "../logs/logs.h"      // TIMER_START
-#include "gadget/macros.h"     // Terminate
+#include "../data/allvars.h"     // extern All
+#include "../data/mymalloc.h"    // extern Mem
+#include "../logs/logs.h"        // TIMER_START
+#include "../main/simulation.h"  // get_softening_type_from_mass
+#include "gadget/macros.h"       // Terminate
 
 /** \brief This routine creates star/wind particles according to their respective rates.
  *
@@ -214,7 +215,7 @@ void coolsfr::convert_sph_particle_into_star(simparticles *Sp, int i, double bir
 #endif
 #ifdef INDIVIDUAL_GRAVITY_SOFTENING
   if(((1 << Sp->P[i].getType()) & (INDIVIDUAL_GRAVITY_SOFTENING)))
-    Sp->P[i].setSofteningClass(Sp->get_softening_type_from_mass(Sp->P[i].getMass()));
+    Sp->P[i].setSofteningClass(sim::get_softening_type_from_mass(Sp->P[i].getMass()));
 #endif
 
   Sp->TimeBinSfr[Sp->P[i].getTimeBinHydro()] -= Sp->SphP[i].Sfr;
@@ -247,7 +248,7 @@ void coolsfr::spawn_star_from_sph_particle(simparticles *Sp, int igas, double bi
 #endif
 #ifdef INDIVIDUAL_GRAVITY_SOFTENING
   if(((1 << Sp->P[istar].getType()) & (INDIVIDUAL_GRAVITY_SOFTENING)))
-    Sp->P[istar].setSofteningClass(Sp->get_softening_type_from_mass(Sp->P[istar].getMass()));
+    Sp->P[istar].setSofteningClass(sim::get_softening_type_from_mass(Sp->P[istar].getMass()));
 #endif
 
   Sp->TimeBinsGravity.ActiveParticleList[Sp->TimeBinsGravity.NActiveParticles++] = istar;

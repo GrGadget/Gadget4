@@ -177,6 +177,14 @@ class sim : public test_io_bandwidth
 #ifdef EXTERNALGRAVITY
   void gravity_external(void);
 #endif
+  void init_individual_softenings(void);
+  static int get_softening_type_from_mass(double mass);
+  static double get_desired_softening_from_mass(double mass);
+#ifdef ADAPTIVE_HYDRO_SOFTENING
+  int get_softeningtype_for_hydro_particle(int i);
+#endif
+  void print_particle_info_from_ID(MyIDType ID);
+  void print_particle_info(int i);
 };
 
 #endif

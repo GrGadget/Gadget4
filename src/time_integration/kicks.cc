@@ -156,7 +156,7 @@ void sim::find_timesteps_and_do_gravity_step_first_half(void)
 
               if(bin == 0)
                 {
-                  Sp.print_particle_info(target);
+                  print_particle_info(target);
                   Terminate("timestep too small");
                 }
 

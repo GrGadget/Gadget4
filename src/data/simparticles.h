@@ -12,7 +12,7 @@
 #ifndef SIMPART_H
 #define SIMPART_H
 
-#include <cmath>  // log
+#include <cmath>  // log, pow
 //#include <stdlib.h>
 //#include <string.h>
 
@@ -21,12 +21,12 @@
 //#include "../main/main.h"
 #include "../system/system.h"              // myflush
 #include "../time_integration/timestep.h"  // TimeBinData
+#include "gadget/constants.h"              // GAMMA_MINUS1
 #include "gadget/particle_data.h"          // particle_data
-//#include "gadget/constants.h"
 //#include "gadget/dtypes.h"
-#include "gadget/intposconvert.h"  // intposconvert
-//#include "gadget/macros.h"
-//#include "gadget/mpi_utils.h"
+#include "gadget/intposconvert.h"      // intposconvert
+#include "gadget/macros.h"             // Terminate
+#include "gadget/mpi_utils.h"          // sumup_large_ints
 #include "gadget/setcomm.h"            // setcomm
 #include "gadget/sph_particle_data.h"  // sph_particle_data
 
@@ -335,48 +335,6 @@ class simparticles : public intposconvert, public setcomm
       }
   }
 
-  /** \brief Print information relative to a particle / cell to standard output.
-   *
-   *  \param i particle / cell index
-   */
-  void print_particle_info(int i)
-  {
-    MyReal pos[3];
-    intpos_to_pos(P[i].IntPos, pos); /* converts the integer coordinates to floating point */
-
-    printf("Task=%d, ID=%llu, Type=%d, TimeBinGrav=%d, TimeBinHydro=%d, Mass=%g, pos=%g|%g|%g, vel=%g|%g|%g, OldAcc=%g\n", ThisTask,
-           (unsigned long long)P[i].ID.get(), P[i].getType(), P[i].TimeBinGrav, P[i].getTimeBinHydro(), P[i].getMass(), pos[0], pos[1],
-           pos[2], P[i].Vel[0], P[i].Vel[1], P[i].Vel[2], P[i].OldAcc);
-#if defined(PMGRID) && defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
-    printf("GravAccel=%g|%g|%g, GravPM=%g|%g|%g, Soft=%g, SoftClass=%d\n", P[i].GravAccel[0], P[i].GravAccel[1], P[i].GravAccel[2],
-           P[i].GravPM[0], P[i].GravPM[1], P[i].GravPM[2], All.ForceSoftening[P[i].getSofteningClass()], P[i].getSofteningClass());
-#else
-#ifndef LEAN
-    printf("GravAccel=%g|%g|%g, Soft=%g, SoftType=%d\n", P[i].GravAccel[0], P[i].GravAccel[1], P[i].GravAccel[2],
-           All.ForceSoftening[P[i].getSofteningClass()], P[i].getSofteningClass());
-#endif
-#endif
-
-    if(P[i].getType() == 0)
-      {
-        printf("rho=%g, hsml=%g, entr=%g, csnd=%g\n", SphP[i].Density, SphP[i].Hsml, SphP[i].Entropy, SphP[i].get_sound_speed());
-        printf("ID=%llu SphP[p].CurrentMaxTiStep=%g\n", (unsigned long long)P[i].ID.get(), SphP[i].CurrentMaxTiStep);
-      }
-
-    myflush(stdout);
-  }
-
-  /** \brief Print information relative to a particle / cell to standard output given its ID.
-   *  *
-   *   *  \param ID particle / cell ID
-   *    */
-  void print_particle_info_from_ID(MyIDType ID)
-  {
-    for(int i = 0; i < NumPart; i++)
-      if(P[i].ID.get() == ID)
-        print_particle_info(i);
-  }
-
  public:
   inline int get_active_index(int idx)
   {
@@ -413,22 +371,6 @@ class simparticles : public intposconvert, public setcomm
   int get_timestep_bin(integertime ti_step);
 
  private:
-#ifdef ADAPTIVE_HYDRO_SOFTENING
-  int get_softeningtype_for_hydro_particle(int i)
-  {
-    double soft = All.GasSoftFactor * SphP[i].Hsml;
-
-    if(soft <= All.ForceSoftening[NSOFTCLASSES])
-      return NSOFTCLASSES;
-
-    int k = 0.5 + log(soft / All.ForceSoftening[NSOFTCLASSES]) / log(All.AdaptiveHydroSofteningSpacing);
-    if(k >= NSOFTCLASSES_HYDRO)
-      k = NSOFTCLASSES_HYDRO - 1;
-
-    return NSOFTCLASSES + k;
-  }
-#endif
-
 #ifdef INDIVIDUAL_GRAVITY_SOFTENING
 
  public:
@@ -440,90 +382,6 @@ class simparticles : public intposconvert, public setcomm
 #error "INDIVIDUAL_GRAVITY_SOFTENING may not include particle type 0 when ADAPTIVE_HYDRO_SOFTENING is used"
 #endif
 
-  int get_softening_type_from_mass(double mass)
-  {
-    int min_type   = -1;
-    double eps     = get_desired_softening_from_mass(mass);
-    double min_dln = MAX_FLOAT_NUMBER;
-
-    for(int i = 0; i < NSOFTCLASSES; i++)
-      {
-        if(All.ForceSoftening[i] > 0)
-          {
-            double dln = fabs(log(eps) - log(All.ForceSoftening[i]));
-
-            if(dln < min_dln)
-              {
-                min_dln  = dln;
-                min_type = i;
-              }
-          }
-      }
-
-    if(min_type < 0)
-      Terminate("min_type < 0");
-
-    return min_type;
-  }
-
-  /*! \brief Returns the desired softening length depending on the particle mass with type 1 as a reference point
-   *
-   * \param mass particle mass
-   * \return softening length for a particle of mass #mass
-   */
-  double get_desired_softening_from_mass(double mass)
-  {
-    return All.ForceSoftening[All.SofteningClassOfPartType[1]] * pow(mass / All.AvgType1Mass, 1.0 / 3);
-  }
-
-  /*! \brief Initializes the mass dependent softening calculation for Type 1 particles
-   *
-   * The average mass of Type 1 particles is calculated.
-   */
-  void init_individual_softenings(void)
-  {
-    int ndm     = 0;
-    double mass = 0, masstot, massmin = MAX_DOUBLE_NUMBER, massmax = 0;
-    long long ndmtot;
-
-    for(int i = 0; i < NumPart; i++)
-      if(P[i].getType() == 1)
-        {
-          ndm++;
-          mass += P[i].getMass();
-
-          if(massmin > P[i].getMass())
-            massmin = P[i].getMass();
-
-          if(massmax < P[i].getMass())
-            massmax = P[i].getMass();
-        }
-
-    sumup_large_ints(1, &ndm, &ndmtot, Communicator);
-    MPI_Allreduce(&mass, &masstot, 1, MPI_DOUBLE, MPI_SUM, Communicator);
-
-    MPI_Allreduce(MPI_IN_PLACE, &massmin, 1, MPI_DOUBLE, MPI_MIN, Communicator);
-    MPI_Allreduce(MPI_IN_PLACE, &massmax, 1, MPI_DOUBLE, MPI_MAX, Communicator);
-
-    All.AvgType1Mass = masstot / ndmtot;
-
-    mpi_printf("INIT: AvgType1Mass = %g   (min=%g max=%g) Ndm1tot=%lld\n", All.AvgType1Mass, massmin, massmax, ndmtot);
-
-    if(massmax > 1.00001 * massmin)
-      Terminate("Strange: Should use constant mass type-1 particles if INDIVIDUAL_GRAVITY_SOFTENING is used\n");
-
-    if(All.ComovingIntegrationOn)
-      {
-        double rhomean_dm = (All.Omega0 - All.OmegaBaryon) * (3 * All.Hubble * All.Hubble / (8 * M_PI * All.G));
-
-        mpi_printf("INIT: For this AvgType1Mass, the mean particle spacing is %g and the assigned softening is %g\n",
-                   pow(All.AvgType1Mass / rhomean_dm, 1.0 / 3), All.SofteningTable[All.SofteningClassOfPartType[1]]);
-      }
-
-    for(int i = 0; i < NumPart; i++)
-      if(((1 << P[i].getType()) & (INDIVIDUAL_GRAVITY_SOFTENING)))
-        P[i].setSofteningClass(get_softening_type_from_mass(P[i].getMass()));
-  }
 #endif
 };
 
