@@ -20,44 +20,6 @@
 
 class shmem
 {
- public:
-  MPI_Comm SharedMemComm;   // the communicator linking the processes that have mutual shared memory access in the same node
-  MPI_Comm SimulationComm;  // the communicator containing all the compute processors (or all the ghost processors)
-
-  int World_ThisTask;  // rank
-  int World_NTask;     // total number of MPI processes
-
-  int Island_ThisTask;  // rank in current shared memory region
-  int Island_NTask;     // number of MPI tasks in shared memory region
-
-  int Sim_ThisTask;  // rank in simulation partition
-  int Sim_NTask;     // size of MPI tasks in simulation partition
-
-  int GhostRank;  // equal to 1 if we are a ghost rank, otherwise zero
-
-  int Island_Smallest_WorldTask;  // this is the smallest global rank in the shared memory node
-
-  // we need a table that maps the rank of a destination processor in the
-  // simulation communicator to the rank of the responsible ghost processor in
-  // the global communicator
-  int *GetGhostRankForSimulCommRank;
-
-  // we need a table that maps the rank of a destination processor in the
-  // simulation communicator to the rank in the shared memory communicator
-  int *GetShmRankForSimulCommRank;
-
-  // we need a table that maps the rank of a simulation processor to the
-  // smallest world rank in its shared memory node. With this we can decide
-  // whether two ranks are on the same node
-  int *GetNodeIDForSimulCommRank;
-
-  // the rank in the global communicator that a processor should turn to for a shared memory request
-  int MyShmRankInGlobal;
-
-  MPI_Win SharedMemWin;
-
-  void **SharedMemBaseAddr;
-
   char *TableData;
   char *EwaldData;
 
@@ -90,7 +52,6 @@ class shmem
     char *NodeIndex_storage;
   };
 
-  tree_storage_info tree_info[MAX_TREE_INFOS];
   int num_tree_info = 0;
 
   inline char *get_basenodep(int no, unsigned char shmrank, int handle)
@@ -125,9 +86,47 @@ class shmem
   void deal_with_sph_node_request(char *message, int length, int source, int handle, simparticles *Sp);
 
   void prepare_offset_table(void *p, ptrdiff_t *&offset_tab);
-  void inform_offset_table(void *p);
   void free_offset_table(ptrdiff_t *&offset_tab);
 
+ public:
+  MPI_Comm SharedMemComm;   // the communicator linking the processes that have mutual shared memory access in the same node
+  MPI_Comm SimulationComm;  // the communicator containing all the compute processors (or all the ghost processors)
+
+  int World_ThisTask;  // rank
+  int World_NTask;     // total number of MPI processes
+  int GhostRank;       // equal to 1 if we are a ghost rank, otherwise zero
+
+  int Sim_NTask;     // size of MPI tasks in simulation partition
+  int Sim_ThisTask;  // rank in simulation partition
+
+  int Island_Smallest_WorldTask;  // this is the smallest global rank in the shared memory node
+  int Island_NTask;               // number of MPI tasks in shared memory region
+  int Island_ThisTask;            // rank in current shared memory region
+
+  // the rank in the global communicator that a processor should turn to for a shared memory request
+  int MyShmRankInGlobal;
+
+  // we need a table that maps the rank of a destination processor in the
+  // simulation communicator to the rank in the shared memory communicator
+  int *GetShmRankForSimulCommRank;
+
+  // we need a table that maps the rank of a destination processor in the
+  // simulation communicator to the rank of the responsible ghost processor in
+  // the global communicator
+  int *GetGhostRankForSimulCommRank;
+
+  // we need a table that maps the rank of a simulation processor to the
+  // smallest world rank in its shared memory node. With this we can decide
+  // whether two ranks are on the same node
+  int *GetNodeIDForSimulCommRank;
+
+  MPI_Win SharedMemWin;
+
+  void **SharedMemBaseAddr;
+
+  tree_storage_info tree_info[MAX_TREE_INFOS];
+
+  void inform_offset_table(void *p);
   void shared_memory_handler(void);
 };
 
