@@ -26,6 +26,7 @@
 
 #include "../data/allvars.h"      // All.
 #include "../data/lcparticles.h"  // lcparticles
+#include "../data/mymalloc.h"     // Mem.
 #include "../domain/domain.h"
 #include "../logs/logs.h"      // TIMER_START
 #include "../system/system.h"  // myflush

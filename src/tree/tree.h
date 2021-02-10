@@ -25,6 +25,7 @@
 
 #define TREE_MAX_ITER 100
 
+#include "../data/mymalloc.h"                 // Mem.
 #include "../domain/domain.h"                 // template class domain;
 #include "../mpi_utils/shared_mem_handler.h"  // shmem Shmem; global variable
 

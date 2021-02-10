@@ -623,7 +623,7 @@ void sim::create_snapshot_if_desired(void)
       }
 
 #if defined(LIGHTCONE_PARTICLES)
-  if(Lp.TestIfAboveFillFactor(std::min<int>(Lp.MaxPart, Sp.MaxPart)))
+  if(Lp.TestIfAboveFillFactor(std::min<int>(Lp.MaxPart, Sp.MaxPart), All.Ti_Current))
     {
 #if defined(LIGHTCONE_PARTICLES_GROUPS) && defined(FOF)
       /* do this only on full timesteps if groups are calculated on lightcone */

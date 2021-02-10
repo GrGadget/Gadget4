@@ -35,6 +35,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/utils.h"  // subdivide_evenly
 
 /*!
  * \brief Function for field registering.
