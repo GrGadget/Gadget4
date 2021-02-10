@@ -1316,6 +1316,13 @@ void tree<node, partset, point_data, foreign_point_data>::tree_export_node_threa
     }
 }
 
+/*
+    FIXME TODO
+    'class tree' is a template, this cc file would not generate any code
+    unless explicit instantiation is requested.
+    
+    Maybe this file should be moved to an implementation header.
+*/
 #include "../ngbtree/ngbtree.h"
 template class tree<ngbnode, simparticles, ngbpoint_data, foreign_sphpoint_data>;
 
