@@ -27,7 +27,6 @@
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"
 #include "../ngbtree/ngbtree.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"

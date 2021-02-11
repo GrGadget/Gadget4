@@ -29,7 +29,6 @@
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
-#include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
@@ -170,7 +169,7 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
   MPI_Allgatherv(loc_candidates, count, MPI_BYTE, all_candidates, countlist, offset, MPI_BYTE, SubComm);
 
   /* sort the candidates by subhalonr */
-  mycxxsort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_subhalonr);
+  std::sort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_subhalonr);
 
   /* now determine the size of the candidates */
   long long *size_list            = (long long *)Mem.mymalloc_clear("size_list", totcand * sizeof(long long));
@@ -227,7 +226,7 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
   /* let's now eliminate small groups and flag the corresponding particles as unbound */
   {
     /* sort the candidates according to previous subhalonr */
-    mycxxsort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_subhalonr);
+    std::sort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_subhalonr);
 
     /* reestablish a locally sorted pcand */
     for(int k = 0; k < NumPartGroup; k++)
@@ -235,7 +234,7 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
         pcand[k].SubhaloNr = Tp->PS[IndexList[k]].SubhaloNr;
         pcand[k].index     = IndexList[k];
       }
-    mycxxsort(pcand, pcand + NumPartGroup, subfind_hbt_compare_pcand_subhalonr);
+    std::sort(pcand, pcand + NumPartGroup, subfind_hbt_compare_pcand_subhalonr);
 
     long long sum = 0;
 
@@ -287,11 +286,11 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
   if(totcand > 0)
     {
       /* sort the candidates by size */
-      mycxxsort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_len);
+      std::sort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_len);
 
       /* sort the candidates by summed previous length, as this is arguably a more robust decision of which one should be the largest
        */
-      mycxxsort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_summedprevlen);
+      std::sort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_summedprevlen);
 
       totcand--;
       for(int k = 0; k < NumPartGroup; k++)
@@ -300,7 +299,7 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
     }
 
   /* sort the candidates according to previous subhalonr */
-  mycxxsort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_subhalonr);
+  std::sort(all_candidates, all_candidates + totcand, subfind_hbt_compare_subcand_subhalonr);
 
   subfind_collective_printf("SUBFIND: root-task=%d: total number of subhalo coll_candidates=%lld\n", ThisTask, totcand);
 
@@ -352,7 +351,7 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
     }
 
   // note: local serial sort sufficient here
-  mycxxsort(pcand, pcand + NumPartGroup, subfind_hbt_compare_pcand_subhalonr);
+  std::sort(pcand, pcand + NumPartGroup, subfind_hbt_compare_pcand_subhalonr);
 
   if(SubNTask > 1)
     {
@@ -677,7 +676,7 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
     }
 
   /* sort locally  */
-  mycxxsort(pcand, pcand + NumPartGroup, subfind_hbt_compare_pcand_subhalonr);
+  std::sort(pcand, pcand + NumPartGroup, subfind_hbt_compare_pcand_subhalonr);
 
   int sizelocsubhalolist = countloc * sizeof(hbt_subhalo_t); /* length in bytes */
   MPI_Allgather(&sizelocsubhalolist, 1, MPI_INT, countlist, 1, MPI_INT, SubComm);
@@ -691,7 +690,7 @@ void fof<partset>::subfind_hbt_single_group(domain<partset> *SubDomain, domain<p
   MPI_Allgatherv(subhalo_list, sizelocsubhalolist, MPI_BYTE, all_subhalo_list, countlist, offset, MPI_BYTE, SubComm);
 
   /* sort locally  */
-  mycxxsort(all_subhalo_list, all_subhalo_list + countall, subfind_hbt_compare_subhalolist_prevsubhalonr);
+  std::sort(all_subhalo_list, all_subhalo_list + countall, subfind_hbt_compare_subhalolist_prevsubhalonr);
 
   int n = 0;
 

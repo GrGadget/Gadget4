@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>  // std::sort
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
@@ -28,7 +29,6 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/shared_mem_handler.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
@@ -1892,7 +1892,7 @@ void fmm::gravity_fmm(int timebin)
           memmove(FMM_WorkStack, FMM_WorkStack + item, NumOnWorkStack * sizeof(fmm_workstack_data));
 
           /* now let's sort such that we can go deep on top-level node branches, allowing us to clear them out eventually */
-          mycxxsort(FMM_WorkStack, FMM_WorkStack + NumOnWorkStack, compare_fmm_workstack);
+          std::sort(FMM_WorkStack, FMM_WorkStack + NumOnWorkStack, compare_fmm_workstack);
 
           TIMER_STOP(CPU_TREESTACK);
 

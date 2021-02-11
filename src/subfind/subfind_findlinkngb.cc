@@ -19,7 +19,7 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <string.h>
-#include <algorithm>
+#include <algorithm>  // std::sort
 #include <cstdio>
 
 #include "../data/allvars.h"
@@ -30,7 +30,6 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mpi_utils/generic_comm.h"
-#include "../sort/cxxsort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
@@ -213,7 +212,7 @@ class nearest_comm : public generic_comm<nearest_in, nearest_out, T_tree, T_doma
                 R2list[i].r2 = Dist2list[i];
               }
 
-            mycxxsort(R2list, R2list + numngb, subfind_ngb_compare_dist);
+            std::sort(R2list, R2list + numngb, subfind_ngb_compare_dist);
 
             Tp->PS[target].v.DM_Hsml = sqrt(R2list[All.DesLinkNgb - 1].r2);
             numngb                   = All.DesLinkNgb;

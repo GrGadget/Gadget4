@@ -235,7 +235,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
   /* bring the part-field into the order of the accessed cells. This allows the removal of duplicates */
 
-  mycxxsort(part_sortindex, part_sortindex + num_on_grid, pm_periodic_sortindex_comparator(part));
+  std::sort(part_sortindex, part_sortindex + num_on_grid, pm_periodic_sortindex_comparator(part));
 
   if(num_on_grid > 0)
     num_field_points = 1;

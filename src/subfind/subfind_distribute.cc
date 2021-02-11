@@ -14,7 +14,6 @@
 #ifdef SUBFIND
 
 #include <mpi.h>
-#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -27,7 +26,6 @@
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
-#include "../sort/cxxsort.h"
 #include "../subfind/subfind.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"

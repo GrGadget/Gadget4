@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>  // std::sort
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
@@ -25,7 +26,6 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
@@ -434,7 +434,7 @@ void sph::tree_based_timesteps(void)
           memmove(WorkStack, WorkStack + item, NumOnWorkStack * sizeof(workstack_data));
 
           /* now let's sort such that we can go deep on top-level node branches, allowing us to clear them out eventually */
-          mycxxsort(WorkStack, WorkStack + NumOnWorkStack, compare_workstack);
+          std::sort(WorkStack, WorkStack + NumOnWorkStack, compare_workstack);
 
           max_ncycles++;
         }

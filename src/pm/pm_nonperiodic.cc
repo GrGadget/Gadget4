@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>  // std::sort
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
@@ -27,7 +28,6 @@
 #include "../pm/pm.h"
 #include "../pm/pm_mpi_fft.h"
 #include "../pm/pm_nonperiodic.h"
-#include "../sort/cxxsort.h"
 #include "../src/gravtree/gravtree.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
@@ -440,7 +440,7 @@ void pm_nonperiodic::pmforce_nonperiodic_zoom_optimized_prepare_density(int grnr
   num_on_grid = ((large_numpart_type)ngrid) * 8;
 
   /* bring the part-field into the order of the accessed cells. This allows the removal of duplicates */
-  mycxxsort(part_sortindex, part_sortindex + num_on_grid, pm_nonperiodic_sortindex_comparator(part));
+  std::sort(part_sortindex, part_sortindex + num_on_grid, pm_nonperiodic_sortindex_comparator(part));
 
   large_array_offset num_field_points;
 

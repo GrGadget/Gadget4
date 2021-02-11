@@ -15,6 +15,7 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>  // std::sort
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
@@ -24,7 +25,6 @@
 #include "../gravtree/gwalk.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
@@ -823,7 +823,7 @@ void gwalk::gravity_tree(int timebin)
           memmove(WorkStack, WorkStack + item, NumOnWorkStack * sizeof(workstack_data));
 
           /* now let's sort such that we can go deep on top-level node branches, allowing us to clear them out eventually */
-          mycxxsort(WorkStack, WorkStack + NumOnWorkStack, compare_workstack);
+          std::sort(WorkStack, WorkStack + NumOnWorkStack, compare_workstack);
 
           TIMER_STOP(CPU_TREESTACK);
 

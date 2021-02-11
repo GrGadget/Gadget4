@@ -15,7 +15,7 @@
 
 #include <mpi.h>
 #include <unistd.h>
-#include <algorithm>
+#include <algorithm>  // std::sort
 #include <climits>
 #include <cmath>
 #include <cstdio>
@@ -31,7 +31,6 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../mergertree/mergertree.h"
-#include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
@@ -169,7 +168,7 @@ void fof<partset>::subfind_find_subhalos(int num, const char *basename, const ch
   Mem.myfree(locProcAssign);
 
   /* make sure, the table is sorted in ascending group-number order */
-  mycxxsort(ProcAssign, ProcAssign + Ncollective, subfind_compare_procassign_GroupNr);
+  std::sort(ProcAssign, ProcAssign + Ncollective, subfind_compare_procassign_GroupNr);
 
   /* assign the processor sets for the collective groups and set disjoint color-flag to later split the processors into different
    * communicators */
@@ -206,7 +205,7 @@ void fof<partset>::subfind_find_subhalos(int num, const char *basename, const ch
   subfind_distribute_groups();
 
   /* sort the local groups by group number */
-  mycxxsort(Group, Group + Ngroups, fof_compare_Group_GroupNr);
+  std::sort(Group, Group + Ngroups, fof_compare_Group_GroupNr);
 
   /* assign target CPUs for the particles in groups */
   /* the particles not in groups will be distributed such that a close to uniform particle load results */

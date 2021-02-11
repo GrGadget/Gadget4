@@ -11,9 +11,9 @@
 
 #include "gadgetconfig.h"
 
+#include <algorithm>          // std::sort
 #include "../data/allvars.h"  // All.
 #include "../logs/logs.h"     // TIMER_START
-#include "../sort/cxxsort.h"
 #include "../tree/tree.h"
 #include "gadget/mpi_utils.h"  // TAG_DENS_A
 
@@ -399,7 +399,7 @@ int tree<node, partset, point_data, foreign_point_data>::treebuild_construct(voi
 #endif
 
   /* sort according to node so that particles indices in the same node are grouped together */
-  mycxxsort(index_list, index_list + count, compare_index_data_subnode);
+  std::sort(index_list, index_list + count, compare_index_data_subnode);
 
   int full_flag  = 0;
   int ntopleaves = D->NumTopleafOfTask[D->ThisTask];
@@ -510,7 +510,7 @@ int tree<node, partset, point_data, foreign_point_data>::treebuild_insert_group_
     }
 
   /* sort */
-  mycxxsort(index_list, index_list + num, compare_index_data_subnode);
+  std::sort(index_list, index_list + num, compare_index_data_subnode);
 
   centermask >>= 1;
   centermask |= ~(~((MyIntPosType)0) >> 1); /* this sets the MSB */
@@ -975,7 +975,7 @@ void tree<node, partset, point_data, foreign_point_data>::tree_fetch_foreign_nod
     OffsetFetch[i] = OffsetFetch[i - 1] + CountFetch[i - 1];
 
   // FIXME define compare_ghostrank as a lambda function
-  mycxxsort(StackToFetch, StackToFetch + NumOnFetchStack, compare_ghostrank);
+  std::sort(StackToFetch, StackToFetch + NumOnFetchStack, compare_ghostrank);
 
   /* now go through each node in turn, and import from them the requested nodes
    */

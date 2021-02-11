@@ -16,7 +16,7 @@
 
 #include <gsl/gsl_math.h>
 #include <mpi.h>
-#include <algorithm>
+#include <algorithm>  // std::sort
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -29,7 +29,6 @@
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
-#include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
@@ -174,7 +173,7 @@ void fof<partset>::subfind_process_single_group(domain<partset> *SubDomain, doma
               tmp_coll_candidates[k].subnr = k;
             }
 
-          mycxxsort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_rank);
+          std::sort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_rank);
           for(int k = 0; k < totcand; k++)
             {
               if(tmp_coll_candidates[k].parent >= 0)
@@ -204,7 +203,7 @@ void fof<partset>::subfind_process_single_group(domain<partset> *SubDomain, doma
                 }
             }
 
-          mycxxsort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_subnr);
+          std::sort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_subnr);
         }
 
       /* send the stuff back */
@@ -351,7 +350,7 @@ void fof<partset>::subfind_process_single_group(domain<partset> *SubDomain, doma
               PPS[i].index   = i;
             }
 
-          mycxxsort(PPS, PPS + Tp->NumPart, subfind_compare_PPS);
+          std::sort(PPS, PPS + Tp->NumPart, subfind_compare_PPS);
         }
 
       MPI_Barrier(SubComm);
@@ -631,7 +630,7 @@ void fof<partset>::subfind_process_single_group(domain<partset> *SubDomain, doma
           tmp_coll_candidates[k].parent = 0;
         }
 
-      mycxxsort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_rank);
+      std::sort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_rank);
 
       for(int k = 0; k < totcand; k++)
         {
@@ -655,7 +654,7 @@ void fof<partset>::subfind_process_single_group(domain<partset> *SubDomain, doma
             }
         }
 
-      mycxxsort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_subnr);
+      std::sort(tmp_coll_candidates, tmp_coll_candidates + totcand, subfind_compare_coll_candidates_subnr);
     }
 
   MPI_Scatterv(tmp_coll_candidates, countlist, offset, MPI_BYTE, coll_candidates, countlist[SubThisTask], MPI_BYTE, 0, SubComm);
@@ -1119,7 +1118,7 @@ void fof<partset>::subfind_unbind_independent_ones(domain<partset> *SingleDomain
 {
   unbind_list = (int *)Mem.mymalloc("unbind_list", Tp->NumPart * sizeof(int));
 
-  mycxxsort(coll_candidates, coll_candidates + count_cand_l, subfind_compare_coll_candidates_nsubs);
+  std::sort(coll_candidates, coll_candidates + count_cand_l, subfind_compare_coll_candidates_nsubs);
 
   for(int k = 0, ii = 0; k < count_cand_l; k++)
     if(coll_candidates[k].parent == 0)
