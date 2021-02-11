@@ -12,9 +12,9 @@
 #ifndef PARALLEL_SORT_H
 #define PARALLEL_SORT_H
 
-#include <mpi.h>      // MPI_Bcast
-#include <cstddef>    // size_t
-#include "cxxsort.h"  // mycxxsort
+#include <mpi.h>              // MPI_Bcast
+#include <cstddef>            // size_t
+#include "../sort/cxxsort.h"  // mycxxsort
 
 #include "../data/mymalloc.h"  // extern Mem;
 #include "gadget/macros.h"     // Terminate
@@ -42,7 +42,7 @@ inline void buildIndex(It begin, It end, T2 *idx, Comp comp)
   T2 num = end - begin;
   for(T2 i = 0; i < num; ++i)
     idx[i] = i;
-  mycxxsort(idx, idx + num, IdxComp__<It, Comp>(begin, comp));
+  mycxxsort(idx, idx + num, (IdxComp__<It, Comp>(begin, comp)));
 }
 
 template <typename T, typename Comp>

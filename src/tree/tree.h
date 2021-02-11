@@ -104,49 +104,47 @@ class tree
   };
   // FIXME: delete this function
   static inline bool compare_index_data_subnode(const index_data &a, const index_data &b) { return a.subnode < b.subnode; }
-  
-    
+
  protected:
-  
   int *Father;
   int *Nextnode;
   int *NodeIndex;
-  
+
   partset *Tp;
   domain<partset> *D;
-  
+
   node *TopNodes;
   node *Nodes;
   node *Foreign_Nodes;
-  
+
   foreign_point_data *Foreign_Points;
-  
+
   ptrdiff_t *TreeP_offsets;
   ptrdiff_t *TreePS_offsets;
   ptrdiff_t *TreeSphP_offsets;
   ptrdiff_t *TreeForeign_Points_offsets;
   ptrdiff_t *TreeForeign_Nodes_offsets;
-  
+
   void **TreeSharedMemBaseAddr;
-  
+
   int *IndexList;
   int *ResultIndexList;
-  
+
   int *Send_offset;
   int *Send_count;
   int *Recv_count;
   int *Recv_offset;
-  
+
   int MaxPart;
   int MaxNodes;
   int NumNodes;
   int NumPartExported;
-  
+
   int NumForeignNodes;  // number of imported foreign tree nodes
   int MaxForeignNodes;
   int NumForeignPoints;  // number of imported foreign particles to allow completion of local tree walks
   int MaxForeignPoints;
-  
+
   struct fetch_data
   {
     int NodeToOpen;
@@ -154,14 +152,14 @@ class tree
     int GhostRank;
   };
   fetch_data *StackToFetch;
-  
+
   struct workstack_data
   {
     int Target;
     int Node;
     int ShmRank;
     int MinTopLeafNode;
-    
+
     // FIXME: implement a comparison method
   };
 
@@ -176,29 +174,23 @@ class tree
 
     return a.Target < b.Target;
   }
-  
+
  public:
   typedef decltype(Tp->P) pdata;
-  
+
   int *NodeSibling;
-  
+
   ptrdiff_t *TreeNodes_offsets;
   ptrdiff_t *TreePoints_offsets;
   ptrdiff_t *TreeNextnode_offsets;
-  
+
   unsigned char *NodeLevel;
-  
+
   point_data *Points;
 
   int NumPartImported;
 
-
-
-
-
- // private, public, protected: ????
-
-
+  // private, public, protected: ????
 
   // for some statistics about the number of imported nodes and points
   long long sum_NumForeignNodes;
@@ -224,17 +216,12 @@ class tree
   int NumOnFetchStack;
   int MaxOnFetchStack;
 
-
-
   int NumOnWorkStack;
   int MaxOnWorkStack;
   int NewOnWorkStack;
   int AllocWorkStackBaseLow;
   int AllocWorkStackBaseHigh;
 
-  
-
-  
   struct node_count_info
   {
     int count_nodes;
@@ -247,7 +234,6 @@ class tree
     int foreignnode;
   };
 
-
   enum ftype
   {
     FETCH_GRAVTREE,
@@ -255,12 +241,6 @@ class tree
     FETCH_SPH_HYDRO,
     FETCH_SPH_TREETIMESTEP,
   };
-
-
-
-
-
-
 
  private:
   /** Gives next node in tree walk for the "particle" nodes. Entries 0
@@ -270,37 +250,33 @@ class tree
   /** Gives previous node in tree walk for the leaf (particle)
       nodes. Entries 0 -- MaxPart-1 are the real particles, and the
       "pseudoparticles" are indexed by the node number-MaxNodes. */
-  
+
   // FIXME remove this function
   static bool compare_ghostrank(const fetch_data &a, const fetch_data &b) { return a.GhostRank < b.GhostRank; }
-  
+
   void tree_get_node_and_task(int i, int &no, int &task);
- 
+
  protected:
-  
   void prepare_shared_memory_access(void);
   void cleanup_shared_memory_access(void);
-  
+
   inline sph_particle_data *get_SphPp(int n, unsigned char shmrank)
   {
     return (sph_particle_data *)((char *)TreeSharedMemBaseAddr[shmrank] + TreeSphP_offsets[shmrank]) + n;
   }
-  
-  void tree_add_to_fetch_stack(node *nop, int nodetoopen, unsigned char
-  shmrank);
+
+  void tree_add_to_fetch_stack(node *nop, int nodetoopen, unsigned char shmrank);
   int treebuild_construct(void);
   int treebuild_insert_group_of_points(int num, index_data *index_list, int th, unsigned char level, int sibling);
   int create_empty_nodes(int no, int level, int topnode, int bits, int sibling, MyIntPosType x, MyIntPosType y, MyIntPosType z);
 
   void tree_export_node_threads_by_task_and_node(int task, int nodeindex, int i, thread_data *thread, offset_tuple off = 0);
-  
-  
+
   virtual void update_node_recursive(int no, int sib, int mode)            = 0;
   virtual void exchange_topleafdata(void)                                  = 0;
   virtual void report_log_message(void)                                    = 0;
   virtual void fill_in_export_points(point_data *exp_point, int i, int no) = 0;
-  
-  
+
   inline node *get_nodep(int no)
   {
     node *nop;
@@ -362,10 +338,10 @@ class tree
   {
     return (foreign_point_data *)((char *)TreeSharedMemBaseAddr[shmrank] + TreeForeign_Points_offsets[shmrank]) + n;
   }
-  
+
   void tree_fetch_foreign_nodes(enum ftype fetch_type);
   void tree_initialize_leaf_node_access_info(void);
-  
+
  public:
   tree() /* constructor */
   {
@@ -393,7 +369,7 @@ class tree
   void treefree(void);
   void treeallocate(int max_partindex, partset *Pptr, domain<partset> *Dptr);
   void treeallocate_share_topnode_addresses(void);
-  
+
   void tree_export_node_threads(int no, int i, thread_data *thread, offset_tuple off = 0);
 
   inline int *get_nextnodep(unsigned char shmrank)

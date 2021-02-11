@@ -11,11 +11,13 @@
 
 #include "gadgetconfig.h"
 
-#include <mpi.h>                  // MPI_Allreduce
-#include "../data/allvars.h"      // All.
-#include "../data/lcparticles.h"  // lcparticles
-#include "../data/mymalloc.h"     // extern class Mem;
+#include <mpi.h>                   // MPI_Allreduce
+#include "../data/allvars.h"       // All.
+#include "../data/lcparticles.h"   // lcparticles
+#include "../data/mymalloc.h"      // extern class Mem;
+#include "../data/simparticles.h"  // simparticles
 #include "../domain/domain.h"
+#include "../logs/logs.h"      // Log.
 #include "../sort/cxxsort.h"   // mycxxsort
 #include "gadget/macros.h"     // Terminate
 #include "gadget/mpi_utils.h"  // allreduce_sum

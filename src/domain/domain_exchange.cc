@@ -14,7 +14,9 @@
 #include <mpi.h>  // MPI_Allreduce
 
 #include "../domain/domain.h"
+#include "../logs/logs.h"      // Log.
 #include "../sort/cxxsort.h"   // mycxxsort
+#include "gadget/constants.h"  // ALLOC_TOLERANCE
 #include "gadget/macros.h"     // Terminate
 #include "gadget/mpi_utils.h"  // sumup_longs
 

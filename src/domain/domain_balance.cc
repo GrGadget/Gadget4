@@ -11,9 +11,11 @@
 
 #include "gadgetconfig.h"
 
-#include "../data/allvars.h"      // All.
-#include "../data/lcparticles.h"  // lcparticles
+#include "../data/allvars.h"       // All.
+#include "../data/lcparticles.h"   // lcparticles
+#include "../data/simparticles.h"  // simparticles
 #include "../domain/domain.h"
+#include "../logs/logs.h"     // Log.
 #include "../sort/cxxsort.h"  // mycxxsort
 
 #include "gadget/macros.h"     // Terminate
