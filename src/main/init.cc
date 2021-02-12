@@ -700,6 +700,7 @@ void sim::test_id_uniqueness(void)
  *
  * The average mass of Type 1 particles is calculated.
  */
+#ifdef INDIVIDUAL_GRAVITY_SOFTENING
 void sim::init_individual_softenings(void)
 {
   int ndm     = 0;
@@ -744,6 +745,7 @@ void sim::init_individual_softenings(void)
     if(((1 << Sp.P[i].getType()) & (INDIVIDUAL_GRAVITY_SOFTENING)))
       Sp.P[i].setSofteningClass(get_softening_type_from_mass(Sp.P[i].getMass()));
 }
+#endif
 #ifdef ADAPTIVE_HYDRO_SOFTENING
 int sim::get_softeningtype_for_hydro_particle(int i)
 {
@@ -760,6 +762,7 @@ int sim::get_softeningtype_for_hydro_particle(int i)
 }
 #endif
 
+#ifdef INDIVIDUAL_GRAVITY_SOFTENING
 int sim::get_softening_type_from_mass(double mass)
 {
   int min_type   = -1;
@@ -785,12 +788,15 @@ int sim::get_softening_type_from_mass(double mass)
 
   return min_type;
 }
+#endif
 /*! \brief Returns the desired softening length depending on the particle mass with type 1 as a reference point
  *
  * \param mass particle mass
  * \return softening length for a particle of mass #mass
  */
+#ifdef INDIVIDUAL_GRAVITY_SOFTENING
 double sim::get_desired_softening_from_mass(double mass)
 {
   return All.ForceSoftening[All.SofteningClassOfPartType[1]] * pow(mass / All.AvgType1Mass, 1.0 / 3);
 }
+#endif
