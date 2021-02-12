@@ -39,6 +39,8 @@ pm_mpi_fft::fft_plan::fft_plan(int ntask, int ngridx, int ngridy, int ngridz)
     : NgridX{ngridx},
       NgridY{ngridy},
       NgridZ{ngridz},
+      Ngridz{NgridZ / 2 + 1},
+      Ngrid2{2 * Ngridz},
       slab_to_task(NgridX),
       slabs_x_per_task(ntask),
       first_slab_x_of_task(ntask),
@@ -48,7 +50,7 @@ pm_mpi_fft::fft_plan::fft_plan(int ntask, int ngridx, int ngridy, int ngridz)
 }
 
 pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
-    : setcomm{comm} fft_plan{setcomm::NTask, ngridx, ngridy, ngridz}
+    : setcomm{comm}, fft_plan{setcomm::NTask, ngridx, ngridy, ngridz}
 {
   subdivide_evenly(NgridX, NTask, ThisTask, &slabstart_x, &nslab_x);
   subdivide_evenly(NgridY, NTask, ThisTask, &slabstart_y, &nslab_y);
@@ -73,15 +75,6 @@ pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
   MPI_Allgather(&nslab_y, 1, MPI_INT, slabs_y_per_task.data(), 1, MPI_INT, Communicator);
 
   MPI_Allgather(&slabstart_y, 1, MPI_INT, first_slab_y_of_task.data(), 1, MPI_INT, Communicator);
-
-  NgridX = NgridX;
-  NgridY = NgridY;
-  NgridZ = NgridZ;
-
-  int Ngridz = NgridZ / 2 + 1; /* dimension needed in complex space */
-
-  Ngridz = Ngridz;
-  Ngrid2 = 2 * Ngridz;
 }
 
 /*! \brief Transposes the array field
@@ -384,6 +377,8 @@ fft_plan::fft_plan(int ntask, int ngridx, int ngridy, int ngridz)
     : NgridX{ngridx},
       NgridY{ngridy},
       NgridZ{ngridz},
+      Ngridz{NgridZ / 2 + 1},
+      Ngrid2{2 * Ngridz},
       offsets_send_A(ntask),
       offsets_recv_A(ntask),
       offsets_send_B(ntask),
@@ -415,11 +410,6 @@ fft_plan::fft_plan(int ntask, int ngridx, int ngridy, int ngridz)
 pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
     : setcomm{comm}, fft_plan{setcomm::NTask, ngridx, ngridy, ngridz}
 {
-  int Ngridz = NgridZ / 2 + 1;
-
-  Ngridz = Ngridz;
-  Ngrid2 = 2 * Ngridz;
-
   subdivide_evenly(NgridX * NgridY, NTask, ThisTask, &firstcol_XY, &ncol_XY);
   subdivide_evenly(NgridX * Ngrid2, NTask, ThisTask, &firstcol_XZ, &ncol_XZ);
   subdivide_evenly(Ngrid2 * NgridY, NTask, ThisTask, &firstcol_ZY, &ncol_ZY);
