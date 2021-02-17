@@ -1213,7 +1213,8 @@ void ngenic::print_spec(void)
 
       double rhoback = All.Omega0 * 3 * All.Hubble * All.Hubble / (8 * M_PI * All.G);
 
-      for(double M = 1.0e5; M <= 1.01e16; M *= pow(10.0, 1.0 / 16))  // mass in solar masses / h
+      const double mfact = pow(10.0, 1.0 / 16);
+      for(double M = 1.0e5; M <= 1.01e16; M *= mfact)  // mass in solar masses / h
         {
           double Mint = M * (SOLAR_MASS / All.UnitMass_in_g);
 
