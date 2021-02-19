@@ -1150,7 +1150,7 @@ void mergertree::halotrees_remap_treepointers(void)
                   }
 
                 /* sort it by current pointer value (which is the subhalonr) */
-                mycxxsort(list, list + count, compare_data_list_subhalonnr);
+                std::sort(list, list + count, compare_data_list_subhalonnr);
 
                 /* we now need to send them to other target processors since they may contain the corresponding subhalos */
 
@@ -1232,7 +1232,7 @@ void mergertree::halotrees_remap_treepointers(void)
                 for(int i = 0; i < nimport; i++)
                   import_data[i].orig_index = i;
 
-                mycxxsort(import_data, import_data + nimport, compare_remap_data_subhalonr);
+                std::sort(import_data, import_data + nimport, compare_remap_data_subhalonr);
 
                 /* now we check the incoming data, and prepare new values for the pointers */
                 for(int i = 0, j = 0; i < Cats[num].Nsubhalos && j < nimport;)
@@ -1268,7 +1268,7 @@ void mergertree::halotrees_remap_treepointers(void)
                       }
                   }
 
-                mycxxsort(import_data, import_data + nimport, compare_remap_data_orig_index);
+                std::sort(import_data, import_data + nimport, compare_remap_data_orig_index);
 
                 /* send the results back */
                 for(int ngrp = 0; ngrp < (1 << PTask); ngrp++)
@@ -1517,7 +1517,7 @@ int mergertree::halotrees_join_via_descendants(int num)
       sorted_list[i].orig_index    = i;
     }
 
-  mycxxsort(sorted_list, sorted_list + Cats[num - 1].Nsubhalos, compare_sorted_list_descsubhalonr);
+  std::sort(sorted_list, sorted_list + Cats[num - 1].Nsubhalos, compare_sorted_list_descsubhalonr);
 
   /* for communication bookkeeping reasons, we traverse the counting pattern twice */
   for(int mode = 0; mode < 2; mode++)
@@ -1586,7 +1586,7 @@ int mergertree::halotrees_join_via_descendants(int num)
   for(int i = 0; i < nimport; i++)
     import_data[i].orig_order = i;
 
-  mycxxsort(import_data, import_data + nimport, compare_halotrees_data_descendantnr);
+  std::sort(import_data, import_data + nimport, compare_halotrees_data_descendantnr);
 
   int changes = 0;
 
@@ -1616,7 +1616,7 @@ int mergertree::halotrees_join_via_descendants(int num)
     }
 
   /* reestablish original order */
-  mycxxsort(import_data, import_data + nimport, compare_halotrees_data_orig_order);
+  std::sort(import_data, import_data + nimport, compare_halotrees_data_orig_order);
 
   /* send the results back */
   for(int ngrp = 0; ngrp < (1 << PTask); ngrp++) /* note: here we also have a transfer from each task to itself (for ngrp=0) */
@@ -1691,7 +1691,7 @@ int mergertree::halotrees_join_via_progenitors(int num)
       sorted_list[i].orig_index    = i;
     }
 
-  mycxxsort(sorted_list, sorted_list + Cats[num + 1].Nsubhalos, compare_sorted_list_progsubhalonr);
+  std::sort(sorted_list, sorted_list + Cats[num + 1].Nsubhalos, compare_sorted_list_progsubhalonr);
 
   /* for communication bookkeeping reasons, we traverse the counting pattern twice */
   for(int mode = 0; mode < 2; mode++)
@@ -1761,7 +1761,7 @@ int mergertree::halotrees_join_via_progenitors(int num)
   for(int i = 0; i < nimport; i++)
     import_data[i].orig_order = i;
 
-  mycxxsort(import_data, import_data + nimport, compare_halotrees_data_progenitornr);
+  std::sort(import_data, import_data + nimport, compare_halotrees_data_progenitornr);
 
   int changes = 0;
 
@@ -1791,7 +1791,7 @@ int mergertree::halotrees_join_via_progenitors(int num)
     }
 
   /* reestablish original order */
-  mycxxsort(import_data, import_data + nimport, compare_halotrees_data_orig_order);
+  std::sort(import_data, import_data + nimport, compare_halotrees_data_orig_order);
 
   /* send the results back */
   for(int ngrp = 0; ngrp < (1 << PTask); ngrp++) /* note: here we also have a transfer from each task to itself (for ngrp=0) */
@@ -1894,7 +1894,7 @@ void mergertree::halotrees_propagate_max_branch_length_descendants(int num)
       sorted_list[i].MaxLenProgBranch = Cats[num - 1].SubExt[i].MaxLenProgBranch;
     }
 
-  mycxxsort(sorted_list, sorted_list + Cats[num - 1].Nsubhalos, compare_halotrees_propagate_data_DescSubhaloNr);
+  std::sort(sorted_list, sorted_list + Cats[num - 1].Nsubhalos, compare_halotrees_propagate_data_DescSubhaloNr);
 
   /* for communication bookkeeping reasons, we traverse the counting pattern twice */
   for(int mode = 0; mode < 2; mode++)
@@ -1961,7 +1961,7 @@ void mergertree::halotrees_propagate_max_branch_length_descendants(int num)
   /* the collection of incoming data is not necessarily sorted according to DescSubhaloNr, so we need to sort it for efficient
    * matching
    */
-  mycxxsort(import_data, import_data + nimport, compare_halotrees_propagate_data_DescSubhaloNr);
+  std::sort(import_data, import_data + nimport, compare_halotrees_propagate_data_DescSubhaloNr);
 
   /* now do the matching */
   for(int i = 0, j = 0; i < Cats[num].Nsubhalos && j < nimport;)
@@ -2034,7 +2034,7 @@ void mergertree::halotrees_propagate_max_branch_length_progenitors(int num)
       sorted_list[i].index         = i;
     }
 
-  mycxxsort(sorted_list, sorted_list + Cats[num].Nsubhalos, compare_halotrees_propagate_data_ProgSubhaloNr);
+  std::sort(sorted_list, sorted_list + Cats[num].Nsubhalos, compare_halotrees_propagate_data_ProgSubhaloNr);
 
   /* for communication bookkeeping reasons, we traverse the counting pattern twice */
   for(int mode = 0; mode < 2; mode++)
@@ -2103,7 +2103,7 @@ void mergertree::halotrees_propagate_max_branch_length_progenitors(int num)
   /* the collection of incoming data is not necessarily sorted according to ProgSubhaloNr, so we need to sort it for efficient
    * matching
    */
-  mycxxsort(import_data, import_data + nimport, compare_halotrees_propagate_data_ProgSubhaloNr);
+  std::sort(import_data, import_data + nimport, compare_halotrees_propagate_data_ProgSubhaloNr);
 
   /* now do the matching */
   for(int i = 0, j = 0; i < Cats[num - 1].Nsubhalos && j < nimport;)
@@ -2125,7 +2125,7 @@ void mergertree::halotrees_propagate_max_branch_length_progenitors(int num)
     }
 
   /* reestablish original order */
-  mycxxsort(import_data, import_data + nimport, compare_halotrees_propagate_data_orig_order);
+  std::sort(import_data, import_data + nimport, compare_halotrees_propagate_data_orig_order);
 
   /* send data back */
   for(int ngrp = 0; ngrp < (1 << PTask); ngrp++)

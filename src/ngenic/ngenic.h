@@ -19,6 +19,7 @@
 #endif
 
 #include <fftw3.h>
+#include <gsl/gsl_rng.h>  // gsl_rng
 
 #ifdef DOUBLEPRECISION_FFTW
 typedef double fft_real;
@@ -29,7 +30,7 @@ typedef fftwf_complex fft_complex;
 #endif
 
 #include "../data/simparticles.h"
-#include "../pm/pm_mpi_fft.h"
+#include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
 class ngenic : public pm_mpi_fft
 {
@@ -37,7 +38,7 @@ class ngenic : public pm_mpi_fft
   simparticles *Sp;
 
  public:
-  ngenic(MPI_Comm comm, simparticles *Sp_ptr) : setcomm(comm), pm_mpi_fft(comm) /* constructor */ { Sp = Sp_ptr; }
+  ngenic(MPI_Comm comm, simparticles *Sp_ptr) : pm_mpi_fft{comm, NGENIC, NGENIC, NGENIC} { Sp = Sp_ptr; }
 
  public:
   void ngenic_displace_particles(void);
@@ -56,7 +57,6 @@ class ngenic : public pm_mpi_fft
 
   unsigned int *seedtable;
 
-  fft_plan myplan;
   size_t maxfftsize;
 
   struct partbuf

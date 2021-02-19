@@ -12,28 +12,32 @@
 #ifndef TIMESTEP_H
 #define TIMESTEP_H
 
+#include <vector>
 #include "gadget/dtypes.h"  // TIMEBINS
+#include "gadgetconfig.h"
+
+extern template class std::vector<int>;
 
 struct TimeBinData
 {
  public:
   int NActiveParticles;
   long long GlobalNActiveParticles;
-  int *ActiveParticleList;
   int TimeBinCount[TIMEBINS];
 
   int FirstInTimeBin[TIMEBINS];
   int LastInTimeBin[TIMEBINS];
-  int *NextInTimeBin;
-  int *PrevInTimeBin;
+
   char Name[100];
-  int *MaxPart;
+  // int *MaxPart;
+
+  std::vector<int> ActiveParticleList;
+  std::vector<int> NextInTimeBin;
+  std::vector<int> PrevInTimeBin;
 
   /* TimeBinData stuff */
-  void timebins_init(const char *name, int *MaxPart);
-  void timebins_allocate(void);
-  void timebins_free(void);
-  void timebins_reallocate(void);
+  void timebins_init(const char *name, const int MaxPart);
+  void timebins_reallocate(const int MaxPart);
   void timebin_move_particle(int p, int timeBin_old, int timeBin_new);
   void timebin_add_particle(int i_new, int i_old, int timeBin, int addToListOfActiveParticles);
   void timebin_remove_particle(int idx, int bin);

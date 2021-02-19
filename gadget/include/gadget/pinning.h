@@ -19,14 +19,11 @@
  *  \brief examines cpu topology and binds processes and threads to cores
  */
 
-#ifdef IMPOSE_PINNING
 #include <hwloc.h>
-#endif
 
 class pinning
 {
  private:
-#ifdef IMPOSE_PINNING
   int flag_pinning_error = 0;
 
   hwloc_cpuset_t cpuset, cpuset_after_MPI_init;
@@ -37,7 +34,8 @@ class pinning
   int pus;
   int hyperthreads_per_core;
 
-#endif
+  constexpr static int max_cores = 4096;
+
  public:
   void get_core_set(void);
   void detect_topology(void);

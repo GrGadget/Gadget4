@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <algorithm>  // std::sort
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
@@ -30,7 +31,6 @@
 #include "../lightcone/lightcone_massmap_io.h"
 #include "../main/main.h"
 #include "../main/simulation.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/hdf5_util.h"
@@ -636,7 +636,7 @@ int lightcone::lightcone_init_times(void)
             }
     }
 
-  mycxxsort(BoxList, BoxList + NumBoxes, lightcone_compare_BoxList_Rmax);
+  std::sort(BoxList, BoxList + NumBoxes, lightcone_compare_BoxList_Rmax);
 
   lightcone_clear_boxlist(All.Time);
 
@@ -686,7 +686,7 @@ void lightcone::lightcone_clear_boxlist(double ascale)
   if(count)
     {
       mpi_printf("LIGHTCONE: Eliminated %d entries from BoxList\n", count);
-      mycxxsort(BoxList, BoxList + NumBoxes, lightcone_compare_BoxList_Rmax);
+      std::sort(BoxList, BoxList + NumBoxes, lightcone_compare_BoxList_Rmax);
     }
 }
 
@@ -831,7 +831,7 @@ void lightcone::lightcone_init_massmaps(void)
             }
         }
 
-      mycxxsort(MassMapBoundariesAscale, MassMapBoundariesAscale + NumMassMapBoundaries, compare_doubles);
+      std::sort(MassMapBoundariesAscale, MassMapBoundariesAscale + NumMassMapBoundaries, compare_doubles);
     }
 
   /* now tell also all other ranks about the lightcones */

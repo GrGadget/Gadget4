@@ -15,7 +15,7 @@
 
 #include <gsl/gsl_math.h>
 #include <mpi.h>
-#include <algorithm>
+#include <algorithm>  // std::sort
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -28,7 +28,6 @@
 #include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
-#include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
@@ -114,7 +113,7 @@ void fof<partset>::subfind_processing(domain<partset> *SubDomain, domain_options
       submp[i].DM_Density = Tp->PS[i].u.s.u.DM_Density;
 #endif
     }
-  mycxxsort(submp, submp + Tp->NumPart, subfind_compare_submp_GroupNr_DM_Density);
+  std::sort(submp, submp + Tp->NumPart, subfind_compare_submp_GroupNr_DM_Density);
 
   /* In this index list, we store the indices of the local particles in the group that we currently need to process (it is for sure
    * shorter than NumPart) */

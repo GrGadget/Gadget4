@@ -11,11 +11,14 @@
 
 #include "gadgetconfig.h"
 
-#include <mpi.h>  // MPI_Allreduce
+#include <mpi.h>      // MPI_Allreduce
+#include <algorithm>  // std::sort
 
 #include "../domain/domain.h"
-#include "../sort/cxxsort.h"  // mycxxsort
-#include "gadget/macros.h"    // Terminate
+#include "../logs/logs.h"      // Log.
+#include "gadget/constants.h"  // ALLOC_TOLERANCE
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // sumup_longs
 
 /*! \file domain_exchange.c
  *  \brief exchanges particle data according to the new domain decomposition
@@ -283,7 +286,7 @@ void domain<partset>::peano_hilbert_order(peanokey *key)
           pmp[i].key   = key[i];
         }
 
-      mycxxsort(pmp, pmp + Tp->NumGas, compare_peano_hilbert_data);
+      std::sort(pmp, pmp + Tp->NumGas, compare_peano_hilbert_data);
 
       for(int i = 0; i < Tp->NumGas; i++)
         Id[pmp[i].index] = i;
@@ -305,7 +308,7 @@ void domain<partset>::peano_hilbert_order(peanokey *key)
           pmp[i - Tp->NumGas].key   = key[i];
         }
 
-      mycxxsort(pmp, pmp + Tp->NumPart - Tp->NumGas, compare_peano_hilbert_data);
+      std::sort(pmp, pmp + Tp->NumPart - Tp->NumGas, compare_peano_hilbert_data);
 
       for(int i = Tp->NumGas; i < Tp->NumPart; i++)
         Id[pmp[i - Tp->NumGas].index - Tp->NumGas] = i;
@@ -474,7 +477,7 @@ void domain<partset>::reorder_P_PS(int loc_numgas, int loc_numpart)
       mp[i].targetindex = Tp->PS[i].TargetIndex;
     }
 
-  mycxxsort(mp + loc_numgas, mp + loc_numpart, compare_local_sort_data_targetindex);
+  std::sort(mp + loc_numgas, mp + loc_numpart, compare_local_sort_data_targetindex);
 
   for(int i = loc_numgas; i < loc_numpart; i++)
     Id[mp[i].index] = i;
@@ -842,7 +845,7 @@ void domain<partset>::particle_exchange_based_on_PS(MPI_Comm Communicator)
           mp[i].targetindex = Tp->PS[i].TargetIndex;
         }
 
-      mycxxsort(mp, mp + Tp->NumGas, compare_local_sort_data_targetindex);
+      std::sort(mp, mp + Tp->NumGas, compare_local_sort_data_targetindex);
 
       for(int i = 0; i < Tp->NumGas; i++)
         Id[mp[i].index] = i;

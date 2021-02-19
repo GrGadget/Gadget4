@@ -34,9 +34,9 @@
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind_readid_io.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*! \brief Prepares the loaded initial conditions for the run
  *
@@ -385,7 +385,7 @@ void sim::init(int RestartSnapNum)
 #endif
 
 #ifdef INDIVIDUAL_GRAVITY_SOFTENING
-  Sp.init_individual_softenings();
+  init_individual_softenings();
 #endif
 
   if(All.RestartFlag == RST_FOF)
@@ -584,7 +584,7 @@ void sim::setup_smoothinglengths(void)
       mpi_printf("INIT: Setup smoothing lengths.\n");
 
       GravTree.treeallocate(Sp.NumPart, &Sp, &Domain);
-      GravTree.treebuild(Sp.TimeBinsGravity.NActiveParticles, Sp.TimeBinsGravity.ActiveParticleList);
+      GravTree.treebuild(Sp.TimeBinsGravity.NActiveParticles, Sp.TimeBinsGravity.ActiveParticleList.data());
 
       for(int i = 0; i < Sp.NumGas; i++)
         {
@@ -613,7 +613,7 @@ void sim::setup_smoothinglengths(void)
       for(int i = 0; i < Sp.NumGas; i++)
         Sp.TimeBinsGravity.ActiveParticleList[Sp.TimeBinsHydro.NActiveParticles++] = i;
 
-      NgbTree.density(Sp.TimeBinsGravity.ActiveParticleList, Sp.TimeBinsHydro.NActiveParticles);
+      NgbTree.density(Sp.TimeBinsGravity.ActiveParticleList.data(), Sp.TimeBinsHydro.NActiveParticles);
 
 #ifdef PRESSURE_ENTROPY_SPH
       for(int i = 0; i < Sp.NumGas; i++)
@@ -695,3 +695,108 @@ void sim::test_id_uniqueness(void)
 
   mpi_printf("INIT: success.  took=%g sec\n\n", Logs.timediff(t0, t1));
 }
+
+/*! \brief Initializes the mass dependent softening calculation for Type 1 particles
+ *
+ * The average mass of Type 1 particles is calculated.
+ */
+#ifdef INDIVIDUAL_GRAVITY_SOFTENING
+void sim::init_individual_softenings(void)
+{
+  int ndm     = 0;
+  double mass = 0, masstot, massmin = MAX_DOUBLE_NUMBER, massmax = 0;
+  long long ndmtot;
+
+  for(int i = 0; i < Sp.NumPart; i++)
+    if(Sp.P[i].getType() == 1)
+      {
+        ndm++;
+        mass += Sp.P[i].getMass();
+
+        if(massmin > Sp.P[i].getMass())
+          massmin = Sp.P[i].getMass();
+
+        if(massmax < Sp.P[i].getMass())
+          massmax = Sp.P[i].getMass();
+      }
+
+  sumup_large_ints(1, &ndm, &ndmtot, Communicator);
+  MPI_Allreduce(&mass, &masstot, 1, MPI_DOUBLE, MPI_SUM, Communicator);
+
+  MPI_Allreduce(MPI_IN_PLACE, &massmin, 1, MPI_DOUBLE, MPI_MIN, Communicator);
+  MPI_Allreduce(MPI_IN_PLACE, &massmax, 1, MPI_DOUBLE, MPI_MAX, Communicator);
+
+  All.AvgType1Mass = masstot / ndmtot;
+
+  mpi_printf("INIT: AvgType1Mass = %g   (min=%g max=%g) Ndm1tot=%lld\n", All.AvgType1Mass, massmin, massmax, ndmtot);
+
+  if(massmax > 1.00001 * massmin)
+    Terminate("Strange: Should use constant mass type-1 particles if INDIVIDUAL_GRAVITY_SOFTENING is used\n");
+
+  if(All.ComovingIntegrationOn)
+    {
+      double rhomean_dm = (All.Omega0 - All.OmegaBaryon) * (3 * All.Hubble * All.Hubble / (8 * M_PI * All.G));
+      // debugin information
+      mpi_printf("INIT: For this AvgType1Mass, the mean particle spacing is %g and the assigned softening is %g\n",
+                 pow(All.AvgType1Mass / rhomean_dm, 1.0 / 3), All.SofteningTable[All.SofteningClassOfPartType[1]]);
+    }
+
+  for(int i = 0; i < Sp.NumPart; i++)
+    if(((1 << Sp.P[i].getType()) & (INDIVIDUAL_GRAVITY_SOFTENING)))
+      Sp.P[i].setSofteningClass(get_softening_type_from_mass(Sp.P[i].getMass()));
+}
+#endif
+#ifdef ADAPTIVE_HYDRO_SOFTENING
+int sim::get_softeningtype_for_hydro_particle(int i)
+{
+  double soft = All.GasSoftFactor * Sp.SphP[i].Hsml;
+
+  if(soft <= All.ForceSoftening[NSOFTCLASSES])
+    return NSOFTCLASSES;
+
+  int k = 0.5 + log(soft / All.ForceSoftening[NSOFTCLASSES]) / log(All.AdaptiveHydroSofteningSpacing);
+  if(k >= NSOFTCLASSES_HYDRO)
+    k = NSOFTCLASSES_HYDRO - 1;
+
+  return NSOFTCLASSES + k;
+}
+#endif
+
+#ifdef INDIVIDUAL_GRAVITY_SOFTENING
+int sim::get_softening_type_from_mass(double mass)
+{
+  int min_type   = -1;
+  double eps     = get_desired_softening_from_mass(mass);
+  double min_dln = MAX_FLOAT_NUMBER;
+
+  for(int i = 0; i < NSOFTCLASSES; i++)
+    {
+      if(All.ForceSoftening[i] > 0)
+        {
+          double dln = fabs(log(eps) - log(All.ForceSoftening[i]));
+
+          if(dln < min_dln)
+            {
+              min_dln  = dln;
+              min_type = i;
+            }
+        }
+    }
+
+  if(min_type < 0)
+    Terminate("min_type < 0");
+
+  return min_type;
+}
+#endif
+/*! \brief Returns the desired softening length depending on the particle mass with type 1 as a reference point
+ *
+ * \param mass particle mass
+ * \return softening length for a particle of mass #mass
+ */
+#ifdef INDIVIDUAL_GRAVITY_SOFTENING
+double sim::get_desired_softening_from_mass(double mass)
+{
+  return All.ForceSoftening[All.SofteningClassOfPartType[1]] * pow(mass / All.AvgType1Mass, 1.0 / 3);
+}
+#endif

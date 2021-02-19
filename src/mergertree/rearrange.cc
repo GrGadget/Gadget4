@@ -32,7 +32,6 @@
 #include "../main/main.h"
 #include "../main/simulation.h"
 #include "../mergertree/io_readtrees_mbound.h"
-#include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"

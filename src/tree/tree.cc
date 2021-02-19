@@ -11,8 +11,11 @@
 
 #include "gadgetconfig.h"
 
-#include "../sort/cxxsort.h"
+#include <algorithm>          // std::sort
+#include "../data/allvars.h"  // All.
+#include "../logs/logs.h"     // TIMER_START
 #include "../tree/tree.h"
+#include "gadget/mpi_utils.h"  // TAG_DENS_A
 
 /*! This file contains the construction of the tree used for calculating the gravitational force
  *  and the neighbor tree for SPH.
@@ -396,7 +399,7 @@ int tree<node, partset, point_data, foreign_point_data>::treebuild_construct(voi
 #endif
 
   /* sort according to node so that particles indices in the same node are grouped together */
-  mycxxsort(index_list, index_list + count, compare_index_data_subnode);
+  std::sort(index_list, index_list + count, compare_index_data_subnode);
 
   int full_flag  = 0;
   int ntopleaves = D->NumTopleafOfTask[D->ThisTask];
@@ -507,7 +510,7 @@ int tree<node, partset, point_data, foreign_point_data>::treebuild_insert_group_
     }
 
   /* sort */
-  mycxxsort(index_list, index_list + num, compare_index_data_subnode);
+  std::sort(index_list, index_list + num, compare_index_data_subnode);
 
   centermask >>= 1;
   centermask |= ~(~((MyIntPosType)0) >> 1); /* this sets the MSB */
@@ -971,7 +974,8 @@ void tree<node, partset, point_data, foreign_point_data>::tree_fetch_foreign_nod
   for(int i = 1; i < Shmem.World_NTask; i++)
     OffsetFetch[i] = OffsetFetch[i - 1] + CountFetch[i - 1];
 
-  mycxxsort(StackToFetch, StackToFetch + NumOnFetchStack, compare_ghostrank);
+  // FIXME define compare_ghostrank as a lambda function
+  std::sort(StackToFetch, StackToFetch + NumOnFetchStack, compare_ghostrank);
 
   /* now go through each node in turn, and import from them the requested nodes
    */
@@ -1314,6 +1318,73 @@ void tree<node, partset, point_data, foreign_point_data>::tree_export_node_threa
     }
 }
 
+template <typename node, typename partset, typename point_data, typename foreign_point_data>
+void tree<node, partset, point_data, foreign_point_data>::tree_add_to_fetch_stack(node *nop, int nodetoopen, unsigned char shmrank)
+{
+  if(NumOnFetchStack >= MaxOnFetchStack)
+    {
+      Terminate("we shouldn't get here");
+      MaxOnFetchStack *= 1.1;
+      StackToFetch = (fetch_data *)Mem.myrealloc_movable(StackToFetch, MaxOnFetchStack * sizeof(fetch_data));
+    }
+
+  node_bit_field mybit = (((node_bit_field)1) << Shmem.Island_ThisTask);
+
+  node_bit_field oldval = nop->flag_already_fetched.fetch_or(mybit);
+
+  if((oldval & mybit) == 0)  // it wasn't fetched by me yet
+    {
+      int ghostrank = Shmem.GetGhostRankForSimulCommRank[nop->OriginTask];
+
+      StackToFetch[NumOnFetchStack].NodeToOpen = nodetoopen;
+      StackToFetch[NumOnFetchStack].ShmRank    = shmrank;
+      StackToFetch[NumOnFetchStack].GhostRank  = ghostrank;
+
+      NumOnFetchStack++;
+    }
+}
+
+template <typename node, typename partset, typename point_data, typename foreign_point_data>
+void tree<node, partset, point_data, foreign_point_data>::tree_get_node_and_task(int i, int &no, int &task)
+{
+  MyIntPosType xxb       = Tp->P[i].IntPos[0];
+  MyIntPosType yyb       = Tp->P[i].IntPos[1];
+  MyIntPosType zzb       = Tp->P[i].IntPos[2];
+  MyIntPosType mask      = (((MyIntPosType)1) << (BITS_FOR_POSITIONS - 1));
+  unsigned char shiftx   = (BITS_FOR_POSITIONS - 3);
+  unsigned char shifty   = (BITS_FOR_POSITIONS - 2);
+  unsigned char shiftz   = (BITS_FOR_POSITIONS - 1);
+  unsigned char level    = 0;
+  unsigned char rotation = 0;
+
+#if defined(PMGRID) && defined(PLACEHIGHRESREGION)
+  Tp->P[i].InsideOutsideFlag = Tp->check_high_res_point_location(Tp->P[i].IntPos);
+#endif
+
+  no = 0;
+  while(D->TopNodes[no].Daughter >= 0)  // walk down top tree to find correct leaf
+    {
+      unsigned char pix     = (((unsigned char)((xxb & mask) >> (shiftx--))) | ((unsigned char)((yyb & mask) >> (shifty--))) |
+                           ((unsigned char)((zzb & mask) >> (shiftz--))));
+      unsigned char subnode = peano_incremental_key(pix, &rotation);
+
+      mask >>= 1;
+      level++;
+
+      no = D->TopNodes[no].Daughter + subnode;
+    }
+
+  no   = D->TopNodes[no].Leaf;
+  task = D->TaskOfLeaf[no];
+}
+
+/*
+    FIXME TODO
+    'class tree' is a template, this cc file would not generate any code
+    unless explicit instantiation is requested.
+
+    Maybe this file should be moved to an implementation header.
+*/
 #include "../ngbtree/ngbtree.h"
 template class tree<ngbnode, simparticles, ngbpoint_data, foreign_sphpoint_data>;
 

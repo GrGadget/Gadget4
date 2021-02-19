@@ -27,9 +27,9 @@
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/peano.h"
+#include "gadget/timebindata.h"
 
 void ngbtree::report_log_message(void)
 {

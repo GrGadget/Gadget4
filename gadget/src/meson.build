@@ -12,4 +12,7 @@ gadget_src = files([
     'sph_particle_data.cc',
     'hdf5_util.cc',
     'parameters.cc',
-    'setcomm.cc'])
+    'setcomm.cc',
+    'pm_mpi_fft.cc',
+    'timebindata.cc',
+    'utils.cc'])

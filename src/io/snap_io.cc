@@ -22,6 +22,7 @@
 #include "../logs/logs.h"      // extern class Logs; TIMER_START
 #include "gadget/hdf5_util.h"  // my_H5Fopen
 #include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // sumup_longs
 #include "version.h"           // GIT_COMMIT, GIT_DATE
 //
 /*!

@@ -26,10 +26,10 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 void sim::gravity_external(void)
 {

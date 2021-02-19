@@ -18,18 +18,14 @@
 
 #include "gadgetconfig.h"
 
-#include "../data/lightcone_particle_data.h"
-#include "../data/mymalloc.h"
-#include "../data/particle_data.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/constants.h"
-#include "gadget/dtypes.h"
-#include "gadget/intposconvert.h"
-#include "gadget/macros.h"
-#include "gadget/mpi_utils.h"
-#include "gadget/setcomm.h"
-#include "gadget/sph_particle_data.h"
+#include "../data/mymalloc.h"                // Mem.
+#include "gadget/dtypes.h"                   // integertime
+#include "gadget/intposconvert.h"            // intposconvert
+#include "gadget/lightcone_particle_data.h"  // lightcone_particle_data
+#include "gadget/mpi_utils.h"                // sumup_large_ints
+#include "gadget/particle_data.h"            // subfind_data
+#include "gadget/setcomm.h"                  // setcomm
+#include "gadget/sph_particle_data.h"        // sph_particle_data
 
 class lcparticles : public intposconvert, public setcomm
 {
@@ -100,7 +96,7 @@ class lcparticles : public intposconvert, public setcomm
     // Don't need to do anything here.
   }
 
-  bool TestIfAboveFillFactor(int SpMaxPart)
+  bool TestIfAboveFillFactor(int SpMaxPart, integertime Ti_Current)
   {
     int max_in[2] = {NumPart, SpMaxPart}, max_out[2];
     MPI_Allreduce(max_in, max_out, 2, MPI_INT, MPI_MAX, Communicator);
@@ -108,7 +104,7 @@ class lcparticles : public intposconvert, public setcomm
     /* also recompute the total number of particles in buffer to have current value */
     sumup_large_ints(1, &NumPart, &TotNumPart, Communicator);
 
-    if(max_out[0] > 0 && (All.Ti_Current >= TIMEBASE || max_out[0] >= LIGHTCONE_MAX_FILLFACTOR * max_out[1]))
+    if(max_out[0] > 0 && (Ti_Current >= TIMEBASE || max_out[0] >= LIGHTCONE_MAX_FILLFACTOR * max_out[1]))
       return true;
     else
       return false;

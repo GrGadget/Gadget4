@@ -232,7 +232,7 @@ double ngenic::ngenic_tk_eh(double k) /* from Martin White */
 
 double ngenic::ngenic_tophat_sigma2(double R)
 {
-  const int worksize = 1000000;
+  const int worksize = 1'000'000;
 
   double result, abserr, kmin, kmax;
   gsl_function F;
@@ -264,7 +264,7 @@ double ngenic::ngenic_tophat_sigma2(double R)
       gsl_integration_qag(&F, log(kmin), log(kmax), 0, 0.1, worksize, GSL_INTEG_GAUSS15, workspace, &result, &abserr);
 
       /* now set a low absolute error bound for each segment */
-      double errbound = 1.0e-8 / NPowerTable * result;
+      double errbound = 1.0e-6 / NPowerTable * result;
       result          = 0.0;
 
       for(int i = 0; i < NPowerTable - 2; i++)

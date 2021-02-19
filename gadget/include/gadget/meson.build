@@ -13,4 +13,9 @@ gadget_headers = files([
     'intposconvert.h',
     'io_streamcount.h',
     'hdf5_util.h',
-    'setcomm.h'])
+    'setcomm.h',
+    'pm_mpi_fft.h',
+    'particle_data.h',
+    'timebindata.h',
+    'lightcone_particle_data.h',
+    'utils.h'])

@@ -22,9 +22,9 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*! \brief Open files for logging.
  *
@@ -596,7 +596,7 @@ void logs::compute_global_quantities_of_system(void)
 
           sys.EnergyKinComp[0] += 0.5 * Sp->P[i].getMass() * (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
 
-          egyspec = Sp->get_utherm_from_entropy(i);
+          egyspec = Sp->get_utherm_from_entropy(i, All.cf_a3inv);
 
           sys.EnergyIntComp[0] += Sp->P[i].getMass() * egyspec;
         }

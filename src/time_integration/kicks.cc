@@ -26,9 +26,9 @@
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"
 #include "../time_integration/driftfac.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 /*! \brief performs the first half step kick operator for the gravity
  *
@@ -156,7 +156,7 @@ void sim::find_timesteps_and_do_gravity_step_first_half(void)
 
               if(bin == 0)
                 {
-                  Sp.print_particle_info(target);
+                  print_particle_info(target);
                   Terminate("timestep too small");
                 }
 

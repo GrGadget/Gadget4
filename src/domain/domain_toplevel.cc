@@ -11,12 +11,16 @@
 
 #include "gadgetconfig.h"
 
-#include <mpi.h>                  // MPI_Allreduce
-#include "../data/lcparticles.h"  // lcparticles
-#include "../data/mymalloc.h"     // extern class Mem;
+#include <mpi.h>                   // MPI_Allreduce
+#include <algorithm>               // std::sort
+#include "../data/allvars.h"       // All.
+#include "../data/lcparticles.h"   // lcparticles
+#include "../data/mymalloc.h"      // extern class Mem;
+#include "../data/simparticles.h"  // simparticles
 #include "../domain/domain.h"
-#include "../sort/cxxsort.h"  // mycxxsort
-#include "gadget/macros.h"    // Terminate
+#include "../logs/logs.h"      // Log.
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // allreduce_sum
 
 template <typename partset>
 void domain<partset>::domain_do_local_refine(int n, int *list)
@@ -190,7 +194,7 @@ void domain<partset>::domain_determineTopTree(void)
   domain_printf("DOMAIN: Sum=%g  TotalCost=%g  NumTimeBinsToBeBalanced=%d  MultipleDomains=%d\n", sum, TotalCost,
                 NumTimeBinsToBeBalanced, MultipleDomains);
 
-  mycxxsort(mp, mp + Tp->NumPart, domain_compare_key);
+  std::sort(mp, mp + Tp->NumPart, domain_compare_key);
 
   NTopnodes            = 1;
   NTopleaves           = 1;

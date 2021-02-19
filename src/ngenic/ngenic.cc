@@ -47,7 +47,7 @@
 #define GRID2 (2 * GRIDz)
 
 #define FI(x, y, z) (((large_array_offset)GRID2) * (GRIDY * (x) + (y)) + (z))
-#define FC(c, z) (((large_array_offset)GRID2) * ((c)-myplan.firstcol_XY) + (z))
+#define FC(c, z) (((large_array_offset)GRID2) * ((c)-firstcol_XY) + (z))
 
 #if(GRIDZ > 1024)
 typedef long long large_array_offset; /* use a larger data type in this case so that we can always address all cells of the 3D grid
@@ -288,19 +288,13 @@ void ngenic::ngenic_displace_particles(void)
       Mem.myfree(seedtable);
     }
 
-#ifndef FFT_COLUMN_BASED
-  my_slab_based_fft_free(&myplan);
-#else
-  my_column_based_fft_free(&myplan);
-#endif
+  FFTW(destroy_plan)(forward_plan_zdir);
+  FFTW(destroy_plan)(forward_plan_ydir);
+  FFTW(destroy_plan)(forward_plan_xdir);
 
-  FFTW(destroy_plan)(myplan.forward_plan_zdir);
-  FFTW(destroy_plan)(myplan.forward_plan_ydir);
-  FFTW(destroy_plan)(myplan.forward_plan_xdir);
-
-  FFTW(destroy_plan)(myplan.backward_plan_zdir);
-  FFTW(destroy_plan)(myplan.backward_plan_ydir);
-  FFTW(destroy_plan)(myplan.backward_plan_xdir);
+  FFTW(destroy_plan)(backward_plan_zdir);
+  FFTW(destroy_plan)(backward_plan_ydir);
+  FFTW(destroy_plan)(backward_plan_xdir);
 
   if(All.PowerSpectrumType == 2)
     free_power_table();
@@ -344,8 +338,8 @@ void ngenic::ngenic_distribute_particles(void)
           slab_xx = 0;
 
 #ifndef FFT_COLUMN_BASED
-        int task0 = myplan.slab_to_task[slab_x];
-        int task1 = myplan.slab_to_task[slab_xx];
+        int task0 = slab_to_task[slab_x];
+        int task1 = slab_to_task[slab_xx];
 
         send_count[task0]++;
         if(task0 != task1)
@@ -441,8 +435,8 @@ void ngenic::ngenic_distribute_particles(void)
           slab_xx = 0;
 
 #ifndef FFT_COLUMN_BASED
-        int task0 = myplan.slab_to_task[slab_x];
-        int task1 = myplan.slab_to_task[slab_xx];
+        int task0 = slab_to_task[slab_x];
+        int task1 = slab_to_task[slab_xx];
 
         size_t ind0 = send_offset[task0] + send_count[task0]++;
         for(int j = 0; j < 3; j++)
@@ -538,9 +532,9 @@ void ngenic::ngenic_compute_transform_of_source_potential(fft_real *pot)
   fft_real *workspace = (fft_real *)Mem.mymalloc("workspace", maxfftsize * sizeof(fft_real));
 
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&myplan, &pot[0], &workspace[0], +1);
+  my_slab_based_fft(&pot[0], &workspace[0], +1);
 #else
-  my_column_based_fft(&myplan, pot, workspace, +1);  // result is in workspace, not in Phi2
+  my_column_based_fft(pot, workspace, +1);  // result is in workspace, not in Phi2
   memcpy(pot, workspace, maxfftsize * sizeof(fft_real));
 #endif
 
@@ -564,16 +558,16 @@ void ngenic::ngenic_get_derivate_from_fourier_field(int axes1, int axes2, fft_co
   double kfacz = 2.0 * M_PI / All.BoxSize;
 
 #ifdef FFT_COLUMN_BASED
-  for(large_array_offset ip = 0; ip < myplan.second_transposed_ncells; ip += GRIDX)
+  for(large_array_offset ip = 0; ip < second_transposed_ncells; ip += GRIDX)
     {
-      large_array_offset ipcell = ip + ((large_array_offset)myplan.second_transposed_firstcol) * GRIDX;
+      large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
       int y                     = ipcell / (GRIDX * GRIDz);
       int yr                    = ipcell % (GRIDX * GRIDz);
       int z                     = yr / GRIDX;
       if(yr % GRIDX != 0)  // Note: check that x-columns are really complete
         Terminate("x-column seems incomplete. This is not expected");
 #else
-  for(int y = myplan.slabstart_y; y < myplan.slabstart_y + myplan.nslab_y; y++)
+  for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
     for(int z = 0; z < GRIDz; z++)
       {
 #endif
@@ -631,7 +625,7 @@ void ngenic::ngenic_get_derivate_from_fourier_field(int axes1, int axes2, fft_co
 #endif
 
 #ifndef FFT_COLUMN_BASED
-          large_array_offset elem = ((large_array_offset)GRIDz) * (GRIDX * (y - myplan.slabstart_y) + x) + z;
+          large_array_offset elem = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
 #else
             large_array_offset elem = ip + x;
 #endif
@@ -655,10 +649,10 @@ void ngenic::ngenic_get_derivate_from_fourier_field(int axes1, int axes2, fft_co
     }
 
 #ifdef FFT_COLUMN_BASED
-  if(myplan.second_transposed_firstcol == 0)
+  if(second_transposed_firstcol == 0)
     fft_of_grid[0][0] = fft_of_grid[0][1] = 0.0;
 #else
-  if(myplan.slabstart_y == 0)
+  if(slabstart_y == 0)
     fft_of_grid[0][0] = fft_of_grid[0][1] = 0.0;
 #endif
 
@@ -666,9 +660,9 @@ void ngenic::ngenic_get_derivate_from_fourier_field(int axes1, int axes2, fft_co
   fft_real *workspace = (fft_real *)Mem.mymalloc("workspace", maxfftsize * sizeof(fft_real));
 
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&myplan, &fft_of_grid[0], &workspace[0], -1);
+  my_slab_based_fft(&fft_of_grid[0], &workspace[0], -1);
 #else
-  my_column_based_fft(&myplan, fft_of_grid, workspace, -1);  // result is in workspace
+  my_column_based_fft(fft_of_grid, workspace, -1);  // result is in workspace
   memcpy(fft_of_grid, workspace, maxfftsize * sizeof(fft_real));
 #endif
 
@@ -689,16 +683,16 @@ void ngenic::ngenic_setup_modes_in_kspace(fft_complex *fft_of_grid)
   double kfacz = 2.0 * M_PI / All.BoxSize;
 
 #ifdef FFT_COLUMN_BASED
-  for(large_array_offset ip = 0; ip < myplan.second_transposed_ncells; ip += GRIDX)
+  for(large_array_offset ip = 0; ip < second_transposed_ncells; ip += GRIDX)
     {
-      large_array_offset ipcell = ip + ((large_array_offset)myplan.second_transposed_firstcol) * GRIDX;
+      large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
       int y                     = ipcell / (GRIDX * GRIDz);
       int yr                    = ipcell % (GRIDX * GRIDz);
       int z                     = yr / GRIDX;
       if(yr % GRIDX != 0)  // Note: check that x-columns are really complete
         Terminate("x-column seems incomplete. This is not expected");
 #else
-  for(int y = myplan.slabstart_y; y < myplan.slabstart_y + myplan.nslab_y; y++)
+  for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
     for(int z = 0; z < GRIDz; z++)
       {
 #endif
@@ -853,7 +847,7 @@ void ngenic::ngenic_setup_modes_in_kspace(fft_complex *fft_of_grid)
           double delta = fac * sqrt(p_of_k) / Dplus; /* scale back to starting redshift */
 
 #ifndef FFT_COLUMN_BASED
-          large_array_offset elem = ((large_array_offset)GRIDz) * (GRIDX * (y - myplan.slabstart_y) + x) + z;
+          large_array_offset elem = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
 #else
             large_array_offset elem = ip + x;
 #endif
@@ -914,9 +908,9 @@ void ngenic::ngenic_readout_disp(fft_real *grid, int axis, double pfac, double v
         slab_zz = 0;
 
 #ifndef FFT_COLUMN_BASED
-      if(myplan.slab_to_task[slab_x] == ThisTask)
+      if(slab_to_task[slab_x] == ThisTask)
         {
-          slab_x -= myplan.first_slab_x_of_task[ThisTask];
+          slab_x -= first_slab_x_of_task[ThisTask];
 
           flistin[i] += grid[FI(slab_x, slab_y, slab_z)] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FI(slab_x, slab_y, slab_zz)] * (1.0 - dx) * (1.0 - dy) * (dz) +
@@ -924,9 +918,9 @@ void ngenic::ngenic_readout_disp(fft_real *grid, int axis, double pfac, double v
                         grid[FI(slab_x, slab_yy, slab_zz)] * (1.0 - dx) * (dy) * (dz);
         }
 
-      if(myplan.slab_to_task[slab_xx] == ThisTask)
+      if(slab_to_task[slab_xx] == ThisTask)
         {
-          slab_xx -= myplan.first_slab_x_of_task[ThisTask];
+          slab_xx -= first_slab_x_of_task[ThisTask];
 
           flistin[i] += grid[FI(slab_xx, slab_y, slab_z)] * (dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FI(slab_xx, slab_y, slab_zz)] * (dx) * (1.0 - dy) * (dz) +
@@ -939,24 +933,24 @@ void ngenic::ngenic_readout_disp(fft_real *grid, int axis, double pfac, double v
       int column2 = slab_xx * GRIDY + slab_y;
       int column3 = slab_xx * GRIDY + slab_yy;
 
-      if(column0 >= myplan.firstcol_XY && column0 <= myplan.lastcol_XY)
+      if(column0 >= firstcol_XY && column0 <= lastcol_XY)
         {
           flistin[i] += grid[FC(column0, slab_z)] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                         grid[FC(column0, slab_zz)] * (1.0 - dx) * (1.0 - dy) * (dz);
         }
-      if(column1 >= myplan.firstcol_XY && column1 <= myplan.lastcol_XY)
+      if(column1 >= firstcol_XY && column1 <= lastcol_XY)
         {
           flistin[i] +=
               grid[FC(column1, slab_z)] * (1.0 - dx) * (dy) * (1.0 - dz) + grid[FC(column1, slab_zz)] * (1.0 - dx) * (dy) * (dz);
         }
 
-      if(column2 >= myplan.firstcol_XY && column2 <= myplan.lastcol_XY)
+      if(column2 >= firstcol_XY && column2 <= lastcol_XY)
         {
           flistin[i] +=
               grid[FC(column2, slab_z)] * (dx) * (1.0 - dy) * (1.0 - dz) + grid[FC(column2, slab_zz)] * (dx) * (1.0 - dy) * (dz);
         }
 
-      if(column3 >= myplan.firstcol_XY && column3 <= myplan.lastcol_XY)
+      if(column3 >= firstcol_XY && column3 <= lastcol_XY)
         {
           flistin[i] += grid[FC(column3, slab_z)] * (dx) * (dy) * (1.0 - dz) + grid[FC(column3, slab_zz)] * (dx) * (dy) * (dz);
         }
@@ -993,8 +987,8 @@ void ngenic::ngenic_readout_disp(fft_real *grid, int axis, double pfac, double v
           slab_xx = 0;
 
 #ifndef FFT_COLUMN_BASED
-        int task0 = myplan.slab_to_task[slab_x];
-        int task1 = myplan.slab_to_task[slab_xx];
+        int task0 = slab_to_task[slab_x];
+        int task1 = slab_to_task[slab_xx];
 
         double value = flistout[send_offset[task0] + send_count[task0]++];
 
@@ -1096,40 +1090,34 @@ void ngenic::ngenic_initialize_ffts(void)
   int stride    = 1;
 #endif
 
-  myplan.backward_plan_xdir =
-      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDX, fft_of_DispGrid, 0, stride, GRIDz * GRIDX,
-                          FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_xdir = FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDX, fft_of_DispGrid, 0, stride,
+                                           GRIDz * GRIDX, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.backward_plan_ydir =
-      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDY, fft_of_DispGrid, 0, stride, GRIDz * GRIDY,
-                          FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_ydir = FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDY, fft_of_DispGrid, 0, stride,
+                                           GRIDz * GRIDY, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)DispGrid, 0, 1, GRIDz, (fft_real *)fft_of_DispGrid,
-                                                      0, 1, GRID2, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)DispGrid, 0, 1, GRIDz, (fft_real *)fft_of_DispGrid, 0, 1,
+                                               GRID2, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.forward_plan_xdir = FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDX, fft_of_DispGrid, 0,
-                                                 stride, GRIDz * GRIDX, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_xdir = FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDX, fft_of_DispGrid, 0, stride,
+                                          GRIDz * GRIDX, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.forward_plan_ydir = FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDY, fft_of_DispGrid, 0,
-                                                 stride, GRIDz * GRIDY, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_ydir = FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)DispGrid, 0, stride, GRIDz * GRIDY, fft_of_DispGrid, 0, stride,
+                                          GRIDz * GRIDY, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  myplan.forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, DispGrid, 0, 1, GRID2, (fft_complex *)fft_of_DispGrid, 0, 1, GRIDz,
-                                                     FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, DispGrid, 0, 1, GRID2, (fft_complex *)fft_of_DispGrid, 0, 1, GRIDz,
+                                              FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
   Mem.myfree(fft_of_DispGrid);
   Mem.myfree(DispGrid);
 
 #ifndef FFT_COLUMN_BASED
 
-  my_slab_based_fft_init(&myplan, GRIDX, GRIDY, GRIDZ);
-
-  maxfftsize = std::max<int>(myplan.largest_x_slab * GRIDY, myplan.largest_y_slab * GRIDX) * ((size_t)GRID2);
+  maxfftsize = std::max<int>(largest_x_slab * GRIDY, largest_y_slab * GRIDX) * ((size_t)GRID2);
 
 #else
 
-  my_column_based_fft_init(&myplan, GRIDX, GRIDY, GRIDZ);
-
-  maxfftsize = myplan.max_datasize;
+  maxfftsize = max_datasize;
 
 #endif
 }
@@ -1225,7 +1213,8 @@ void ngenic::print_spec(void)
 
       double rhoback = All.Omega0 * 3 * All.Hubble * All.Hubble / (8 * M_PI * All.G);
 
-      for(double M = 1.0e5; M <= 1.01e16; M *= pow(10.0, 1.0 / 16))  // mass in solar masses / h
+      const double mfact = pow(10.0, 1.0 / 16);
+      for(double M = 1.0e5; M <= 1.01e16; M *= mfact)  // mass in solar masses / h
         {
           double Mint = M * (SOLAR_MASS / All.UnitMass_in_g);
 

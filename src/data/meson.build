@@ -6,9 +6,7 @@ sources += files([
 headers += files(['allvars.h',
     'lcparticles.h',
     'lightcone_massmap_data.h',
-    'lightcone_particle_data.h',
     'mmparticles.h',
     'mymalloc.h',
-    'particle_data.h',
     'simparticles.h'
     ])

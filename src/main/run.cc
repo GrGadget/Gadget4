@@ -35,6 +35,7 @@
 #include "../sort/parallel_sort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
+#include "gadget/intposconvert.h"  // intpos_to_pos
 
 /*!
  * Main driver routine for advancing the simulation forward in time.
@@ -523,8 +524,6 @@ void sim::create_snapshot_if_desired(void)
 
 #ifndef OUTPUT_NON_SYNCHRONIZED_ALLOWED
         NgbTree.treefree();
-        Sp.TimeBinsGravity.timebins_free();
-        Sp.TimeBinsHydro.timebins_free();
 #endif
 
 #ifdef FOF
@@ -609,8 +608,8 @@ void sim::create_snapshot_if_desired(void)
         All.Ti_nextoutput = find_next_outputtime(All.Ti_Current + 1);
 
 #ifndef OUTPUT_NON_SYNCHRONIZED_ALLOWED
-        Sp.TimeBinsHydro.timebins_allocate();
-        Sp.TimeBinsGravity.timebins_allocate();
+        // Sp.TimeBinsHydro.timebins_allocate(Sp.MaxPartSph);
+        // Sp.TimeBinsGravity.timebins_allocate(Sp.MaxPart);
 
         /* we need to reconstruct the timebins here. Even though the particles are in the same place again,
          * it could have happened that Sp.P was reduced in size temporarily below NumPart on a certain task,
@@ -624,7 +623,7 @@ void sim::create_snapshot_if_desired(void)
       }
 
 #if defined(LIGHTCONE_PARTICLES)
-  if(Lp.TestIfAboveFillFactor(std::min<int>(Lp.MaxPart, Sp.MaxPart)))
+  if(Lp.TestIfAboveFillFactor(std::min<int>(Lp.MaxPart, Sp.MaxPart), All.Ti_Current))
     {
 #if defined(LIGHTCONE_PARTICLES_GROUPS) && defined(FOF)
       /* do this only on full timesteps if groups are calculated on lightcone */
@@ -745,4 +744,47 @@ void sim::create_snapshot_if_desired(void)
         Lp.reallocate_memory_maxpart(LIGHTCONE_ALLOC_FAC * Sp.MaxPart);
     }
 #endif
+}
+/** \brief Print information relative to a particle / cell to standard output.
+ *
+ *  \param i particle / cell index
+ */
+void sim::print_particle_info(int i)
+{
+  MyReal pos[3];
+  Sp.intpos_to_pos(Sp.P[i].IntPos, pos); /* converts the integer coordinates to floating point */
+
+  printf("Task=%d, ID=%llu, Type=%d, TimeBinGrav=%d, TimeBinHydro=%d, Mass=%g, pos=%g|%g|%g, vel=%g|%g|%g, OldAcc=%g\n", ThisTask,
+         (unsigned long long)Sp.P[i].ID.get(), Sp.P[i].getType(), Sp.P[i].TimeBinGrav, Sp.P[i].getTimeBinHydro(), Sp.P[i].getMass(),
+         pos[0], pos[1], pos[2], Sp.P[i].Vel[0], Sp.P[i].Vel[1], Sp.P[i].Vel[2], Sp.P[i].OldAcc);
+#if defined(PMGRID) && defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
+  printf("GravAccel=%g|%g|%g, GravPM=%g|%g|%g, Soft=%g, SoftClass=%d\n", Sp.P[i].GravAccel[0], Sp.P[i].GravAccel[1],
+         Sp.P[i].GravAccel[2], Sp.P[i].GravPM[0], Sp.P[i].GravPM[1], Sp.P[i].GravPM[2],
+         All.ForceSoftening[Sp.P[i].getSofteningClass()], Sp.P[i].getSofteningClass());
+#else
+#ifndef LEAN
+  printf("GravAccel=%g|%g|%g, Soft=%g, SoftType=%d\n", Sp.P[i].GravAccel[0], Sp.P[i].GravAccel[1], Sp.P[i].GravAccel[2],
+         All.ForceSoftening[P[i].getSofteningClass()], Sp.P[i].getSofteningClass());
+#endif
+#endif
+
+  if(Sp.P[i].getType() == 0)
+    {
+      printf("rho=%g, hsml=%g, entr=%g, csnd=%g\n", Sp.SphP[i].Density, Sp.SphP[i].Hsml, Sp.SphP[i].Entropy,
+             Sp.SphP[i].get_sound_speed());
+      printf("ID=%llu SphP[p].CurrentMaxTiStep=%g\n", (unsigned long long)Sp.P[i].ID.get(), Sp.SphP[i].CurrentMaxTiStep);
+    }
+
+  myflush(stdout);
+}
+
+/** \brief Print information relative to a particle / cell to standard output given its ID.
+ *  *
+ *   *  \param ID particle / cell ID
+ *    */
+void sim::print_particle_info_from_ID(MyIDType ID)
+{
+  for(int i = 0; i < Sp.NumPart; i++)
+    if(Sp.P[i].ID.get() == ID)
+      print_particle_info(i);
 }

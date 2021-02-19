@@ -25,13 +25,12 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 #include "gadget/peano.h"
+#include "gadget/timebindata.h"
 
 /*!
  *  This file contains the construction of the tree used for calculating the gravitational force.

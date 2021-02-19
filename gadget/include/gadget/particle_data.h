@@ -17,8 +17,8 @@
 #include <atomic>
 #include <cstring>  // memcpy
 
-#include "gadget/idstorage.h"  // MyIDStorage
-#include "gadget/peano.h"
+#include "gadget/idstorage.h"   // MyIDStorage
+#include "gadget/peano.h"       // peanokey
 #include "gadget/symtensors.h"  // vector
 
 /** This structure holds all the information that is
@@ -54,12 +54,13 @@ struct particle_data
   float OldAcc;                        /**< magnitude of old gravitational force. Used in relative opening criterion */
   int GravCost;                        /**< weight factors used for balancing the work-load */
 
-#ifndef LEAN
  private:
+#ifndef LEAN
   MyDouble Mass; /**< particle mass */
- public:
+#else
+  static MyDouble Mass; /**< particle mass */
 #endif
-
+ public:
   MyIDStorage ID;           // 6-byte
   signed char TimeBinGrav;  // 1-byte
 #ifndef LEAN
@@ -166,21 +167,9 @@ struct particle_data
 
   inline int getGravCost(void) { return GravCost; }
 
-  inline MyDouble getMass(void)
-  {
-#ifdef LEAN
-    return All.PartMass;
-#else
-    return Mass;
-#endif
-  }
+  inline MyDouble getMass(void) { return Mass; }
 
-  inline void setMass(MyDouble mass)
-  {
-#ifndef LEAN
-    Mass = mass;
-#endif
-  }
+  inline void setMass(MyDouble mass) { Mass = mass; }
 
   inline integertime get_Ti_Current(void) { return Ti_Current; }
 
@@ -202,7 +191,7 @@ struct particle_data
 #endif
   }
 
-  inline double getAscale(void) { return All.Time; }
+  // inline double getAscale(void) { return All.Time; }
 
 #if defined(LIGHTCONE_PARTICLES_GROUPS)
   inline void setFlagSaveDistance(void) {}
@@ -286,13 +275,11 @@ struct subfind_data
 #endif
 };
 
-#ifdef SUBFIND_ORPHAN_TREATMENT
+// SUBFIND_ORPHAN_TREATMENT
 struct idstoredata
 {
   int NumPart;
   MyIDType* ID;
 };
-
-#endif
 
 #endif

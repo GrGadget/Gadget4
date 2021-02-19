@@ -12,36 +12,19 @@
 #ifndef PM_PERIODIC_H
 #define PM_PERIODIC_H
 
+#include <gsl/gsl_integration.h>   // gsl_integration_workspace
+#include "../data/allvars.h"       // All.
+#include "../data/simparticles.h"  // simparticles
+#include "gadget/constants.h"      // MAXLEN_PATH_EXTRA
+#include "gadget/dtypes.h"         // LONG_X
 #include "gadgetconfig.h"
-
-#include <gsl/gsl_integration.h>
 
 #if defined(PMGRID) || defined(NGENIC)
 
-#include <gsl/gsl_integration.h>
-#include <gsl/gsl_rng.h>
-#include <math.h>
-
-#include "../data/allvars.h"
-#include "../data/mymalloc.h"
-#include "../data/simparticles.h"
-#include "../domain/domain.h"
-#include "../logs/logs.h"
-#include "../pm/pm_mpi_fft.h"
-#include "../system/system.h"
-#include "../time_integration/timestep.h"
-#include "gadget/dtypes.h"
-#include "gadget/intposconvert.h"
-#include "gadget/mpi_utils.h"
-
-class pm_periodic : public pm_mpi_fft
-{
- public:
-  pm_periodic(MPI_Comm comm) : setcomm(comm), pm_mpi_fft(comm) {}
+#include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
 #if defined(PMGRID) && defined(PERIODIC)
 
- private:
 #ifdef LONG_X_BITS
 #if PMGRID != ((PMGRID / LONG_X) * LONG_X)
 #error "PMGRID must be a multiple of the stretch factor in the x-direction"
@@ -65,7 +48,16 @@ class pm_periodic : public pm_mpi_fft
 #define GRIDZ ((PMGRID / LONG_Z) * DBZ + DBZ_EXTRA)
 
 #define INTCELL ((~((MyIntPosType)0)) / PMGRID + 1)
+#endif
 
+class pm_periodic : public pm_mpi_fft
+{
+ public:
+  pm_periodic(MPI_Comm comm) : pm_mpi_fft(comm, GRIDX, GRIDY, GRIDZ) {}
+
+#if defined(PMGRID) && defined(PERIODIC)
+
+ private:
 #if(GRIDX > 1024) || (GRIDY > 1024) || (GRIDZ > 1024)
   typedef long long large_array_offset; /* use a larger data type in this case so that we can always address all cells of the 3D grid
                                            with a single index */
@@ -98,8 +90,6 @@ class pm_periodic : public pm_mpi_fft
   void pmforce_setup_tallbox_kernel(void);
   double pmperiodic_tallbox_long_range_potential(double x, double y, double z);
 #endif
-
-  fft_plan myplan; /*!< In this structure, various bookkeeping variables for the distributed FFTs are stored */
 
   /*! \var maxfftsize
    *  \brief maximum size of the local fft grid among all tasks

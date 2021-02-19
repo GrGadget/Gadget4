@@ -13,8 +13,8 @@
 #define PARALLEL_SORT_H
 
 #include <mpi.h>      // MPI_Bcast
+#include <algorithm>  // std::sort
 #include <cstddef>    // size_t
-#include "cxxsort.h"  // mycxxsort
 
 #include "../data/mymalloc.h"  // extern Mem;
 #include "gadget/macros.h"     // Terminate
@@ -42,7 +42,7 @@ inline void buildIndex(It begin, It end, T2 *idx, Comp comp)
   T2 num = end - begin;
   for(T2 i = 0; i < num; ++i)
     idx[i] = i;
-  mycxxsort(idx, idx + num, IdxComp__<It, Comp>(begin, comp));
+  std::sort(idx, idx + num, (IdxComp__<It, Comp>(begin, comp)));
 }
 
 template <typename T, typename Comp>
@@ -172,7 +172,7 @@ inline double mycxxsort_parallel(T *begin, T *end, Comp comp, MPI_Comm comm)
   size_t nmemb = end - begin;
   size_t size  = sizeof(T);
   /* do a serial sort of the local data up front */
-  mycxxsort(begin, end, comp);
+  std::sort(begin, end, comp);
 
   /* we create a communicator that contains just those tasks with nmemb > 0. This makes
    *  it easier to deal with CPUs that do not hold any data.
@@ -531,7 +531,7 @@ inline double mycxxsort_parallel(T *begin, T *end, Comp comp, MPI_Comm comm)
       memcpy(static_cast<void *>(begin), static_cast<void *>(basetmp), nmemb * size);
       Mem.myfree(basetmp);
 
-      mycxxsort(begin, begin + nmemb, comp);
+      std::sort(begin, begin + nmemb, comp);
 
       Mem.myfree(recv_offset);
       Mem.myfree(send_offset);

@@ -24,7 +24,6 @@
 #include "../gravtree/gravtree.h"
 #include "../io/io.h"
 #include "../main/simulation.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 

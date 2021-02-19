@@ -2,9 +2,7 @@ sources += files([
     'driftfac.cc',
     'kicks.cc',
     'predict.cc',
-    'timestep.cc',
+    'sim_timestep.cc',
     'timestep_treebased.cc'])
 
-headers += files([
-    'timestep.h',
-    'driftfac.h'])
+headers += files('driftfac.h')

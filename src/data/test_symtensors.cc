@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>  // std::sort
 
 #include "../data/allvars.h"
-#include "../sort/cxxsort.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
@@ -52,7 +52,7 @@ static void symtensor_test_tensor4_contraction_with_tensor1(void)
               {
                 int li[] = {i, j, k, l};
 
-                mycxxsort(li, li + 4, compare_list);
+                std::sort(li, li + 4, compare_list);
 
                 I4[i][j][k][l] = I4[li[0]][li[1]][li[2]][li[3]];
               }
@@ -74,7 +74,7 @@ static void symtensor_test_tensor4_contraction_with_tensor1(void)
             {
               int li[] = {i, j, k};
 
-              mycxxsort(li, li + 3, compare_list);
+              std::sort(li, li + 3, compare_list);
 
               I3[i][j][k] = I3[li[0]][li[1]][li[2]];
             }
@@ -155,7 +155,7 @@ static void symtensor_test_tensor4_contraction_with_tensor2(void)
               {
                 int li[] = {i, j, k, l};
 
-                mycxxsort(li, li + 4, compare_list);
+                std::sort(li, li + 4, compare_list);
 
                 I4[i][j][k][l] = I4[li[0]][li[1]][li[2]][li[3]];
               }
@@ -178,7 +178,7 @@ static void symtensor_test_tensor4_contraction_with_tensor2(void)
           {
             int li[] = {i, j};
 
-            mycxxsort(li, li + 2, compare_list);
+            std::sort(li, li + 2, compare_list);
 
             I2[i][j] = I2[li[0]][li[1]];
           }
@@ -261,7 +261,7 @@ static void symtensor_test_tensor4_contraction_with_tensor3(void)
               {
                 int li[] = {i, j, k, l};
 
-                mycxxsort(li, li + 4, compare_list);
+                std::sort(li, li + 4, compare_list);
 
                 I4[i][j][k][l] = I4[li[0]][li[1]][li[2]][li[3]];
               }
@@ -285,7 +285,7 @@ static void symtensor_test_tensor4_contraction_with_tensor3(void)
             {
               int li[] = {i, j, k};
 
-              mycxxsort(li, li + 3, compare_list);
+              std::sort(li, li + 3, compare_list);
 
               I3[i][j][k] = I3[li[0]][li[1]][li[2]];
             }

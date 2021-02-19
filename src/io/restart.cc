@@ -30,9 +30,9 @@
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/timebindata.h"
 
 void restart::write(sim *Sim_ptr)
 {
@@ -475,12 +475,12 @@ void restart::contents_restart_file(int modus)
   in(&Sim->Sp.TimeBinsGravity.NActiveParticles, modus);
   byten(&Sim->Sp.TimeBinsHydro.GlobalNActiveParticles, sizeof(long long), modus);
   byten(&Sim->Sp.TimeBinsGravity.GlobalNActiveParticles, sizeof(long long), modus);
-  byten(Sim->Sp.TimeBinsHydro.ActiveParticleList, Sim->Sp.TimeBinsHydro.NActiveParticles * sizeof(int), modus);
-  byten(Sim->Sp.TimeBinsGravity.ActiveParticleList, Sim->Sp.TimeBinsGravity.NActiveParticles * sizeof(int), modus);
-  byten(Sim->Sp.TimeBinsHydro.NextInTimeBin, Sim->Sp.NumGas * sizeof(int), modus);
-  byten(Sim->Sp.TimeBinsGravity.NextInTimeBin, Sim->Sp.NumPart * sizeof(int), modus);
-  byten(Sim->Sp.TimeBinsHydro.PrevInTimeBin, Sim->Sp.NumGas * sizeof(int), modus);
-  byten(Sim->Sp.TimeBinsGravity.PrevInTimeBin, Sim->Sp.NumPart * sizeof(int), modus);
+  byten(Sim->Sp.TimeBinsHydro.ActiveParticleList.data(), Sim->Sp.TimeBinsHydro.NActiveParticles * sizeof(int), modus);
+  byten(Sim->Sp.TimeBinsGravity.ActiveParticleList.data(), Sim->Sp.TimeBinsGravity.NActiveParticles * sizeof(int), modus);
+  byten(Sim->Sp.TimeBinsHydro.NextInTimeBin.data(), Sim->Sp.NumGas * sizeof(int), modus);
+  byten(Sim->Sp.TimeBinsGravity.NextInTimeBin.data(), Sim->Sp.NumPart * sizeof(int), modus);
+  byten(Sim->Sp.TimeBinsHydro.PrevInTimeBin.data(), Sim->Sp.NumGas * sizeof(int), modus);
+  byten(Sim->Sp.TimeBinsGravity.PrevInTimeBin.data(), Sim->Sp.NumPart * sizeof(int), modus);
   byten(Sim->Sp.TimeBinsHydro.TimeBinCount, TIMEBINS * sizeof(int), modus);
   byten(Sim->Sp.TimeBinsGravity.TimeBinCount, TIMEBINS * sizeof(int), modus);
   byten(Sim->Sp.TimeBinsHydro.FirstInTimeBin, TIMEBINS * sizeof(int), modus);

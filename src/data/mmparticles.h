@@ -21,12 +21,12 @@
 #include "../data/lightcone_massmap_data.h"
 #include "../data/mymalloc.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/constants.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/macros.h"
 #include "gadget/setcomm.h"
+#include "gadget/timebindata.h"
 #include "gadgetconfig.h"
 
 class mmparticles : public setcomm

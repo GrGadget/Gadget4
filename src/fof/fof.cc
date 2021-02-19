@@ -30,15 +30,14 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../ngbtree/ngbtree.h"
-#include "../sort/cxxsort.h"
 #include "../sort/parallel_sort.h"
 #include "../subfind/subfind.h"
 #include "../system/system.h"
-#include "../time_integration/timestep.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 #include "gadget/peano.h"
+#include "gadget/timebindata.h"
 
 /*! Computation of a FOF group catalogue.
  *
@@ -201,7 +200,7 @@ void fof<partset>::fof_fof(int num, const char *grpcat_basename, const char *grp
   /* Sort FOF_GList according to MinID. We are going to match this with FOF_PList (still ordered according to MinID) to get
    * access to the particles making up each group piece.
    */
-  mycxxsort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinID);
+  std::sort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinID);
 
   /* compute partial group properties for each local group segment */
   long long count_nids = 0;
@@ -501,7 +500,7 @@ void fof<partset>::fof_prepare_output_order(void)
     }
 
 #ifndef LEAN
-  mycxxsort(Tp->PS, Tp->PS + Tp->NumPart, fof_compare_subfind_data_Type);
+  std::sort(Tp->PS, Tp->PS + Tp->NumPart, fof_compare_subfind_data_Type);
 #endif
 
   for(int i = 0, off = 0; i < NTYPES; i++)
@@ -549,7 +548,7 @@ template <typename partset>
 void fof<partset>::fof_compile_catalogue(double inner_distance)
 {
   /* sort according to MinID, this brings particles belonging to the same group together */
-  mycxxsort(FOF_PList, FOF_PList + Tp->NumPart, fof_compare_FOF_PList_MinID);
+  std::sort(FOF_PList, FOF_PList + Tp->NumPart, fof_compare_FOF_PList_MinID);
 
   /* we now use the auxiliary FOF_GList structure to determine the group lengths.
    * LocCount will count the length of the group piece that is on the principal processor
@@ -605,7 +604,7 @@ void fof<partset>::fof_compile_catalogue(double inner_distance)
   FOF_GList = (fof_group_list *)Mem.myrealloc_movable(FOF_GList, sizeof(fof_group_list) * NgroupsExt);
 
   /* sort the group pieces according to task */
-  mycxxsort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinIDTask);
+  std::sort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinIDTask);
 
   int *Send_count  = (int *)Mem.mymalloc("Send_count", sizeof(int) * NTask);
   int *Send_offset = (int *)Mem.mymalloc("Send_offset", sizeof(int) * NTask);
@@ -663,8 +662,8 @@ void fof<partset>::fof_compile_catalogue(double inner_distance)
     get_FOF_GList[i].MinIDTask = i;
 
   /* sort both the local group pieces and the incoming group pieces so that we can match them efficiently */
-  mycxxsort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinID);
-  mycxxsort(get_FOF_GList, get_FOF_GList + nimport, fof_compare_FOF_GList_MinID);
+  std::sort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinID);
+  std::sort(get_FOF_GList, get_FOF_GList + nimport, fof_compare_FOF_GList_MinID);
 
   /* Merge the imported group pieces with the local group pieces.
    * For all local group pieces in FOF_GList, the total number of particles on other processors will
@@ -709,8 +708,8 @@ void fof<partset>::fof_compile_catalogue(double inner_distance)
    * We also sort the local group pieces according to MinIDTask, so that we can fill in the exported info
    * at the right place again.
    */
-  mycxxsort(get_FOF_GList, get_FOF_GList + nimport, fof_compare_FOF_GList_MinIDTask);
-  mycxxsort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinIDTask);
+  std::sort(get_FOF_GList, get_FOF_GList + nimport, fof_compare_FOF_GList_MinIDTask);
+  std::sort(FOF_GList, FOF_GList + NgroupsExt, fof_compare_FOF_GList_MinIDTask);
 
   /* fix the value of MinIDTask again that we had temporarily overwritten */
   for(int i = 0; i < nimport; i++)
@@ -953,7 +952,8 @@ void fof<partset>::fof_compute_group_properties(int gr, int start, int len)
       Group[gr].Mass += Tp->P[index].getMass();
       int type = Tp->P[index].getType();
 
-      Group[gr].Ascale += Tp->P[index].getMass() * Tp->P[index].getAscale();
+      // Group[gr].Ascale += Tp->P[index].getMass() * Tp->P[index].getAscale();
+      Group[gr].Ascale += Tp->P[index].getMass() * All.Time;
 
       Group[gr].LenType[type]++;
       Group[gr].MassType[type] += Tp->P[index].getMass();
@@ -989,7 +989,7 @@ void fof<partset>::fof_add_in_properties_of_group_segments(void)
   int *Recv_offset = (int *)Mem.mymalloc("Recv_offset", sizeof(int) * NTask);
 
   /* sort the groups according to task */
-  mycxxsort(Group, Group + NgroupsExt, fof_compare_Group_MinIDTask);
+  std::sort(Group, Group + NgroupsExt, fof_compare_Group_MinIDTask);
 
   /* count how many we have of each task */
   for(int i = 0; i < NTask; i++)
@@ -1034,8 +1034,8 @@ void fof<partset>::fof_add_in_properties_of_group_segments(void)
     }
 
   /* sort the groups again according to MinID */
-  mycxxsort(Group, Group + NgroupsExt, fof_compare_Group_MinID);
-  mycxxsort(get_Group, get_Group + nimport, fof_compare_Group_MinID);
+  std::sort(Group, Group + NgroupsExt, fof_compare_Group_MinID);
+  std::sort(get_Group, get_Group + nimport, fof_compare_Group_MinID);
 
   int start = 0;
   /* now add in the partial imported group data to the main ones */
@@ -1151,7 +1151,7 @@ void fof<partset>::fof_finish_group_properties(void)
   if(ngr != Ngroups)
     Terminate("ngr != Ngroups");
 
-  mycxxsort(Group, Group + Ngroups, fof_compare_Group_MinID);
+  std::sort(Group, Group + Ngroups, fof_compare_Group_MinID);
 }
 
 #if defined(LIGHTCONE_PARTICLES_GROUPS)

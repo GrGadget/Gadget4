@@ -9,13 +9,17 @@
  *  \brief contains routines to improve the domain balance by combining several patches per MPI rank
  */
 
+#include <algorithm>  // std::sort
 #include "gadgetconfig.h"
 
-#include "../data/lcparticles.h"  // lcparticles
+#include "../data/allvars.h"       // All.
+#include "../data/lcparticles.h"   // lcparticles
+#include "../data/simparticles.h"  // simparticles
 #include "../domain/domain.h"
-#include "../sort/cxxsort.h"  // mycxxsort
+#include "../logs/logs.h"  // Log.
 
-#include "gadget/macros.h"  // Terminate
+#include "gadget/macros.h"     // Terminate
+#include "gadget/mpi_utils.h"  // allreduce_sum
 
 /** This function uses the cumulative cost function (which weights work-load and memory-load equally) to subdivide
  *  the list of top-level leaf nodes into pieces that are (approximately) equal in size.
@@ -238,7 +242,7 @@ void domain<partset>::domain_combine_multipledomains(void)
                 cnt_try, NTask, NumNodes);
 
   /* sort the combinations such that we first try those yielding a lower imbalance */
-  mycxxsort(balance_try, balance_try + cnt_try, domain_compare_trybalance);
+  std::sort(balance_try, balance_try + cnt_try, domain_compare_trybalance);
 
   int start_try = 0;
   int completed = 0;
@@ -350,7 +354,7 @@ void domain<partset>::domain_combine_multipledomains(void)
 #ifdef SIMPLE_DOMAIN_AGGREGATION
                   domain_determinate_aggregated_value(cost_queues[n_cost_items], ndomains);
 #endif
-                  mycxxsort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
+                  std::sort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
                   first_unusued_in_cost_queue[n_cost_items] = 0;
 
                   n_cost_items++;
@@ -367,7 +371,7 @@ void domain<partset>::domain_combine_multipledomains(void)
 #ifdef SIMPLE_DOMAIN_AGGREGATION
                   domain_determinate_aggregated_value(cost_queues[n_cost_items], ndomains);
 #endif
-                  mycxxsort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
+                  std::sort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
                   first_unusued_in_cost_queue[n_cost_items] = 0;
 
                   n_cost_items++;
@@ -385,7 +389,7 @@ void domain<partset>::domain_combine_multipledomains(void)
 #ifdef SIMPLE_DOMAIN_AGGREGATION
               domain_determinate_aggregated_value(cost_queues[n_cost_items], ndomains);
 #endif
-              mycxxsort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
+              std::sort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
               first_unusued_in_cost_queue[n_cost_items] = 0;
 
               n_cost_items++;
@@ -402,7 +406,7 @@ void domain<partset>::domain_combine_multipledomains(void)
 #ifdef SIMPLE_DOMAIN_AGGREGATION
               domain_determinate_aggregated_value(cost_queues[n_cost_items], ndomains);
 #endif
-              mycxxsort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
+              std::sort(cost_queues[n_cost_items], cost_queues[n_cost_items] + ndomains, domain_sort_cost_queue_data);
               first_unusued_in_cost_queue[n_cost_items] = 0;
 
               n_cost_items++;
