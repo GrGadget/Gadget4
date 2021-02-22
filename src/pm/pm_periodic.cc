@@ -1834,16 +1834,16 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   workspace = forcegrid;
 
 #ifndef FFT_COLUMN_BASED
-  fft_of_rhogrid = (fft_complex *)&rhogrid[0];
+  fft_of_rhogrid = (fft_complex *)rhogrid;
 #else
-  fft_of_rhogrid = (fft_complex *)&workspace[0];
+  fft_of_rhogrid = (fft_complex *)workspace;
 #endif
 
   /* Do the FFT of the density field */
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&&rhogrid[0], &workspace[0], 1);
+  my_slab_based_fft(rhogrid, workspace, 1);
 #else
-  my_column_based_fft(&rhogrid, workspace, 1); /* result is in workspace, not in rhogrid ! */
+  my_column_based_fft(rhogrid, workspace, 1); /* result is in workspace, not in rhogrid ! */
 #endif
 
   if(mode != 0)
@@ -1959,9 +1959,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         /* Do the inverse FFT to get the potential/forces */
 
 #ifndef FFT_COLUMN_BASED
-      my_slab_based_fft(&&rhogrid[0], &workspace[0], -1);
+      my_slab_based_fft(rhogrid, workspace, -1);
 #else
-      my_column_based_fft(&workspace, rhogrid, -1);
+      my_column_based_fft(workspace, rhogrid, -1);
 #endif
 
       /* Now rhogrid holds the potential/forces */

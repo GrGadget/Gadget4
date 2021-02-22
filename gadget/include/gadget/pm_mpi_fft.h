@@ -92,9 +92,9 @@ class pm_mpi_fft : public setcomm, public fft_plan
  public:
   pm_mpi_fft(MPI_Comm comm, int nx, int ny, int nz);
 
-  void my_slab_based_fft(void *data, void *workspace, int forward);
+  void my_slab_based_fft(fft_real *data, fft_real *workspace, int forward);
 
-  void my_column_based_fft(void *data, void *workspace, int forward);
+  void my_column_based_fft(fft_real *data, fft_real *workspace, int forward);
 
   void my_slab_transposeA(fft_real *field, fft_real *scratch);
   void my_slab_transposeB(fft_real *field, fft_real *scratch);
