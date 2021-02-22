@@ -273,7 +273,7 @@ void pm_mpi_fft::my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int
   /* now the result is in b[] */
 }
 
-void pm_mpi_fft::my_slab_based_fft(void *data, void *workspace, int forward)
+void pm_mpi_fft::my_slab_based_fft(fft_real *data, fft_real *workspace, int forward)
 {
   int n, prod;
   int slabsx = slabs_x_per_task[ThisTask];
@@ -517,7 +517,7 @@ void pm_mpi_fft::my_fft_swap13back(fft_real *data, fft_real *out)
                           count_recv_13back.data(), 0);
 }
 
-void pm_mpi_fft::my_column_based_fft(void *data, void *workspace, int forward)
+void pm_mpi_fft::my_column_based_fft(fft_real *data, fft_real *workspace, int forward)
 {
   size_t n;
   fft_real *data_real = (fft_real *)data, *workspace_real = (fft_real *)workspace;
