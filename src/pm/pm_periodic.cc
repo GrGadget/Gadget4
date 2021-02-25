@@ -15,9 +15,8 @@
 
 #include <fftw3.h>
 #include <mpi.h>
-#include <sys/stat.h>
+#include <sys/stat.h>  // mkdir
 
-//#include "../logs/logs.h"
 #include "../data/allvars.h"  // All.
 #include "../pm/pm_periodic.h"
 #include "gadget/constants.h"      // NTYPES
@@ -72,11 +71,12 @@
  *
  *  Some auxiliary variables for bookkeeping are also initialized.
  */
-void pm_periodic::pm_init_periodic(simparticles *Sp_ptr)
+void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
 {
-  Sp = Sp_ptr;
+  BoxSize = boxsize;
+  Sp      = Sp_ptr;
 
-  Sp->Asmth[0] = ASMTH * All.BoxSize / PMGRID;
+  Sp->Asmth[0] = ASMTH * BoxSize / PMGRID;
   Sp->Rcut[0]  = RCUT * Sp->Asmth[0];
 
   /* Set up the FFTW-3 plan files. */
@@ -423,7 +423,7 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
 #ifdef GRAVITY_TALLBOX
   double fac = 1.0 / (((double)GRIDX) * GRIDY * GRIDZ); /* to get potential  */
 #else
-  double fac = 4.0 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(All.BoxSize, 3); /* to get potential  */
+  double fac = 4.0 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
 #endif
 #endif
 
@@ -945,7 +945,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 #ifdef GRAVITY_TALLBOX
   double fac = 1.0 / (((double)GRIDX) * GRIDY * GRIDZ); /* to get potential  */
 #else
-  double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(All.BoxSize, 3); /* to get potential  */
+  double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
 #endif
 #endif
 
@@ -1806,13 +1806,13 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
   double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
-  double d      = All.BoxSize / PMGRID;
+  double d      = BoxSize / PMGRID;
   double dhalf  = 0.5 * d;
 
 #ifdef GRAVITY_TALLBOX
   double fac = 1.0 / (((double)GRIDX) * GRIDY * GRIDZ); /* to get potential  */
 #else
-  double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(All.BoxSize, 3); /* to get potential  */
+  double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
 #endif
 
   fac *= 1 / (2 * d); /* for finite differencing */
@@ -2226,7 +2226,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
  */
 void pm_periodic::pmforce_setup_tallbox_kernel(void)
 {
-  double d = All.BoxSize / PMGRID;
+  double d = BoxSize / PMGRID;
 
   mpi_printf("PM-PERIODIC: Setting up tallbox kernel (GRIDX=%d, GRIDY=%d, GRIDZ=%d)\n", GRIDX, GRIDY, GRIDZ);
 
@@ -2274,7 +2274,7 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
 #else
           size_t ip = FCxy(c, k);
 #endif
-            kernel[ip] = pot / All.BoxSize;
+            kernel[ip] = pot / BoxSize;
           }
 
 #ifndef FFT_COLUMN_BASED
@@ -2301,9 +2301,9 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
 
 double pm_periodic::pmperiodic_tallbox_long_range_potential(double x, double y, double z)
 {
-  x /= All.BoxSize;
-  y /= All.BoxSize;
-  z /= All.BoxSize;
+  x /= BoxSize;
+  y /= BoxSize;
+  z /= BoxSize;
 
   double r = sqrt(x * x + y * y + z * z);
 
@@ -2398,7 +2398,7 @@ double pm_periodic::pmperiodic_tallbox_long_range_potential(double x, double y, 
 /*           Here comes code for the power-spectrum computation                                       */
 /*----------------------------------------------------------------------------------------------------*/
 
-void pm_periodic::calculate_power_spectra(int num)
+void pm_periodic::calculate_power_spectra(int num, char *OutputDir)
 {
   int n_type[NTYPES];
   long long ntot_type_all[NTYPES];
@@ -2431,11 +2431,11 @@ void pm_periodic::calculate_power_spectra(int num)
   if(ThisTask == 0)
     {
       char buf[MAXLEN_PATH_EXTRA];
-      sprintf(buf, "%s/powerspecs", All.OutputDir);
+      sprintf(buf, "%s/powerspecs", OutputDir);
       mkdir(buf, 02755);
     }
 
-  sprintf(power_spec_fname, "%s/powerspecs/powerspec_%03d.txt", All.OutputDir, num);
+  sprintf(power_spec_fname, "%s/powerspecs/powerspec_%03d.txt", OutputDir, num);
 
   pmforce_do_powerspec(typeflag); /* calculate power spectrum for all particle types */
 
@@ -2455,7 +2455,7 @@ void pm_periodic::calculate_power_spectra(int num)
 
             typeflag[i] = 1;
 
-            sprintf(power_spec_fname, "%s/powerspecs/powerspec_type%d_%03d.txt", All.OutputDir, i, num);
+            sprintf(power_spec_fname, "%s/powerspecs/powerspec_type%d_%03d.txt", OutputDir, i, num);
 
             pmforce_do_powerspec(typeflag); /* calculate power spectrum for type i */
           }
@@ -2512,18 +2512,18 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
   MPI_Allreduce(MPI_IN_PLACE, &mass2, 1, MPI_DOUBLE, MPI_SUM, Communicator);
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, MPI_DOUBLE, MPI_SUM, Communicator);
 
-  double d     = All.BoxSize / PMGRID;
+  double d     = BoxSize / PMGRID;
   double dhalf = 0.5 * d;
 
   double fac = 1.0 / mass;
 
-  double K0     = 2 * M_PI / All.BoxSize;                                                        /* minimum k */
-  double K1     = 2 * M_PI / All.BoxSize * (POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC * PMGRID / 2); /* maximum k that can be measured */
+  double K0     = 2 * M_PI / BoxSize;                                                        /* minimum k */
+  double K1     = 2 * M_PI / BoxSize * (POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC * PMGRID / 2); /* maximum k that can be measured */
   double binfac = BINS_PS / (log(K1) - log(K0));
 
-  double kfacx = 2.0 * M_PI * LONG_X / All.BoxSize;
-  double kfacy = 2.0 * M_PI * LONG_Y / All.BoxSize;
-  double kfacz = 2.0 * M_PI * LONG_Z / All.BoxSize;
+  double kfacx = 2.0 * M_PI * LONG_X / BoxSize;
+  double kfacy = 2.0 * M_PI * LONG_Y / BoxSize;
+  double kfacz = 2.0 * M_PI * LONG_Z / BoxSize;
 
   for(int i = 0; i < BINS_PS; i++)
     {
@@ -2658,9 +2658,9 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
       else
         PowerUncorrected[i] = 0;
 
-      DeltaUncorrected[i] = 4 * M_PI * pow(Kbin[i], 3) / pow(2 * M_PI / All.BoxSize, 3) * PowerUncorrected[i];
+      DeltaUncorrected[i] = 4 * M_PI * pow(Kbin[i], 3) / pow(2 * M_PI / BoxSize, 3) * PowerUncorrected[i];
 
-      ShotLimit[i] = 4 * M_PI * pow(Kbin[i], 3) / pow(2 * M_PI / All.BoxSize, 3) * (mass2 / (mass * mass));
+      ShotLimit[i] = 4 * M_PI * pow(Kbin[i], 3) / pow(2 * M_PI / BoxSize, 3) * (mass2 / (mass * mass));
     }
 
   /* store the result */
@@ -2681,12 +2681,12 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
       else
         Terminate("Something wrong.\n");
 
-      fprintf(fd, "%g\n", All.Time);
+      // fprintf(fd, "%g\n", All.Time);
       fprintf(fd, "%d\n", count_non_zero_bins);
-      fprintf(fd, "%g\n", All.BoxSize);
+      fprintf(fd, "%g\n", BoxSize);
       fprintf(fd, "%d\n", (int)(PMGRID));
-      if(All.ComovingIntegrationOn)
-        fprintf(fd, "%g\n", All.ComovingIntegrationOn > 0 ? linear_growth_factor(All.Time, 1.0) : 1.0);
+      // if(All.ComovingIntegrationOn)
+      //  fprintf(fd, "%g\n", All.ComovingIntegrationOn > 0 ? linear_growth_factor(All.Time, 1.0) : 1.0);
 
       for(int i = 0; i < BINS_PS; i++)
         if(CountModes[i] > 0)

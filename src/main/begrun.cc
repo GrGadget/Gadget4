@@ -231,7 +231,7 @@ void sim::begrun1(const char *parameterFile)
      All.RestartFlag == RST_POWERSPEC)
     {
 #ifdef PERIODIC
-      PM.pm_init_periodic(&Sp);
+      PM.pm_init_periodic(&Sp, All.BoxSize);
 #ifdef PLACEHIGHRESREGION
       PM.pm_init_nonperiodic(&Sp);
 #endif

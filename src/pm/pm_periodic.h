@@ -12,8 +12,8 @@
 #ifndef PM_PERIODIC_H
 #define PM_PERIODIC_H
 
-#include <gsl/gsl_integration.h>   // gsl_integration_workspace
-#include "../data/allvars.h"       // All.
+// #include <gsl/gsl_integration.h>   // gsl_integration_workspace
+// #include "../data/allvars.h"       // All.
 #include "../data/simparticles.h"  // simparticles
 #include "gadget/constants.h"      // MAXLEN_PATH_EXTRA
 #include "gadget/dtypes.h"         // LONG_X
@@ -73,12 +73,8 @@ class pm_periodic : public pm_mpi_fft
 #endif
 
   /* variables for power spectrum estimation */
-#ifndef BINS_PS
-#define BINS_PS 4000 /* number of bins for power spectrum computation */
-#endif
-#ifndef POWERSPEC_FOLDFAC
-#define POWERSPEC_FOLDFAC 16 /* folding factor to obtain an estimate of the power spectrum on very small scales */
-#endif
+  static constexpr int BINS_PS           = 4000; /* number of bins for power spectrum computation */
+  static constexpr int POWERSPEC_FOLDFAC = 16;   /* folding factor to obtain an estimate of the power spectrum on very small scales */
 
   char power_spec_fname[MAXLEN_PATH_EXTRA];
 
@@ -189,39 +185,16 @@ class pm_periodic : public pm_mpi_fft
   void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim);
 #endif
 
+  double BoxSize{};
+
  public:
   simparticles *Sp;
 
-  void pm_init_periodic(simparticles *Sp_ptr);
+  void pm_init_periodic(simparticles *Sp_ptr, double boxsize);
   void pmforce_periodic(int mode, int *typelist);
 
-  void calculate_power_spectra(int num);
+  void calculate_power_spectra(int num, char *OutputDir);
 
-  static double growthfactor_integrand(double a, void *param)
-  {
-    return pow(a / (All.Omega0 + (1 - All.Omega0 - All.OmegaLambda) * a + All.OmegaLambda * a * a * a), 1.5);
-  }
-
-  double linear_growth_factor(double astart, double aend) { return linear_growth(aend) / linear_growth(astart); }
-
-  double linear_growth(double a)
-  {
-    double hubble_a = sqrt(All.Omega0 / (a * a * a) + (1 - All.Omega0 - All.OmegaLambda) / (a * a) + All.OmegaLambda);
-
-    const int worksize = 100000;
-
-    double result, abserr;
-    gsl_function F;
-
-    gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(worksize);
-    F.function                           = &growthfactor_integrand;
-
-    gsl_integration_qag(&F, 0, a, 0, 1.0e-8, worksize, GSL_INTEG_GAUSS41, workspace, &result, &abserr);
-
-    gsl_integration_workspace_free(workspace);
-
-    return hubble_a * result;
-  }
 #endif
 };
 

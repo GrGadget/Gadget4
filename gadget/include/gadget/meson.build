@@ -1,4 +1,5 @@
 gadget_headers = files([
+    'linear_growth.h',
     'pinning.h',
     'parameters.h',
     'dtypes.h',

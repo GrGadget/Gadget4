@@ -456,7 +456,7 @@ void sim::init(int RestartSnapNum)
     {
 #if defined(PMGRID) && defined(PERIODIC)
 
-      PM.calculate_power_spectra(RestartSnapNum);
+      PM.calculate_power_spectra(RestartSnapNum, All.OutputDir);
 #else
       mpi_printf("\nThis option (Power Spectrum) only works for PERIODIC and enabled PMGRID.\n\n");
 #endif

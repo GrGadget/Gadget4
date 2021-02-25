@@ -53,7 +53,7 @@ void sim::run(void)
   snap_io Snap(&Sp, Communicator, All.SnapFormat);             /* get an I/O object */
   Snap.write_snapshot(All.SnapshotFileCount, NORMAL_SNAPSHOT); /* write snapshot file */
 #if defined(POWERSPEC_ON_OUTPUT)
-  PM.calculate_power_spectra(All.SnapshotFileCount);
+  PM.calculate_power_spectra(All.SnapshotFileCount, All.OutputDir);
 #endif
   return;
 #endif
@@ -601,7 +601,7 @@ void sim::create_snapshot_if_desired(void)
 #endif
 
 #if defined(POWERSPEC_ON_OUTPUT) && defined(PERIODIC) && defined(PMGRID)
-        PM.calculate_power_spectra(All.SnapshotFileCount);
+        PM.calculate_power_spectra(All.SnapshotFileCount, All.OutputDir);
 #endif
 
         All.SnapshotFileCount++;
