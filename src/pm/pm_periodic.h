@@ -12,8 +12,6 @@
 #ifndef PM_PERIODIC_H
 #define PM_PERIODIC_H
 
-// #include <gsl/gsl_integration.h>   // gsl_integration_workspace
-// #include "../data/allvars.h"       // All.
 #include "../data/simparticles.h"  // simparticles
 #include "gadget/constants.h"      // MAXLEN_PATH_EXTRA
 #include "gadget/dtypes.h"         // LONG_X
@@ -167,6 +165,8 @@ class pm_periodic : public pm_mpi_fft
   {
 #ifndef LEAN
     MyFloat Mass;
+#else
+    static MyFloat Mass;
 #endif
     MyIntPosType IntPos[3];
   };

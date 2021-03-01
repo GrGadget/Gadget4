@@ -96,11 +96,7 @@ void sim::init(int RestartSnapNum)
   for(int i = 0; i < Sp.NumPart; i++)
     if(All.MassTable[Sp.P[i].getType()] != 0)
       {
-#ifndef LEAN
         Sp.P[i].setMass(All.MassTable[Sp.P[i].getType()]);
-#else
-        All.PartMass = All.MassTable[Sp.P[i].getType()];
-#endif
       }
 
 #if NSOFTCLASSES > 1

@@ -17,7 +17,6 @@
 #include <mpi.h>
 #include <sys/stat.h>  // mkdir
 
-#include "../data/allvars.h"  // All.
 #include "../pm/pm_periodic.h"
 #include "gadget/constants.h"      // NTYPES
 #include "gadget/macros.h"         // Terminate
@@ -65,6 +64,10 @@
 
 #ifndef FFT_COLUMN_BASED
 #define NI(x, y, z) (((large_array_offset)GRIDZ) * ((y) + (x)*nslab_y) + (z))
+#endif
+
+#ifdef LEAN
+MyFloat pm_periodic::partbuf::Mass;
 #endif
 
 /*! \brief This routine generates the FFTW-plans to carry out the FFTs later on.
@@ -178,9 +181,6 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   for(int idx = 0; idx < NSource; idx++)
     {
       int i = Sp->get_active_index(idx);
-
-      if(P[i].Ti_Current != All.Ti_Current)
-        Sp->drift_particle(&P[i], &Sp->SphP[i], All.Ti_Current);
 
       int slab_x, slab_y, slab_z;
       if(mode == 2)
@@ -562,9 +562,6 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
         {
           int i = Sp->get_active_index(idx);
 
-          if(P[i].Ti_Current != All.Ti_Current)
-            Sp->drift_particle(&Sp->P[i], &Sp->SphP[i], All.Ti_Current);
-
           if(mode) /* only for power spectrum calculation */
             if(typelist[P[i].getType()] == 0)
               continue;
@@ -599,18 +596,14 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
               int task1 = slab_to_task[slab_xx];
 
               size_t ind0 = Sndpm_offset[task0] + Sndpm_count[task0]++;
-#ifndef LEAN
               partout[ind0].Mass = P[i].getMass();
-#endif
               for(int j = 0; j < 3; j++)
                 partout[ind0].IntPos[j] = P[i].IntPos[j];
 
               if(task0 != task1)
                 {
                   size_t ind1 = Sndpm_offset[task1] + Sndpm_count[task1]++;
-#ifndef LEAN
                   partout[ind1].Mass = P[i].getMass();
-#endif
                   for(int j = 0; j < 3; j++)
                     partout[ind1].IntPos[j] = P[i].IntPos[j];
                 }
@@ -670,36 +663,28 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
           else
             {
               size_t ind0        = Sndpm_offset[task0] + Sndpm_count[task0]++;
-#ifndef LEAN
               partout[ind0].Mass = P[i].getMass();
-#endif
               for(int j = 0; j < 3; j++)
                 partout[ind0].IntPos[j] = P[i].IntPos[j];
 
               if(task1 != task0)
                 {
                   size_t ind1        = Sndpm_offset[task1] + Sndpm_count[task1]++;
-#ifndef LEAN
                   partout[ind1].Mass = P[i].getMass();
-#endif
                   for(int j = 0; j < 3; j++)
                     partout[ind1].IntPos[j] = P[i].IntPos[j];
                 }
               if(task2 != task1 && task2 != task0)
                 {
                   size_t ind2        = Sndpm_offset[task2] + Sndpm_count[task2]++;
-#ifndef LEAN
                   partout[ind2].Mass = P[i].getMass();
-#endif
                   for(int j = 0; j < 3; j++)
                     partout[ind2].IntPos[j] = P[i].IntPos[j];
                 }
               if(task3 != task0 && task3 != task1 && task3 != task2)
                 {
                   size_t ind3        = Sndpm_offset[task3] + Sndpm_count[task3]++;
-#ifndef LEAN
                   partout[ind3].Mass = P[i].getMass();
-#endif
                   for(int j = 0; j < 3; j++)
                     partout[ind3].IntPos[j] = P[i].IntPos[j];
                 }
@@ -799,11 +784,7 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
       if(slab_zz >= GRIDZ)
         slab_zz = 0;
 
-#ifdef LEAN
-      double mass = All.PartMass;
-#else
       double mass = partin[i].Mass;
-#endif
 
       if(slab_to_task[slab_x] == ThisTask)
         {
@@ -876,11 +857,7 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
       int col2 = slab_xx * GRIDY + slab_y;
       int col3 = slab_xx * GRIDY + slab_yy;
 
-#ifdef LEAN
-      double mass = All.PartMass;
-#else
       double mass = partin[i].Mass;
-#endif
 
       int slab_z;
       MyIntPosType rmd_z;
@@ -1186,9 +1163,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
         {
           int i = Sp->get_active_index(idx);
 
-          if(P[i].Ti_Current != All.Ti_Current)
-            Sp->drift_particle(&Sp->P[i], &Sp->SphP[i], All.Ti_Current);
-
           int slab_x = P[i].IntPos[0] / INTCELL;
           int slab_xx = slab_x + 1;
 
@@ -1492,9 +1466,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
       for(int idx = 0; idx < NSource; idx++)
         {
           int i = Sp->get_active_index(idx);
-
-          if(P[i].Ti_Current != All.Ti_Current)
-            Sp->drift_particle(&Sp->P[i], &Sp->SphP[i], All.Ti_Current);
 
           int slab_z = P[i].IntPos[2] / INTCELL;
           int slab_zz = slab_z + 1;

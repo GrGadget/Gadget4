@@ -392,6 +392,7 @@ void sim::gravity_pm(int timebin)
   if((GravTree.DoPM & TREE_DO_BASE_PM))
     {
 #ifdef PERIODIC
+      sincronize_particles();
       PM.pmforce_periodic(LOW_MESH, NULL);
 #else
       /* non periodic PM mesh */
@@ -432,6 +433,7 @@ void sim::gravity_long_range_force(void)
 #endif
     }
 
+  sincronize_particles();
   PM.pmforce_periodic(0, NULL);
 
   /* multiply with the gravitational constant */
