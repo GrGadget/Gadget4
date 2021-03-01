@@ -1,4 +1,5 @@
 gadget_src = files([
+    'particle_data.cc',
     'std_vector.cc',
     'pinning.cc',
     'peano.cc',
