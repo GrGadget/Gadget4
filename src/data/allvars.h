@@ -73,7 +73,6 @@ struct global_data_all_processes : public parameters
 
   int DesNumNgb; /**< Desired number of SPH neighbours */
 
-
 #ifdef TIMEDEP_ART_VISC
   double AlphaMin; /*!< Minimum of allowed viscosity parameter */
 #endif

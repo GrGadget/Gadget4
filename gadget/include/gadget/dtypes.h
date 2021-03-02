@@ -83,6 +83,13 @@ typedef float MyReal;
 typedef double MyReal;
 #endif
 
+#ifdef NUMPART_PER_TASK_LARGE
+typedef long long large_numpart_type; /* if there is a risk that the local particle number times 8 overflows a 32-bit integer, this
+                                         data type should be used */
+#else
+typedef int large_numpart_type;
+#endif
+
 #ifndef DOUBLEPRECISION /* default is single-precision */
 typedef float MyFloat;
 typedef float MyDouble;

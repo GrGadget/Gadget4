@@ -16,12 +16,19 @@
 #include <fftw3.h>
 #include <mpi.h>
 #include <sys/stat.h>  // mkdir
+#include <algorithm>   // sort
+#include <vector>
 
+#include "../data/mymalloc.h"  // TODO: remove Mem.
 #include "../pm/pm_periodic.h"
 #include "gadget/constants.h"      // NTYPES
+#include "gadget/dtypes.h"         // MyFloat
 #include "gadget/macros.h"         // Terminate
 #include "gadget/mpi_utils.h"      // myMPI_Sendrecv
 #include "gadget/particle_data.h"  // particle_data
+
+extern template class std::vector<MyFloat>;
+extern template class std::vector<size_t>;
 
 /*!
  * These routines support two different strategies for doing the particle data exchange to assemble the density field
@@ -79,8 +86,8 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
   BoxSize = boxsize;
   Sp      = Sp_ptr;
 
-  Sp->Asmth[0] = ASMTH * BoxSize / PMGRID;
-  Sp->Rcut[0]  = RCUT * Sp->Asmth[0];
+  Sp->Asmth[0] = ASMTH * BoxSize / PMGRID;  // TODO: not here
+  Sp->Rcut[0]  = RCUT * Sp->Asmth[0];       // TODO: not here
 
   /* Set up the FFTW-3 plan files. */
   int ndimx[1] = {GRIDX}; /* dimension of the 1D transforms */
@@ -138,8 +145,8 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
 #endif
 
 #if defined(GRAVITY_TALLBOX)
-  kernel        = (fft_real *)Mem.mymalloc("kernel", maxfftsize * sizeof(fft_real));
-  fft_of_kernel = (fft_complex *)kernel;
+  kernel.reset(new fft_real[maxfftsize]);
+  fft_of_kernel = (fft_complex *)kernel.get();
 
   pmforce_setup_tallbox_kernel();
 #endif
@@ -165,9 +172,9 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
   particle_data *P = Sp->P;
 
-  part = (part_slab_data *)Mem.mymalloc("part", 8 * (NSource * sizeof(part_slab_data)));
-  large_numpart_type *part_sortindex =
-      (large_numpart_type *)Mem.mymalloc("part_sortindex", 8 * (NSource * sizeof(large_numpart_type)));
+  const large_numpart_type num_on_grid = ((large_numpart_type)NSource) * 8;
+  part                                 = (part_slab_data *)Mem.mymalloc("part", num_on_grid * sizeof(part_slab_data));
+  std::vector<large_numpart_type> part_sortindex(num_on_grid);
 
 #ifdef FFT_COLUMN_BASED
   int columns         = GRIDX * GRIDY;
@@ -202,7 +209,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
           slab_z = P[i].IntPos[2] / INTCELL;
         }
 
-      large_numpart_type index_on_grid = ((large_numpart_type)idx) << 3;
+      large_numpart_type index_on_grid = ((large_numpart_type)idx) * 8;
 
       for(int xx = 0; xx < 2; xx++)
         for(int yy = 0; yy < 2; yy++)
@@ -230,18 +237,11 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
   /* note: num_on_grid will be  8 times larger than the particle number, but num_field_points will generally be much smaller */
 
-  large_array_offset num_field_points;
-  large_numpart_type num_on_grid = ((large_numpart_type)NSource) << 3;
-
   /* bring the part-field into the order of the accessed cells. This allows the removal of duplicates */
 
-  std::sort(part_sortindex, part_sortindex + num_on_grid, pm_periodic_sortindex_comparator(part));
+  std::sort(part_sortindex.begin(), part_sortindex.end(), pm_periodic_sortindex_comparator(part));
 
-  if(num_on_grid > 0)
-    num_field_points = 1;
-  else
-    num_field_points = 0;
-
+  large_array_offset num_field_points = num_on_grid > 0 ? 1 : 0;
   /* determine the number of unique field points */
   for(large_numpart_type i = 1; i < num_on_grid; i++)
     {
@@ -253,10 +253,6 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   localfield_globalindex = (large_array_offset *)Mem.mymalloc_movable(&localfield_globalindex, "localfield_globalindex",
                                                                       num_field_points * sizeof(large_array_offset));
   localfield_data        = (fft_real *)Mem.mymalloc_movable(&localfield_data, "localfield_data", num_field_points * sizeof(fft_real));
-  localfield_first       = (size_t *)Mem.mymalloc_movable(&localfield_first, "localfield_first", NTask * sizeof(size_t));
-  localfield_sendcount   = (size_t *)Mem.mymalloc_movable(&localfield_sendcount, "localfield_sendcount", NTask * sizeof(size_t));
-  localfield_offset      = (size_t *)Mem.mymalloc_movable(&localfield_offset, "localfield_offset", NTask * sizeof(size_t));
-  localfield_recvcount   = (size_t *)Mem.mymalloc_movable(&localfield_recvcount, "localfield_recvcount", NTask * sizeof(size_t));
 
   for(int i = 0; i < NTask; i++)
     {
@@ -304,9 +300,6 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   localfield_offset[0] = 0;
   for(int i = 1; i < NTask; i++)
     localfield_offset[i] = localfield_offset[i - 1] + localfield_sendcount[i - 1];
-
-  Mem.myfree_movable(part_sortindex);
-  part_sortindex = NULL;
 
   /* now bin the local particle data onto the mesh list */
   for(large_numpart_type i = 0; i < num_field_points; i++)
@@ -359,7 +352,8 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   rhogrid = (fft_real *)Mem.mymalloc_clear("rhogrid", maxfftsize * sizeof(fft_real));
 
   /* exchange data and add contributions to the local mesh-path */
-  MPI_Alltoall(localfield_sendcount, sizeof(size_t), MPI_BYTE, localfield_recvcount, sizeof(size_t), MPI_BYTE, Communicator);
+  MPI_Alltoall(localfield_sendcount.data(), sizeof(size_t), MPI_BYTE, localfield_recvcount.data(), sizeof(size_t), MPI_BYTE,
+               Communicator);
 
   for(level = 0; level < (1 << PTask); level++) /* note: for level=0, target is the same task */
     {
@@ -487,7 +481,7 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
         continue;
 #endif
 
-      large_numpart_type j = (idx << 3);
+      large_numpart_type j = idx * 8;
 
       MyIntPosType rmd_x = P[i].IntPos[0] % INTCELL;
       MyIntPosType rmd_y = P[i].IntPos[1] % INTCELL;
@@ -535,11 +529,6 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
 
 void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typelist)
 {
-  Sndpm_count = (size_t *)Mem.mymalloc("Sndpm_count", NTask * sizeof(size_t));
-  Sndpm_offset = (size_t *)Mem.mymalloc("Sndpm_offset", NTask * sizeof(size_t));
-  Rcvpm_count = (size_t *)Mem.mymalloc("Rcvpm_count", NTask * sizeof(size_t));
-  Rcvpm_offset = (size_t *)Mem.mymalloc("Rcvpm_offset", NTask * sizeof(size_t));
-
   particle_data *P = Sp->P;
 
   /* determine the slabs/columns each particles accesses */
@@ -694,7 +683,7 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
 
       if(rep == 0)
         {
-          MPI_Alltoall(Sndpm_count, sizeof(size_t), MPI_BYTE, Rcvpm_count, sizeof(size_t), MPI_BYTE, Communicator);
+          MPI_Alltoall(Sndpm_count.data(), sizeof(size_t), MPI_BYTE, Rcvpm_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
 
           nimport = 0, nexport = 0, Rcvpm_offset[0] = 0, Sndpm_offset[0] = 0;
           for(int j = 0; j < NTask; j++)
@@ -726,7 +715,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange particle data */
-  myMPI_Alltoallv(partout, Sndpm_count, Sndpm_offset, partin, Rcvpm_count, Rcvpm_offset, sizeof(partbuf), flag_big_all, Communicator);
+  myMPI_Alltoallv(partout, Sndpm_count.data(), Sndpm_offset.data(), partin, Rcvpm_count.data(), Rcvpm_offset.data(), sizeof(partbuf),
+                  flag_big_all, Communicator);
 
   Mem.myfree(partout);
 
@@ -926,8 +916,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 #endif
 #endif
 
-  MyFloat *flistin = (MyFloat *)Mem.mymalloc("flistin", nimport * sizeof(MyFloat));
-  MyFloat *flistout = (MyFloat *)Mem.mymalloc("flistout", nexport * sizeof(MyFloat));
+  std::vector<MyFloat> flistin(nimport);
+  std::vector<MyFloat> flistout(nexport);
 
 #ifdef FFT_COLUMN_BASED
   int columns = GRIDX * GRIDY;
@@ -1026,8 +1016,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange  data */
-  myMPI_Alltoallv(flistin, Rcvpm_count, Rcvpm_offset, flistout, Sndpm_count, Sndpm_offset, sizeof(MyFloat), flag_big_all,
-                  Communicator);
+  myMPI_Alltoallv(flistin.data(), Rcvpm_count.data(), Rcvpm_offset.data(), flistout.data(), Sndpm_count.data(), Sndpm_offset.data(),
+                  sizeof(MyFloat), flag_big_all, Communicator);
 
   /* each threads needs to do the loop to clear its send_count[] array */
   for(int j = 0; j < NTask; j++)
@@ -1121,9 +1111,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 #endif
         }
     }
-
-  Mem.myfree(flistout);
-  Mem.myfree(flistin);
 }
 
 #ifdef FFT_COLUMN_BASED
@@ -1132,17 +1119,18 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   if(dim != 1)
     Terminate("bummer");
 
-  size_t *send_count = (size_t *)Mem.mymalloc("send_count", NTask * sizeof(size_t));
-  size_t *send_offset = (size_t *)Mem.mymalloc("send_offset", NTask * sizeof(size_t));
-  size_t *recv_count = (size_t *)Mem.mymalloc("recv_count", NTask * sizeof(size_t));
-  size_t *recv_offset = (size_t *)Mem.mymalloc("recv_offset", NTask * sizeof(size_t));
+  std::vector<size_t> send_count(NTask);
+  std::vector<size_t> send_offset(NTask);
+  std::vector<size_t> recv_count(NTask);
+  std::vector<size_t> recv_offset(NTask);
 
-  struct partbuf
+  struct partbuf  // TODO: careful there is another partbuf defined in the header
   {
     MyIntPosType IntPos[3];
   };
 
-  partbuf *partin, *partout;
+  partbuf *partin, *partout;  // TODO: careful there is partin and partout
+  // defined in the header
   size_t nimport = 0, nexport = 0;
 
   particle_data *P = Sp->P;
@@ -1243,7 +1231,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
 
       if(rep == 0)
         {
-          MPI_Alltoall(send_count, sizeof(size_t), MPI_BYTE, recv_count, sizeof(size_t), MPI_BYTE, Communicator);
+          MPI_Alltoall(send_count.data(), sizeof(size_t), MPI_BYTE, recv_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
 
           nimport = 0, nexport = 0;
           recv_offset[0] = send_offset[0] = 0;
@@ -1277,12 +1265,13 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange particle data */
-  myMPI_Alltoallv(partout, send_count, send_offset, partin, recv_count, recv_offset, sizeof(partbuf), flag_big_all, Communicator);
+  myMPI_Alltoallv(partout, send_count.data(), send_offset.data(), partin, recv_count.data(), recv_offset.data(), sizeof(partbuf),
+                  flag_big_all, Communicator);
 
   Mem.myfree(partout);
 
-  MyFloat *flistin = (MyFloat *)Mem.mymalloc("flistin", nimport * sizeof(MyFloat));
-  MyFloat *flistout = (MyFloat *)Mem.mymalloc("flistout", nexport * sizeof(MyFloat));
+  std::vector<MyFloat> flistin(nimport);
+  std::vector<MyFloat> flistout(nexport);
 
   for(size_t i = 0; i < nimport; i++)
     {
@@ -1350,7 +1339,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange data */
-  myMPI_Alltoallv(flistin, recv_count, recv_offset, flistout, send_count, send_offset, sizeof(MyFloat), flag_big_all, Communicator);
+  myMPI_Alltoallv(flistin.data(), recv_count.data(), recv_offset.data(), flistout.data(), send_count.data(), send_offset.data(),
+                  sizeof(MyFloat), flag_big_all, Communicator);
 
   for(int j = 0; j < NTask; j++)
     send_count[j] = 0;
@@ -1422,13 +1412,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
 #endif
     }
 
-  Mem.myfree(flistout);
-  Mem.myfree(flistin);
   Mem.myfree(partin);
-  Mem.myfree(recv_offset);
-  Mem.myfree(recv_count);
-  Mem.myfree(send_offset);
-  Mem.myfree(send_count);
 }
 
 void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim)
@@ -1436,17 +1420,18 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   if(dim != 0)
     Terminate("bummer");
 
-  size_t *send_count = (size_t *)Mem.mymalloc("send_count", NTask * sizeof(size_t));
-  size_t *send_offset = (size_t *)Mem.mymalloc("send_offset", NTask * sizeof(size_t));
-  size_t *recv_count = (size_t *)Mem.mymalloc("recv_count", NTask * sizeof(size_t));
-  size_t *recv_offset = (size_t *)Mem.mymalloc("recv_offset", NTask * sizeof(size_t));
+  std::vector<size_t> send_count(NTask);
+  std::vector<size_t> send_offset(NTask);
+  std::vector<size_t> recv_count(NTask);
+  std::vector<size_t> recv_offset(NTask);
 
-  struct partbuf
+  struct partbuf  // TODO: careful there is another partbuf defined in the header
   {
     MyIntPosType IntPos[3];
   };
 
-  partbuf *partin, *partout;
+  partbuf *partin, *partout;  // TODO: careful there is partin and partout
+  // defined in the header
   size_t nimport = 0, nexport = 0;
 
   particle_data *P = Sp->P;
@@ -1547,7 +1532,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
 
       if(rep == 0)
         {
-          MPI_Alltoall(send_count, sizeof(size_t), MPI_BYTE, recv_count, sizeof(size_t), MPI_BYTE, Communicator);
+          MPI_Alltoall(send_count.data(), sizeof(size_t), MPI_BYTE, recv_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
 
           nimport = 0, nexport = 0;
           recv_offset[0] = send_offset[0] = 0;
@@ -1581,12 +1566,13 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange particle data */
-  myMPI_Alltoallv(partout, send_count, send_offset, partin, recv_count, recv_offset, sizeof(partbuf), flag_big_all, Communicator);
+  myMPI_Alltoallv(partout, send_count.data(), send_offset.data(), partin, recv_count.data(), recv_offset.data(), sizeof(partbuf),
+                  flag_big_all, Communicator);
 
   Mem.myfree(partout);
 
-  MyFloat *flistin = (MyFloat *)Mem.mymalloc("flistin", nimport * sizeof(MyFloat));
-  MyFloat *flistout = (MyFloat *)Mem.mymalloc("flistout", nexport * sizeof(MyFloat));
+  std::vector<MyFloat> flistin(nimport);
+  std::vector<MyFloat> flistout(nexport);
 
   for(size_t i = 0; i < nimport; i++)
     {
@@ -1654,7 +1640,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange data */
-  myMPI_Alltoallv(flistin, recv_count, recv_offset, flistout, send_count, send_offset, sizeof(MyFloat), flag_big_all, Communicator);
+  myMPI_Alltoallv(flistin.data(), recv_count.data(), recv_offset.data(), flistout.data(), send_count.data(), send_offset.data(),
+                  sizeof(MyFloat), flag_big_all, Communicator);
 
   for(int j = 0; j < NTask; j++)
     send_count[j] = 0;
@@ -1726,13 +1713,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
 #endif
     }
 
-  Mem.myfree(flistout);
-  Mem.myfree(flistin);
   Mem.myfree(partin);
-  Mem.myfree(recv_offset);
-  Mem.myfree(recv_count);
-  Mem.myfree(send_offset);
-  Mem.myfree(send_count);
 }
 #endif
 
@@ -1757,8 +1738,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   double tstart = MPI_Wtime();
 
   if(mode == 0)
-    mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)  presently allocated=%g MB\n", Sp->Rcut[0],
-               Mem.getAllocatedBytesInMB());
+    mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)\n", Sp->Rcut[0]);
 
 #ifdef HIERARCHICAL_GRAVITY
   NSource = Sp->TimeBinsGravity.NActiveParticles;
@@ -2077,47 +2057,46 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       my_fft_swap23(rhogrid, forcegrid);  // rhogrid contains potential field, forcegrid the transposed field
 
       /* make an in-place computation */
-      fft_real *column = (fft_real *)Mem.mymalloc("column", GRIDY * sizeof(fft_real));
+      {
+        std::vector<fft_real> column(GRIDY);
 
-      for(large_array_offset i = 0; i < ncol_XZ; i++)
-        {
-          memcpy(column, &forcegrid[GRIDY * i], GRIDY * sizeof(fft_real));
+        for(large_array_offset i = 0; i < ncol_XZ; i++)
+          {
+            memcpy(column.data(), &forcegrid[GRIDY * i], GRIDY * sizeof(fft_real));
 
-          fft_real *potp = column;
-          fft_real *forcep = &forcegrid[GRIDY * i];
+            fft_real *const forcep = &forcegrid[GRIDY * i];
 
-          for(int y = 0; y < GRIDY; y++)
-            {
-              int yr = y + 1;
-              int yl = y - 1;
-              int yrr = y + 2;
-              int yll = y - 2;
+            for(int y = 0; y < GRIDY; y++)
+              {
+                int yr = y + 1;
+                int yl = y - 1;
+                int yrr = y + 2;
+                int yll = y - 2;
 
-              if(yr >= GRIDY)
-                yr -= GRIDY;
-              if(yrr >= GRIDY)
-                yrr -= GRIDY;
-              if(yl < 0)
-                yl += GRIDY;
-              if(yll < 0)
-                yll += GRIDY;
+                if(yr >= GRIDY)
+                  yr -= GRIDY;
+                if(yrr >= GRIDY)
+                  yrr -= GRIDY;
+                if(yl < 0)
+                  yl += GRIDY;
+                if(yll < 0)
+                  yll += GRIDY;
 
-              forcep[y] = fac * ((4.0 / 3) * (potp[yl] - potp[yr]) - (1.0 / 6) * (potp[yll] - potp[yrr]));
-            }
-        }
-
-      Mem.myfree(column);
+                forcep[y] = fac * ((4.0 / 3) * (column[yl] - column[yr]) - (1.0 / 6) * (column[yll] - column[yrr]));
+              }
+          }
+      }
 
       /* now need to read out from forcegrid  in a non-standard way */
 
 #ifdef PM_ZOOM_OPTIMIZED
       /* need a third field as scratch space */
-      fft_real *scratch = (fft_real *)Mem.mymalloc("scratch", fftsize * sizeof(fft_real));
+      {
+        std::vector<fft_real> scratch(fftsize);
 
-      my_fft_swap23back(&forcegrid, scratch);
-      pmforce_zoom_optimized_readout_forces_or_potential(scratch, 1);
-
-      Mem.myfree(scratch);
+        my_fft_swap23back(forcegrid, scratch.data());
+        pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1);
+      }
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid, 1);
 #endif
@@ -2152,7 +2131,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
         /* now need to read out from forcegrid in a non-standard way */
 #ifdef PM_ZOOM_OPTIMIZED
-      my_fft_swap13back(&rhogrid, forcegrid);
+      my_fft_swap13back(rhogrid, forcegrid);
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 0);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid, 0);
@@ -2167,10 +2146,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   Mem.myfree(rhogrid);
 
 #ifdef PM_ZOOM_OPTIMIZED
-  Mem.myfree(localfield_recvcount);
-  Mem.myfree(localfield_offset);
-  Mem.myfree(localfield_sendcount);
-  Mem.myfree(localfield_first);
   Mem.myfree(localfield_data);
   Mem.myfree(localfield_globalindex);
   Mem.myfree(part);
@@ -2178,10 +2153,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #ifndef FFT_COLUMN_BASED
   Mem.myfree(partin);
 #endif
-  Mem.myfree(Rcvpm_offset);
-  Mem.myfree(Rcvpm_count);
-  Mem.myfree(Sndpm_offset);
-  Mem.myfree(Sndpm_count);
 #endif
 
   double tend = MPI_Wtime();
@@ -2256,16 +2227,14 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
 
   /* Do the FFT of the kernel */
 
-  fft_real *workspc = (fft_real *)Mem.mymalloc("workspc", maxfftsize * sizeof(fft_real));
+  std::vector<fft_real> workspc(maxfftsize);
 
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&kernel, workspc, 1);
+  my_slab_based_fft(kernel.get(), workspc, 1);
 #else
-  my_column_based_fft(&kernel, workspc, 1); /* result is in workspace, not in kernel */
-  memcpy(kernel, workspc, maxfftsize * sizeof(fft_real));
+  my_column_based_fft(kernel.get(), workspc.data(), 1); /* result is in workspace, not in kernel */
+  memcpy(kernel.get(), workspc.data(), maxfftsize * sizeof(fft_real));
 #endif
-
-  Mem.myfree(workspc);
 
   mpi_printf("PM-PERIODIC: Done setting up tallbox kernel\n");
 }

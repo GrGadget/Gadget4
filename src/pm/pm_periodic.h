@@ -12,6 +12,10 @@
 #ifndef PM_PERIODIC_H
 #define PM_PERIODIC_H
 
+#include <memory>  // unique_ptr
+#include <vector>
+extern template class std::vector<size_t>;
+
 #include "../data/simparticles.h"  // simparticles
 #include "gadget/constants.h"      // MAXLEN_PATH_EXTRA
 #include "gadget/dtypes.h"         // LONG_X
@@ -51,7 +55,24 @@
 class pm_periodic : public pm_mpi_fft
 {
  public:
-  pm_periodic(MPI_Comm comm) : pm_mpi_fft(comm, GRIDX, GRIDY, GRIDZ) {}
+  pm_periodic(MPI_Comm comm)
+      : pm_mpi_fft(comm, GRIDX, GRIDY, GRIDZ)
+
+#ifndef PM_ZOOM_OPTIMIZED
+        ,
+        Sndpm_count(NTask),
+        Sndpm_offset(NTask),
+        Rcvpm_count(NTask),
+        Rcvpm_offset(NTask)
+#else
+        ,
+        localfield_sendcount(NTask),
+        localfield_recvcount(NTask),
+        localfield_offset(NTask),
+        localfield_first(NTask)
+#endif
+  {
+  }
 
 #if defined(PMGRID) && defined(PERIODIC)
 
@@ -61,13 +82,6 @@ class pm_periodic : public pm_mpi_fft
                                            with a single index */
 #else
   typedef int large_array_offset;
-#endif
-
-#ifdef NUMPART_PER_TASK_LARGE
-  typedef long long large_numpart_type; /* if there is a risk that the local particle number times 8 overflows a 32-bit integer, this
-                                           data type should be used */
-#else
-  typedef int large_numpart_type;
 #endif
 
   /* variables for power spectrum estimation */
@@ -110,8 +124,8 @@ class pm_periodic : public pm_mpi_fft
   fft_complex *fft_of_rhogrid;
 
 #if defined(GRAVITY_TALLBOX)
-  fft_real *kernel; /*!< If the tallbox option is used, the code will construct and store the k-space Greens function by FFTing it from
-                       real space */
+  std::unique_ptr<fft_real[]> kernel; /*!< If the tallbox option is used, the code will construct and store the k-space Greens function
+                       by FFTing it from real space */
   fft_complex *fft_of_kernel;
 #endif
 
@@ -152,7 +166,7 @@ class pm_periodic : public pm_mpi_fft
   };
 
  private:
-  size_t *localfield_sendcount, *localfield_first, *localfield_offset, *localfield_recvcount;
+  std::vector<size_t> localfield_sendcount, localfield_recvcount, localfield_offset, localfield_first;
   large_array_offset *localfield_globalindex, *import_globalindex;
   fft_real *localfield_data, *import_data;
 
@@ -174,8 +188,7 @@ class pm_periodic : public pm_mpi_fft
 
   size_t nimport, nexport;
 
-  size_t *Sndpm_count, *Sndpm_offset;
-  size_t *Rcvpm_count, *Rcvpm_offset;
+  std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;
 
   void pmforce_uniform_optimized_prepare_density(int mode, int *typelist);
 

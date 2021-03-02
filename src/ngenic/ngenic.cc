@@ -56,13 +56,6 @@ typedef long long large_array_offset; /* use a larger data type in this case so 
 typedef unsigned int large_array_offset;
 #endif
 
-#ifdef NUMPART_PER_TASK_LARGE
-typedef long long large_numpart_type; /* if there is a risk that the local particle number times 8 overflows a 32-bit integer, this
-                                         data type should be used */
-#else
-typedef int large_numpart_type;
-#endif
-
 void ngenic::ngenic_displace_particles(void)
 {
   TIMER_START(CPU_NGENIC);
