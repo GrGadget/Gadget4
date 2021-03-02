@@ -97,8 +97,8 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
   int max_GRID2 = 2 * (std::max<int>(std::max<int>(GRIDX, GRIDY), GRIDZ) / 2 + 1);
 
   /* temporarily allocate some arrays to make sure that out-of-place plans are created */
-  rhogrid   = (fft_real *)Mem.mymalloc("rhogrid", max_GRID2 * sizeof(fft_real));
-  forcegrid = (fft_real *)Mem.mymalloc("forcegrid", max_GRID2 * sizeof(fft_real));
+  rhogrid.resize(max_GRID2);
+  forcegrid.resize(max_GRID2);
 
 #ifdef DOUBLEPRECISION_FFTW
   int alignflag = 0;
@@ -107,7 +107,7 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
   int alignflag = FFTW_UNALIGNED;
 #endif
 
-  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, rhogrid, 0, 1, GRID2, (fft_complex *)forcegrid, 0, 1, GRIDz,
+  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, rhogrid.data(), 0, 1, GRID2, (fft_complex *)forcegrid.data(), 0, 1, GRIDz,
                                               FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
 #ifndef FFT_COLUMN_BASED
@@ -116,23 +116,24 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
   int stride    = 1;
 #endif
 
-  forward_plan_ydir = FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid, 0,
-                                          stride, GRIDz * GRIDY, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_ydir =
+      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid.data(), 0,
+                          stride, GRIDz * GRIDY, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  forward_plan_xdir = FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid, 0,
-                                          stride, GRIDz * GRIDX, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_xdir =
+      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid.data(), 0,
+                          stride, GRIDz * GRIDX, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  backward_plan_xdir = FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid, 0,
-                                           stride, GRIDz * GRIDX, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_xdir =
+      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * GRIDX, (fft_complex *)forcegrid.data(), 0,
+                          stride, GRIDz * GRIDX, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  backward_plan_ydir = FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid, 0,
-                                           stride, GRIDz * GRIDY, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_ydir =
+      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * GRIDY, (fft_complex *)forcegrid.data(), 0,
+                          stride, GRIDz * GRIDY, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)rhogrid, 0, 1, GRIDz, forcegrid, 0, 1, GRID2,
+  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)rhogrid.data(), 0, 1, GRIDz, forcegrid.data(), 0, 1, GRID2,
                                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
-
-  Mem.myfree(forcegrid);
-  Mem.myfree(rhogrid);
 
 #ifndef FFT_COLUMN_BASED
 
@@ -165,7 +166,7 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
 
 #ifdef PM_ZOOM_OPTIMIZED
 
-void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist)
+void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist, std::vector<part_slab_data> &part)
 {
   int level, recvTask;
   MPI_Status status;
@@ -173,7 +174,8 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   particle_data *P = Sp->P;
 
   const large_numpart_type num_on_grid = ((large_numpart_type)NSource) * 8;
-  part                                 = (part_slab_data *)Mem.mymalloc("part", num_on_grid * sizeof(part_slab_data));
+  // part                                 = (part_slab_data *)Mem.mymalloc("part", num_on_grid * sizeof(part_slab_data));
+  part.resize(num_on_grid);
   std::vector<large_numpart_type> part_sortindex(num_on_grid);
 
 #ifdef FFT_COLUMN_BASED
@@ -239,7 +241,8 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
   /* bring the part-field into the order of the accessed cells. This allows the removal of duplicates */
 
-  std::sort(part_sortindex.begin(), part_sortindex.end(), pm_periodic_sortindex_comparator(part));
+  std::sort(part_sortindex.begin(), part_sortindex.end(),
+            [&part](const large_numpart_type a, const large_numpart_type b) { return part[a].globalindex < part[b].globalindex; });
 
   large_array_offset num_field_points = num_on_grid > 0 ? 1 : 0;
   /* determine the number of unique field points */
@@ -349,7 +352,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
       localfield_data[part[i + 7].localindex] += weight * (dx)*dy * dz;
     }
 
-  rhogrid = (fft_real *)Mem.mymalloc_clear("rhogrid", maxfftsize * sizeof(fft_real));
+  rhogrid.resize(maxfftsize);
 
   /* exchange data and add contributions to the local mesh-path */
   MPI_Alltoall(localfield_sendcount.data(), sizeof(size_t), MPI_BYTE, localfield_recvcount.data(), sizeof(size_t), MPI_BYTE,
@@ -409,7 +412,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 /* Function to read out the force component corresponding to spatial dimension 'dim'.
  * If dim is negative, potential values are read out and assigned to particles.
  */
-void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim)
+void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim, const std::vector<part_slab_data> &part)
 {
   particle_data *P = Sp->P;
 
@@ -721,7 +724,7 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
   Mem.myfree(partout);
 
   /* allocate cleared density field */
-  rhogrid = (fft_real *)Mem.mymalloc_movable_clear(&rhogrid, "rhogrid", maxfftsize * sizeof(fft_real));
+  rhogrid.resize(maxfftsize);
 
 #ifndef FFT_COLUMN_BASED
   /* bin particle data onto mesh, in multi-threaded fashion */
@@ -1769,7 +1772,8 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   fac *= 1 / (2 * d); /* for finite differencing */
 
 #ifdef PM_ZOOM_OPTIMIZED
-  pmforce_zoom_optimized_prepare_density(mode, typelist);
+  std::vector<part_slab_data> part; /*!< array of part_slab_data linking the local particles to their mesh cells */
+  pmforce_zoom_optimized_prepare_density(mode, typelist, part);
 #else
   pmforce_uniform_optimized_prepare_density(mode, typelist);
 #endif
@@ -1780,21 +1784,20 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
   /* allocate the memory to hold the FFT fields */
 
-  forcegrid = (fft_real *)Mem.mymalloc_movable(&forcegrid, "forcegrid", maxfftsize * sizeof(fft_real));
-
-  workspace = forcegrid;
+  forcegrid.resize(maxfftsize);
+  auto &workspace = forcegrid;
 
 #ifndef FFT_COLUMN_BASED
-  fft_of_rhogrid = (fft_complex *)rhogrid;
+  fft_complex *const fft_of_rhogrid = (fft_complex *)rhogrid.data();
 #else
-  fft_of_rhogrid = (fft_complex *)workspace;
+  fft_complex *const fft_of_rhogrid = (fft_complex *)workspace.data();
 #endif
 
   /* Do the FFT of the density field */
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(rhogrid, workspace, 1);
+  my_slab_based_fft(rhogrid.data(), workspace.data(), 1);
 #else
-  my_column_based_fft(rhogrid, workspace, 1); /* result is in workspace, not in rhogrid ! */
+  my_column_based_fft(rhogrid.data(), workspace.data(), 1); /* result is in workspace, not in rhogrid ! */
 #endif
 
   if(mode != 0)
@@ -1910,18 +1913,18 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         /* Do the inverse FFT to get the potential/forces */
 
 #ifndef FFT_COLUMN_BASED
-      my_slab_based_fft(rhogrid, workspace, -1);
+      my_slab_based_fft(rhogrid.data(), workspace.data(), -1);
 #else
-      my_column_based_fft(workspace, rhogrid, -1);
+      my_column_based_fft(workspace.data(), rhogrid.data(), -1);
 #endif
 
       /* Now rhogrid holds the potential/forces */
 
 #ifdef EVALPOTENTIAL
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(rhogrid, -1);
+      pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid, -1);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1);
 #endif
 #endif
 
@@ -1955,9 +1958,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
             }
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 2);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid, 2);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2);
 #endif
 
       /* y-direction */
@@ -1980,14 +1983,14 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
             }
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 1);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid, 1);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1);
 #endif
 
       /* x-direction */
-      my_slab_transposeA(&rhogrid, forcegrid); /* compute the transpose of the potential field for finite differencing */
-                                               /* note: for the x-direction, we difference the transposed field */
+      my_slab_transposeA(&rhogrid, forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
+                                                      /* note: for the x-direction, we difference the transposed field */
 
       for(x = 0; x < GRIDX; x++)
         for(y = 0; y < nslab_y; y++)
@@ -2010,9 +2013,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       my_slab_transposeB(&forcegrid, rhogrid); /* reverse the transpose from above */
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 0);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid, 0);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0);
 #endif
 
 #else
@@ -2020,8 +2023,8 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       /* z-direction */
       for(large_array_offset i = 0; i < ncol_XY; i++)
         {
-          fft_real *forcep = &forcegrid[GRID2 * i];
-          fft_real *potp = &rhogrid[GRID2 * i];
+          fft_real *const forcep = &forcegrid[GRID2 * i];
+          fft_real *const potp = &rhogrid[GRID2 * i];
 
           for(int z = 0; z < GRIDZ; z++)
             {
@@ -2044,9 +2047,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         }
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 2);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid, 2);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2);
 
       /* at this point we can free partin */
       Mem.myfree_movable(partin);
@@ -2054,7 +2057,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* y-direction */
-      my_fft_swap23(rhogrid, forcegrid);  // rhogrid contains potential field, forcegrid the transposed field
+      my_fft_swap23(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field, forcegrid the transposed field
 
       /* make an in-place computation */
       {
@@ -2094,15 +2097,15 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       {
         std::vector<fft_real> scratch(fftsize);
 
-        my_fft_swap23back(forcegrid, scratch.data());
-        pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1);
+        my_fft_swap23back(forcegrid.data(), scratch.data());
+        pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part);
       }
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid, 1);
+      pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid.data(), 1);
 #endif
 
       /* x-direction */
-      my_fft_swap13(rhogrid, forcegrid);  // rhogrid contains potential field
+      my_fft_swap13(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field
 
       for(large_array_offset i = 0; i < ncol_ZY; i++)
         {
@@ -2131,24 +2134,20 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
         /* now need to read out from forcegrid in a non-standard way */
 #ifdef PM_ZOOM_OPTIMIZED
-      my_fft_swap13back(rhogrid, forcegrid);
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid, 0);
+      my_fft_swap13back(rhogrid.data(), forcegrid.data());
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid, 0);
+      pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid.data(), 0);
 #endif
 
 #endif
     }
 
-  /* free stuff */
-
-  Mem.myfree(forcegrid);
-  Mem.myfree(rhogrid);
+    /* free stuff */
 
 #ifdef PM_ZOOM_OPTIMIZED
   Mem.myfree(localfield_data);
   Mem.myfree(localfield_globalindex);
-  Mem.myfree(part);
 #else
 #ifndef FFT_COLUMN_BASED
   Mem.myfree(partin);
@@ -2549,6 +2548,7 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
           large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
 #endif
 
+          const fft_complex *const fft_of_rhogrid = (fft_complex *)rhogrid.data();
           double po = (fft_of_rhogrid[ip][0] * fft_of_rhogrid[ip][0] + fft_of_rhogrid[ip][1] * fft_of_rhogrid[ip][1]);
 
           po *= fac * fac * smth;

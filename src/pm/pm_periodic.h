@@ -114,14 +114,13 @@ class pm_periodic : public pm_mpi_fft
    *  \var workspace
    *  \brief Workspace array used during the FFTs
    */
-  fft_real *rhogrid, *forcegrid, *workspace;
+  std::vector<fft_real> rhogrid, forcegrid;  //, *workspace;
 
   /*! \brief Array containing the FFT of #rhogrid
    *
    *  This pointer points to the same array as #rhogrid,
    *  because in-place FFTs are used.
    */
-  fft_complex *fft_of_rhogrid;
 
 #if defined(GRAVITY_TALLBOX)
   std::unique_ptr<fft_real[]> kernel; /*!< If the tallbox option is used, the code will construct and store the k-space Greens function
@@ -147,31 +146,14 @@ class pm_periodic : public pm_mpi_fft
     large_array_offset localindex;  /*!< index to a local copy of the corresponding mesh cell of the global density array (used during
                                        local mass and force assignment) */
   };
-  part_slab_data *part; /*!< array of part_slab_data linking the local particles to their mesh cells */
-
-  /* realize the comparison function as a functor, so that it can have an internal state (here the data array for which we sort indices
-   */
-  struct pm_periodic_sortindex_comparator
-  {
-   private:
-    const part_slab_data *data;
-
-   public:
-    pm_periodic_sortindex_comparator(const part_slab_data *data_) : data(data_) {}
-
-    bool operator()(const large_numpart_type &a, const large_numpart_type &b) const
-    {
-      return data[a].globalindex < data[b].globalindex;
-    }
-  };
 
  private:
   std::vector<size_t> localfield_sendcount, localfield_recvcount, localfield_offset, localfield_first;
   large_array_offset *localfield_globalindex, *import_globalindex;
   fft_real *localfield_data, *import_data;
 
-  void pmforce_zoom_optimized_prepare_density(int mode, int *typelist);
-  void pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim);
+  void pmforce_zoom_optimized_prepare_density(int mode, int *typelist, std::vector<part_slab_data> &part);
+  void pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim, const std::vector<part_slab_data> &part);
 
 #else
 
