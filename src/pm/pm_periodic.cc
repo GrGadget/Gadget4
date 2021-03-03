@@ -16,7 +16,7 @@
 #include <fftw3.h>
 #include <mpi.h>
 #include <sys/stat.h>  // mkdir
-#include <algorithm>   // sort
+#include <algorithm>   // sort, fill
 #include <vector>
 
 #include "../data/mymalloc.h"  // TODO: remove Mem.
@@ -98,6 +98,7 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
 
   /* temporarily allocate some arrays to make sure that out-of-place plans are created */
   rhogrid.resize(max_GRID2);
+  std::fill(rhogrid.begin(), rhogrid.end(), 0);
   forcegrid.resize(max_GRID2);
 
 #ifdef DOUBLEPRECISION_FFTW
@@ -353,6 +354,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
     }
 
   rhogrid.resize(maxfftsize);
+  std::fill(rhogrid.begin(), rhogrid.end(), 0);
 
   /* exchange data and add contributions to the local mesh-path */
   MPI_Alltoall(localfield_sendcount.data(), sizeof(size_t), MPI_BYTE, localfield_recvcount.data(), sizeof(size_t), MPI_BYTE,
@@ -725,6 +727,7 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
 
   /* allocate cleared density field */
   rhogrid.resize(maxfftsize);
+  std::fill(rhogrid.begin(), rhogrid.end(), 0);
 
 #ifndef FFT_COLUMN_BASED
   /* bin particle data onto mesh, in multi-threaded fashion */
