@@ -19,7 +19,6 @@
 #include <algorithm>   // sort, fill
 #include <vector>
 
-#include "../data/mymalloc.h"  // TODO: remove Mem.
 #include "../pm/pm_periodic.h"
 #include "gadget/constants.h"      // NTYPES
 #include "gadget/dtypes.h"         // MyFloat
@@ -363,14 +362,21 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   for(level = 0; level < (1 << PTask); level++) /* note: for level=0, target is the same task */
     {
       recvTask = ThisTask ^ level;
+      large_array_offset *import_globalindex;
+      fft_real *import_data;
+
+      std::vector<fft_real> import_data_buf;
+      std::vector<large_array_offset> import_globalindex_buf;
 
       if(recvTask < NTask)
         {
           if(level > 0)
             {
-              import_data        = (fft_real *)Mem.mymalloc("import_data", localfield_recvcount[recvTask] * sizeof(fft_real));
-              import_globalindex = (large_array_offset *)Mem.mymalloc("import_globalindex",
-                                                                      localfield_recvcount[recvTask] * sizeof(large_array_offset));
+              import_data_buf.resize(localfield_recvcount[recvTask]);
+              import_globalindex_buf.resize(localfield_recvcount[recvTask]);
+
+              import_data        = import_data_buf.data();
+              import_globalindex = import_globalindex_buf.data();
 
               if(localfield_sendcount[recvTask] > 0 || localfield_recvcount[recvTask] > 0)
                 {
@@ -402,12 +408,6 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 #endif
               rhogrid[offset] += import_data[i];
             }
-
-          if(level > 0)
-            {
-              Mem.myfree(import_globalindex);
-              Mem.myfree(import_data);
-            }
         }
     }
 }
@@ -432,14 +432,21 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
   for(int level = 0; level < (1 << PTask); level++) /* note: for level=0, target is the same task */
     {
       int recvTask = ThisTask ^ level;
+      large_array_offset *import_globalindex;
+      fft_real *import_data;
+
+      std::vector<fft_real> import_data_buf;
+      std::vector<large_array_offset> import_globalindex_buf;
 
       if(recvTask < NTask)
         {
           if(level > 0)
             {
-              import_data        = (fft_real *)Mem.mymalloc("import_data", localfield_recvcount[recvTask] * sizeof(fft_real));
-              import_globalindex = (large_array_offset *)Mem.mymalloc("import_globalindex",
-                                                                      localfield_recvcount[recvTask] * sizeof(large_array_offset));
+              import_data_buf.resize(localfield_recvcount[recvTask]);
+              import_globalindex_buf.resize(localfield_recvcount[recvTask]);
+
+              import_data        = import_data_buf.data();
+              import_globalindex = import_globalindex_buf.data();
 
               if(localfield_sendcount[recvTask] > 0 || localfield_recvcount[recvTask] > 0)
                 {
@@ -472,9 +479,6 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
               myMPI_Sendrecv(import_data, localfield_recvcount[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A,
                              localfield_data.data() + localfield_offset[recvTask], localfield_sendcount[recvTask] * sizeof(fft_real),
                              MPI_BYTE, recvTask, TAG_NONPERIOD_A, Communicator, &status);
-
-              Mem.myfree(import_globalindex);
-              Mem.myfree(import_data);
             }
         }
     }

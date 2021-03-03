@@ -149,8 +149,6 @@ class pm_periodic : public pm_mpi_fft
 
  private:
   std::vector<size_t> localfield_sendcount, localfield_recvcount, localfield_offset, localfield_first;
-  large_array_offset *import_globalindex;
-  fft_real *import_data;
 
   void pmforce_zoom_optimized_prepare_density(int mode, int *typelist, std::vector<part_slab_data> &part,
                                               std::vector<large_array_offset> &localfield_globalindex,
