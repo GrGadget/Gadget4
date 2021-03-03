@@ -16,6 +16,7 @@
 #include <cstdarg>  // va_list
 #include <cstdio>   // vprintf
 
+#include "gadget/dtypes.h"   // TIMEBINS
 #include "gadget/peano.h"    // peanokey
 #include "gadget/setcomm.h"  // class setcomm;
 

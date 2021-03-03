@@ -17,6 +17,7 @@
 #include <atomic>
 #include <cstring>  // memcpy
 
+#include "gadget/dtypes.h"      // integertime
 #include "gadget/idstorage.h"   // MyIDStorage
 #include "gadget/peano.h"       // peanokey
 #include "gadget/symtensors.h"  // vector
