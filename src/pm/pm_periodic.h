@@ -21,8 +21,6 @@ extern template class std::vector<size_t>;
 #include "gadget/dtypes.h"         // LONG_X
 #include "gadgetconfig.h"
 
-#if defined(PMGRID) || defined(NGENIC)
-
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
 #if defined(PMGRID) && defined(PERIODIC)
@@ -74,30 +72,17 @@ class pm_periodic : public pm_mpi_fft
   {
   }
 
-#if defined(PMGRID) && defined(PERIODIC)
+  void pm_init_periodic(simparticles *Sp_ptr, double boxsize);
+  void pmforce_periodic(int mode, int *typelist);
+  void calculate_power_spectra(int num, char *OutputDir);
 
  private:
-#if(GRIDX > 1024) || (GRIDY > 1024) || (GRIDZ > 1024)
   typedef long long large_array_offset; /* use a larger data type in this case so that we can always address all cells of the 3D grid
                                            with a single index */
-#else
-  typedef int large_array_offset;
-#endif
-
-  /* variables for power spectrum estimation */
-  static constexpr int BINS_PS           = 4000; /* number of bins for power spectrum computation */
-  static constexpr int POWERSPEC_FOLDFAC = 16;   /* folding factor to obtain an estimate of the power spectrum on very small scales */
-
+  double BoxSize{};
+  simparticles *Sp;
   char power_spec_fname[MAXLEN_PATH_EXTRA];
-
   int NSource;
-
-  void pmforce_measure_powerspec(int flag, int *typeflag);
-  void pmforce_do_powerspec(int *typeflag);
-#if defined(GRAVITY_TALLBOX)
-  void pmforce_setup_tallbox_kernel(void);
-  double pmperiodic_tallbox_long_range_potential(double x, double y, double z);
-#endif
 
   /*! \var maxfftsize
    *  \brief maximum size of the local fft grid among all tasks
@@ -116,16 +101,19 @@ class pm_periodic : public pm_mpi_fft
    */
   std::vector<fft_real> rhogrid, forcegrid;  //, *workspace;
 
-  /*! \brief Array containing the FFT of #rhogrid
-   *
-   *  This pointer points to the same array as #rhogrid,
-   *  because in-place FFTs are used.
-   */
+  /* variables for power spectrum estimation */
+  static constexpr int BINS_PS           = 4000; /* number of bins for power spectrum computation */
+  static constexpr int POWERSPEC_FOLDFAC = 16;   /* folding factor to obtain an estimate of the power spectrum on very small scales */
+
+  void pmforce_measure_powerspec(int flag, int *typeflag);
+  void pmforce_do_powerspec(int *typeflag);
 
 #if defined(GRAVITY_TALLBOX)
   std::unique_ptr<fft_real[]> kernel; /*!< If the tallbox option is used, the code will construct and store the k-space Greens function
                        by FFTing it from real space */
   fft_complex *fft_of_kernel;
+  void pmforce_setup_tallbox_kernel(void);
+  double pmperiodic_tallbox_long_range_potential(double x, double y, double z);
 #endif
 
 #ifdef PM_ZOOM_OPTIMIZED
@@ -137,7 +125,6 @@ class pm_periodic : public pm_mpi_fft
    * one item of this struct exists.
    */
 
- public:
   struct part_slab_data
   {
     large_array_offset globalindex; /*!< index in the global density mesh */
@@ -147,7 +134,6 @@ class pm_periodic : public pm_mpi_fft
                                        local mass and force assignment) */
   };
 
- private:
   std::vector<size_t> localfield_sendcount, localfield_recvcount, localfield_offset, localfield_first;
 
   void pmforce_zoom_optimized_prepare_density(int mode, int *typelist, std::vector<part_slab_data> &part,
@@ -156,7 +142,6 @@ class pm_periodic : public pm_mpi_fft
   void pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim, const std::vector<part_slab_data> &part,
                                                           std::vector<large_array_offset> &localfield_globalindex,
                                                           std::vector<fft_real> &localfield_data);
-
 #else
 
   struct partbuf
@@ -170,30 +155,13 @@ class pm_periodic : public pm_mpi_fft
   };
 
   size_t nimport, nexport;
-
   std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;
 
   void pmforce_uniform_optimized_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
-
   void pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin);
-
   void pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_real *grid, int dim);
   void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim);
 #endif
-
-  double BoxSize{};
-
- public:
-  simparticles *Sp;
-
-  void pm_init_periodic(simparticles *Sp_ptr, double boxsize);
-  void pmforce_periodic(int mode, int *typelist);
-
-  void calculate_power_spectra(int num, char *OutputDir);
-
-#endif
 };
-
-#endif
 
 #endif

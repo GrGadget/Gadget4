@@ -698,7 +698,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
         {
           MPI_Alltoall(Sndpm_count.data(), sizeof(size_t), MPI_BYTE, Rcvpm_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
 
-          nimport = 0, nexport = 0, Rcvpm_offset[0] = 0, Sndpm_offset[0] = 0;
+          size_t nimport = 0, nexport = 0;
+          Rcvpm_offset[0] = 0, Sndpm_offset[0] = 0;
           for(int j = 0; j < NTask; j++)
             {
               nexport += Sndpm_count[j];
