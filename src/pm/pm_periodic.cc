@@ -175,7 +175,6 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   particle_data *P = Sp->P;
 
   const large_numpart_type num_on_grid = ((large_numpart_type)NSource) * 8;
-  // part                                 = (part_slab_data *)Mem.mymalloc("part", num_on_grid * sizeof(part_slab_data));
   part.resize(num_on_grid);
   std::vector<large_numpart_type> part_sortindex(num_on_grid);
 
@@ -532,8 +531,9 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
  *  Here come the routines for a different communication algorithm that is better suited for a homogeneously loaded boxes.
  */
 
-void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typelist)
+void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin)
 {
+  std::vector<partbuf> partout;
   particle_data *P = Sp->P;
 
   /* determine the slabs/columns each particles accesses */
@@ -704,8 +704,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
             }
 
           /* allocate import and export buffer */
-          partin = (partbuf *)Mem.mymalloc_movable(&partin, "partin", nimport * sizeof(partbuf));
-          partout = (partbuf *)Mem.mymalloc("partout", nexport * sizeof(partbuf));
+          partin.resize(nimport);
+          partout.resize(nexport);
         }
     }
 
@@ -720,10 +720,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange particle data */
-  myMPI_Alltoallv(partout, Sndpm_count.data(), Sndpm_offset.data(), partin, Rcvpm_count.data(), Rcvpm_offset.data(), sizeof(partbuf),
-                  flag_big_all, Communicator);
-
-  Mem.myfree(partout);
+  myMPI_Alltoallv(partout.data(), Sndpm_count.data(), Sndpm_offset.data(), partin.data(), Rcvpm_count.data(), Rcvpm_offset.data(),
+                  sizeof(partbuf), flag_big_all, Communicator);
 
   /* allocate cleared density field */
   rhogrid.resize(maxfftsize);
@@ -910,7 +908,7 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
 
 /* If dim<0, this function reads out the potential, otherwise Cartesian force components.
  */
-void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim)
+void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin)
 {
   particle_data *P = Sp->P;
 
@@ -1130,12 +1128,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   std::vector<size_t> recv_count(NTask);
   std::vector<size_t> recv_offset(NTask);
 
-  struct partbuf  // TODO: careful there is another partbuf defined in the header
-  {
-    MyIntPosType IntPos[3];
-  };
-
-  partbuf *partin, *partout;  // TODO: careful there is partin and partout
+  std::vector<partbuf> partin, partout;
   // defined in the header
   size_t nimport = 0, nexport = 0;
 
@@ -1255,8 +1248,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
             }
 
           /* allocate import and export buffer */
-          partin = (partbuf *)Mem.mymalloc("partin", nimport * sizeof(partbuf));
-          partout = (partbuf *)Mem.mymalloc("partout", nexport * sizeof(partbuf));
+          partin.resize(nimport);
+          partout.resize(nexport);
         }
     }
 
@@ -1271,10 +1264,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange particle data */
-  myMPI_Alltoallv(partout, send_count.data(), send_offset.data(), partin, recv_count.data(), recv_offset.data(), sizeof(partbuf),
-                  flag_big_all, Communicator);
-
-  Mem.myfree(partout);
+  myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
+                  sizeof(partbuf), flag_big_all, Communicator);
 
   std::vector<MyFloat> flistin(nimport);
   std::vector<MyFloat> flistout(nexport);
@@ -1417,8 +1408,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
       Sp->P[i].GravAccel[dim] += value;
 #endif
     }
-
-  Mem.myfree(partin);
 }
 
 void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim)
@@ -1431,12 +1420,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   std::vector<size_t> recv_count(NTask);
   std::vector<size_t> recv_offset(NTask);
 
-  struct partbuf  // TODO: careful there is another partbuf defined in the header
-  {
-    MyIntPosType IntPos[3];
-  };
-
-  partbuf *partin, *partout;  // TODO: careful there is partin and partout
+  std::vector<partbuf> partin, partout;
   // defined in the header
   size_t nimport = 0, nexport = 0;
 
@@ -1556,8 +1540,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
             }
 
           /* allocate import and export buffer */
-          partin = (partbuf *)Mem.mymalloc("partin", nimport * sizeof(partbuf));
-          partout = (partbuf *)Mem.mymalloc("partout", nexport * sizeof(partbuf));
+          partin.resize(nimport);
+          partout.resize(nexport);
         }
     }
 
@@ -1572,10 +1556,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
 
   /* exchange particle data */
-  myMPI_Alltoallv(partout, send_count.data(), send_offset.data(), partin, recv_count.data(), recv_offset.data(), sizeof(partbuf),
-                  flag_big_all, Communicator);
-
-  Mem.myfree(partout);
+  myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
+                  sizeof(partbuf), flag_big_all, Communicator);
 
   std::vector<MyFloat> flistin(nimport);
   std::vector<MyFloat> flistout(nexport);
@@ -1718,8 +1700,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
       Sp->P[i].GravAccel[dim] += value;
 #endif
     }
-
-  Mem.myfree(partin);
 }
 #endif
 
@@ -1778,7 +1758,8 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   std::vector<part_slab_data> part; /*!< array of part_slab_data linking the local particles to their mesh cells */
   pmforce_zoom_optimized_prepare_density(mode, typelist, part);
 #else
-  pmforce_uniform_optimized_prepare_density(mode, typelist);
+  std::vector<partbuf> partin;
+  pmforce_uniform_optimized_prepare_density(mode, typelist, partin);
 #endif
 
   /* note: after density, we still keep the field 'partin' from the density assignment,
@@ -1808,8 +1789,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       pmforce_measure_powerspec(mode - 1, typelist);
 
 #if defined(FFT_COLUMN_BASED) && !defined(PM_ZOOM_OPTIMIZED)
-      Mem.myfree_movable(partin);
-      partin = NULL;
 #endif
     }
   else
@@ -1927,7 +1906,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1, partin);
 #endif
 #endif
 
@@ -1963,7 +1942,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
 #endif
 
       /* y-direction */
@@ -1988,7 +1967,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1, partin);
 #endif
 
       /* x-direction */
@@ -2018,7 +1997,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0, partin);
 #endif
 
 #else
@@ -2052,11 +2031,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part);
 #else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2);
+      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
 
       /* at this point we can free partin */
-      Mem.myfree_movable(partin);
-      partin = NULL;
 #endif
 
       /* y-direction */
@@ -2153,7 +2130,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   Mem.myfree(localfield_globalindex);
 #else
 #ifndef FFT_COLUMN_BASED
-  Mem.myfree(partin);
 #endif
 #endif
 

@@ -166,15 +166,14 @@ class pm_periodic : public pm_mpi_fft
 #endif
     MyIntPosType IntPos[3];
   };
-  partbuf *partin, *partout;
 
   size_t nimport, nexport;
 
   std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;
 
-  void pmforce_uniform_optimized_prepare_density(int mode, int *typelist);
+  void pmforce_uniform_optimized_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
 
-  void pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim);
+  void pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin);
 
   void pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_real *grid, int dim);
   void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim);
