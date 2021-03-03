@@ -54,21 +54,7 @@ class pm_periodic : public pm_mpi_fft
 {
  public:
   pm_periodic(MPI_Comm comm)
-      : pm_mpi_fft(comm, GRIDX, GRIDY, GRIDZ)
-
-#ifndef PM_ZOOM_OPTIMIZED
-        ,
-        Sndpm_count(NTask),
-        Sndpm_offset(NTask),
-        Rcvpm_count(NTask),
-        Rcvpm_offset(NTask)
-#else
-        ,
-        localfield_sendcount(NTask),
-        localfield_recvcount(NTask),
-        localfield_offset(NTask),
-        localfield_first(NTask)
-#endif
+      : pm_mpi_fft(comm, GRIDX, GRIDY, GRIDZ), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
   {
   }
 
@@ -79,6 +65,7 @@ class pm_periodic : public pm_mpi_fft
  private:
   typedef long long large_array_offset; /* use a larger data type in this case so that we can always address all cells of the 3D grid
                                            with a single index */
+  std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;
   double BoxSize{};
   simparticles *Sp;
   char power_spec_fname[MAXLEN_PATH_EXTRA];
@@ -134,8 +121,6 @@ class pm_periodic : public pm_mpi_fft
                                        local mass and force assignment) */
   };
 
-  std::vector<size_t> localfield_sendcount, localfield_recvcount, localfield_offset, localfield_first;
-
   void pmforce_zoom_optimized_prepare_density(int mode, int *typelist, std::vector<part_slab_data> &part,
                                               std::vector<large_array_offset> &localfield_globalindex,
                                               std::vector<fft_real> &localfield_data);
@@ -155,7 +140,6 @@ class pm_periodic : public pm_mpi_fft
   };
 
   size_t nimport, nexport;
-  std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;
 
   void pmforce_uniform_optimized_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
   void pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin);

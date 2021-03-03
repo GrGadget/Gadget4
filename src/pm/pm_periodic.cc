@@ -259,8 +259,8 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
   for(int i = 0; i < NTask; i++)
     {
-      localfield_first[i]     = 0;
-      localfield_sendcount[i] = 0;
+      Rcvpm_offset[i] = 0;
+      Sndpm_count[i]  = 0;
     }
 
   /* establish the cross link between the part[ ]-array and the local list of
@@ -293,16 +293,16 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
         task = (column - pivotcol) / (avg - 1) + tasklastsection;
 #endif
 
-      if(localfield_sendcount[task] == 0)
-        localfield_first[task] = num_field_points;
+      if(Sndpm_count[task] == 0)
+        Rcvpm_offset[task] = num_field_points;
 
-      localfield_sendcount[task]++;
+      Sndpm_count[task]++;
     }
   num_field_points++;
 
-  localfield_offset[0] = 0;
+  Sndpm_offset[0] = 0;
   for(int i = 1; i < NTask; i++)
-    localfield_offset[i] = localfield_offset[i - 1] + localfield_sendcount[i - 1];
+    Sndpm_offset[i] = Sndpm_offset[i - 1] + Sndpm_count[i - 1];
 
   /* now bin the local particle data onto the mesh list */
   for(large_numpart_type i = 0; i < num_field_points; i++)
@@ -356,8 +356,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   std::fill(rhogrid.begin(), rhogrid.end(), 0);
 
   /* exchange data and add contributions to the local mesh-path */
-  MPI_Alltoall(localfield_sendcount.data(), sizeof(size_t), MPI_BYTE, localfield_recvcount.data(), sizeof(size_t), MPI_BYTE,
-               Communicator);
+  MPI_Alltoall(Sndpm_count.data(), sizeof(size_t), MPI_BYTE, Rcvpm_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
 
   for(level = 0; level < (1 << PTask); level++) /* note: for level=0, target is the same task */
     {
@@ -372,33 +371,32 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
         {
           if(level > 0)
             {
-              import_data_buf.resize(localfield_recvcount[recvTask]);
-              import_globalindex_buf.resize(localfield_recvcount[recvTask]);
+              import_data_buf.resize(Rcvpm_count[recvTask]);
+              import_globalindex_buf.resize(Rcvpm_count[recvTask]);
 
               import_data        = import_data_buf.data();
               import_globalindex = import_globalindex_buf.data();
 
-              if(localfield_sendcount[recvTask] > 0 || localfield_recvcount[recvTask] > 0)
+              if(Sndpm_count[recvTask] > 0 || Rcvpm_count[recvTask] > 0)
                 {
-                  myMPI_Sendrecv(localfield_data.data() + localfield_offset[recvTask],
-                                 localfield_sendcount[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A, import_data,
-                                 localfield_recvcount[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A, Communicator,
-                                 &status);
+                  myMPI_Sendrecv(localfield_data.data() + Sndpm_offset[recvTask], Sndpm_count[recvTask] * sizeof(fft_real), MPI_BYTE,
+                                 recvTask, TAG_NONPERIOD_A, import_data, Rcvpm_count[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask,
+                                 TAG_NONPERIOD_A, Communicator, &status);
 
-                  myMPI_Sendrecv(localfield_globalindex.data() + localfield_offset[recvTask],
-                                 localfield_sendcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask, TAG_NONPERIOD_B,
-                                 import_globalindex, localfield_recvcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask,
+                  myMPI_Sendrecv(localfield_globalindex.data() + Sndpm_offset[recvTask],
+                                 Sndpm_count[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask, TAG_NONPERIOD_B,
+                                 import_globalindex, Rcvpm_count[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask,
                                  TAG_NONPERIOD_B, Communicator, &status);
                 }
             }
           else
             {
-              import_data        = localfield_data.data() + localfield_offset[ThisTask];
-              import_globalindex = localfield_globalindex.data() + localfield_offset[ThisTask];
+              import_data        = localfield_data.data() + Sndpm_offset[ThisTask];
+              import_globalindex = localfield_globalindex.data() + Sndpm_offset[ThisTask];
             }
 
           /* note: here every element in rhogrid is only accessed once, so there should be no race condition */
-          for(size_t i = 0; i < localfield_recvcount[recvTask]; i++)
+          for(size_t i = 0; i < Rcvpm_count[recvTask]; i++)
             {
               /* determine offset in local FFT slab */
 #ifndef FFT_COLUMN_BASED
@@ -442,28 +440,28 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
         {
           if(level > 0)
             {
-              import_data_buf.resize(localfield_recvcount[recvTask]);
-              import_globalindex_buf.resize(localfield_recvcount[recvTask]);
+              import_data_buf.resize(Rcvpm_count[recvTask]);
+              import_globalindex_buf.resize(Rcvpm_count[recvTask]);
 
               import_data        = import_data_buf.data();
               import_globalindex = import_globalindex_buf.data();
 
-              if(localfield_sendcount[recvTask] > 0 || localfield_recvcount[recvTask] > 0)
+              if(Sndpm_count[recvTask] > 0 || Rcvpm_count[recvTask] > 0)
                 {
                   MPI_Status status;
-                  myMPI_Sendrecv(localfield_globalindex.data() + localfield_offset[recvTask],
-                                 localfield_sendcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask, TAG_NONPERIOD_C,
-                                 import_globalindex, localfield_recvcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask,
+                  myMPI_Sendrecv(localfield_globalindex.data() + Sndpm_offset[recvTask],
+                                 Sndpm_count[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask, TAG_NONPERIOD_C,
+                                 import_globalindex, Rcvpm_count[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask,
                                  TAG_NONPERIOD_C, Communicator, &status);
                 }
             }
           else
             {
-              import_data        = localfield_data.data() + localfield_offset[ThisTask];
-              import_globalindex = localfield_globalindex.data() + localfield_offset[ThisTask];
+              import_data        = localfield_data.data() + Sndpm_offset[ThisTask];
+              import_globalindex = localfield_globalindex.data() + Sndpm_offset[ThisTask];
             }
 
-          for(size_t i = 0; i < localfield_recvcount[recvTask]; i++)
+          for(size_t i = 0; i < Rcvpm_count[recvTask]; i++)
             {
 #ifndef FFT_COLUMN_BASED
               large_array_offset offset = import_globalindex[i] - first_slab_x_of_task[ThisTask] * GRIDY * ((large_array_offset)GRID2);
@@ -476,9 +474,9 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
           if(level > 0)
             {
               MPI_Status status;
-              myMPI_Sendrecv(import_data, localfield_recvcount[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A,
-                             localfield_data.data() + localfield_offset[recvTask], localfield_sendcount[recvTask] * sizeof(fft_real),
-                             MPI_BYTE, recvTask, TAG_NONPERIOD_A, Communicator, &status);
+              myMPI_Sendrecv(import_data, Rcvpm_count[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A,
+                             localfield_data.data() + Sndpm_offset[recvTask], Sndpm_count[recvTask] * sizeof(fft_real), MPI_BYTE,
+                             recvTask, TAG_NONPERIOD_A, Communicator, &status);
             }
         }
     }
