@@ -167,7 +167,9 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
 
 #ifdef PM_ZOOM_OPTIMIZED
 
-void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist, std::vector<part_slab_data> &part)
+void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist, std::vector<part_slab_data> &part,
+                                                         std::vector<large_array_offset> &localfield_globalindex,
+                                                         std::vector<fft_real> &localfield_data)
 {
   int level, recvTask;
   MPI_Status status;
@@ -253,9 +255,8 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
     }
 
   /* allocate the local field */
-  localfield_globalindex = (large_array_offset *)Mem.mymalloc_movable(&localfield_globalindex, "localfield_globalindex",
-                                                                      num_field_points * sizeof(large_array_offset));
-  localfield_data        = (fft_real *)Mem.mymalloc_movable(&localfield_data, "localfield_data", num_field_points * sizeof(fft_real));
+  localfield_globalindex.resize(num_field_points);
+  localfield_data.resize(num_field_points);
 
   for(int i = 0; i < NTask; i++)
     {
@@ -373,11 +374,12 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
               if(localfield_sendcount[recvTask] > 0 || localfield_recvcount[recvTask] > 0)
                 {
-                  myMPI_Sendrecv(localfield_data + localfield_offset[recvTask], localfield_sendcount[recvTask] * sizeof(fft_real),
-                                 MPI_BYTE, recvTask, TAG_NONPERIOD_A, import_data, localfield_recvcount[recvTask] * sizeof(fft_real),
-                                 MPI_BYTE, recvTask, TAG_NONPERIOD_A, Communicator, &status);
+                  myMPI_Sendrecv(localfield_data.data() + localfield_offset[recvTask],
+                                 localfield_sendcount[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A, import_data,
+                                 localfield_recvcount[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A, Communicator,
+                                 &status);
 
-                  myMPI_Sendrecv(localfield_globalindex + localfield_offset[recvTask],
+                  myMPI_Sendrecv(localfield_globalindex.data() + localfield_offset[recvTask],
                                  localfield_sendcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask, TAG_NONPERIOD_B,
                                  import_globalindex, localfield_recvcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask,
                                  TAG_NONPERIOD_B, Communicator, &status);
@@ -385,8 +387,8 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
             }
           else
             {
-              import_data        = localfield_data + localfield_offset[ThisTask];
-              import_globalindex = localfield_globalindex + localfield_offset[ThisTask];
+              import_data        = localfield_data.data() + localfield_offset[ThisTask];
+              import_globalindex = localfield_globalindex.data() + localfield_offset[ThisTask];
             }
 
           /* note: here every element in rhogrid is only accessed once, so there should be no race condition */
@@ -413,7 +415,9 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 /* Function to read out the force component corresponding to spatial dimension 'dim'.
  * If dim is negative, potential values are read out and assigned to particles.
  */
-void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim, const std::vector<part_slab_data> &part)
+void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim, const std::vector<part_slab_data> &part,
+                                                                     std::vector<large_array_offset> &localfield_globalindex,
+                                                                     std::vector<fft_real> &localfield_data)
 {
   particle_data *P = Sp->P;
 
@@ -440,7 +444,7 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
               if(localfield_sendcount[recvTask] > 0 || localfield_recvcount[recvTask] > 0)
                 {
                   MPI_Status status;
-                  myMPI_Sendrecv(localfield_globalindex + localfield_offset[recvTask],
+                  myMPI_Sendrecv(localfield_globalindex.data() + localfield_offset[recvTask],
                                  localfield_sendcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask, TAG_NONPERIOD_C,
                                  import_globalindex, localfield_recvcount[recvTask] * sizeof(large_array_offset), MPI_BYTE, recvTask,
                                  TAG_NONPERIOD_C, Communicator, &status);
@@ -448,8 +452,8 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
             }
           else
             {
-              import_data        = localfield_data + localfield_offset[ThisTask];
-              import_globalindex = localfield_globalindex + localfield_offset[ThisTask];
+              import_data        = localfield_data.data() + localfield_offset[ThisTask];
+              import_globalindex = localfield_globalindex.data() + localfield_offset[ThisTask];
             }
 
           for(size_t i = 0; i < localfield_recvcount[recvTask]; i++)
@@ -466,7 +470,7 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
             {
               MPI_Status status;
               myMPI_Sendrecv(import_data, localfield_recvcount[recvTask] * sizeof(fft_real), MPI_BYTE, recvTask, TAG_NONPERIOD_A,
-                             localfield_data + localfield_offset[recvTask], localfield_sendcount[recvTask] * sizeof(fft_real),
+                             localfield_data.data() + localfield_offset[recvTask], localfield_sendcount[recvTask] * sizeof(fft_real),
                              MPI_BYTE, recvTask, TAG_NONPERIOD_A, Communicator, &status);
 
               Mem.myfree(import_globalindex);
@@ -1756,7 +1760,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
 #ifdef PM_ZOOM_OPTIMIZED
   std::vector<part_slab_data> part; /*!< array of part_slab_data linking the local particles to their mesh cells */
-  pmforce_zoom_optimized_prepare_density(mode, typelist, part);
+  std::vector<large_array_offset> localfield_globalindex;
+  std::vector<fft_real> localfield_data;
+  pmforce_zoom_optimized_prepare_density(mode, typelist, part, localfield_globalindex, localfield_data);
 #else
   std::vector<partbuf> partin;
   pmforce_uniform_optimized_prepare_density(mode, typelist, partin);
@@ -1904,7 +1910,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
 #ifdef EVALPOTENTIAL
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part);
+      pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part, localfield_globalindex, localfield_data);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1, partin);
 #endif
@@ -1940,7 +1946,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
             }
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
 #endif
@@ -1965,7 +1971,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
             }
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part, localfield_globalindex, localfield_data);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1, partin);
 #endif
@@ -1995,7 +2001,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       my_slab_transposeB(&forcegrid, rhogrid); /* reverse the transpose from above */
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0, partin);
 #endif
@@ -2029,7 +2035,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         }
 
 #ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
 
@@ -2078,7 +2084,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         std::vector<fft_real> scratch(fftsize);
 
         my_fft_swap23back(forcegrid.data(), scratch.data());
-        pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part);
+        pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part, localfield_globalindex, localfield_data);
       }
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid.data(), 1);
@@ -2115,7 +2121,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         /* now need to read out from forcegrid in a non-standard way */
 #ifdef PM_ZOOM_OPTIMIZED
       my_fft_swap13back(rhogrid.data(), forcegrid.data());
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part);
+      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid.data(), 0);
 #endif
@@ -2126,8 +2132,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
     /* free stuff */
 
 #ifdef PM_ZOOM_OPTIMIZED
-  Mem.myfree(localfield_data);
-  Mem.myfree(localfield_globalindex);
 #else
 #ifndef FFT_COLUMN_BASED
 #endif
