@@ -536,21 +536,13 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
 /*
  *  Here come the routines for a different communication algorithm that is better suited for a homogeneously loaded boxes.
  */
-
-void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin)
+#ifndef FFT_COLUMN_BASED
+void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin)
 {
   std::vector<partbuf> partout;
   particle_data *P = Sp->P;
 
   /* determine the slabs/columns each particles accesses */
-
-#ifdef FFT_COLUMN_BASED
-  int columns = GRIDX * GRIDY;
-  int avg = (columns - 1) / NTask + 1;
-  int exc = NTask * avg - columns;
-  int tasklastsection = NTask - exc;
-  int pivotcol = tasklastsection * avg;
-#endif
 
   for(int rep = 0; rep < 2; rep++)
     {
@@ -579,7 +571,6 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
           if(slab_xx >= GRIDX)
             slab_xx = 0;
 
-#ifndef FFT_COLUMN_BASED
           if(rep == 0)
             {
               int task0 = slab_to_task[slab_x];
@@ -608,8 +599,166 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
                     partout[ind1].IntPos[j] = P[i].IntPos[j];
                 }
             }
+        }
 
+      if(rep == 0)
+        {
+          MPI_Alltoall(Sndpm_count.data(), sizeof(size_t), MPI_BYTE, Rcvpm_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
+
+          size_t nimport = 0, nexport = 0;
+          Rcvpm_offset[0] = 0, Sndpm_offset[0] = 0;
+          for(int j = 0; j < NTask; j++)
+            {
+              nexport += Sndpm_count[j];
+              nimport += Rcvpm_count[j];
+
+              if(j > 0)
+                {
+                  Sndpm_offset[j] = Sndpm_offset[j - 1] + Sndpm_count[j - 1];
+                  Rcvpm_offset[j] = Rcvpm_offset[j - 1] + Rcvpm_count[j - 1];
+                }
+            }
+
+          /* allocate import and export buffer */
+          partin.resize(nimport);
+          partout.resize(nexport);
+        }
+    }
+
+  /* produce a flag if any of the send sizes is above our transfer limit, in this case we will
+   * transfer the data in chunks.
+   */
+  int flag_big = 0, flag_big_all;
+  for(int i = 0; i < NTask; i++)
+    if(Sndpm_count[i] * sizeof(partbuf) > MPI_MESSAGE_SIZELIMIT_IN_BYTES)
+      flag_big = 1;
+
+  MPI_Allreduce(&flag_big, &flag_big_all, 1, MPI_INT, MPI_MAX, Communicator);
+
+  /* exchange particle data */
+  myMPI_Alltoallv(partout.data(), Sndpm_count.data(), Sndpm_offset.data(), partin.data(), Rcvpm_count.data(), Rcvpm_offset.data(),
+                  sizeof(partbuf), flag_big_all, Communicator);
+
+  /* allocate cleared density field */
+  rhogrid.resize(maxfftsize);
+  std::fill(rhogrid.begin(), rhogrid.end(), 0);
+
+  /* bin particle data onto mesh, in multi-threaded fashion */
+
+  for(size_t i = 0; i < nimport; i++)
+    {
+      int slab_x, slab_y, slab_z;
+      MyIntPosType rmd_x, rmd_y, rmd_z;
+
+      if(mode == 2)
+        {
+          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
+          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) % INTCELL;
+          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
+          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) % INTCELL;
+          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) / INTCELL;
+          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) % INTCELL;
+        }
+      else if(mode == 3)
+        {
+          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
+          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
+          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
+          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
+          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
+          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
+        }
+      else
+        {
+          slab_x = partin[i].IntPos[0] / INTCELL;
+          rmd_x = partin[i].IntPos[0] % INTCELL;
+          slab_y = partin[i].IntPos[1] / INTCELL;
+          rmd_y = partin[i].IntPos[1] % INTCELL;
+          slab_z = partin[i].IntPos[2] / INTCELL;
+          rmd_z = partin[i].IntPos[2] % INTCELL;
+        }
+
+      double dx = rmd_x * (1.0 / INTCELL);
+      double dy = rmd_y * (1.0 / INTCELL);
+      double dz = rmd_z * (1.0 / INTCELL);
+
+      int slab_xx = slab_x + 1;
+      int slab_yy = slab_y + 1;
+      int slab_zz = slab_z + 1;
+
+      if(slab_xx >= GRIDX)
+        slab_xx = 0;
+      if(slab_yy >= GRIDY)
+        slab_yy = 0;
+      if(slab_zz >= GRIDZ)
+        slab_zz = 0;
+
+      double mass = partin[i].Mass;
+
+      if(slab_to_task[slab_x] == ThisTask)
+        {
+          slab_x -= first_slab_x_of_task[ThisTask];
+
+          rhogrid[FI(slab_x, slab_y, slab_z)] += (mass * (1.0 - dx) * (1.0 - dy) * (1.0 - dz));
+          rhogrid[FI(slab_x, slab_y, slab_zz)] += (mass * (1.0 - dx) * (1.0 - dy) * (dz));
+
+          rhogrid[FI(slab_x, slab_yy, slab_z)] += (mass * (1.0 - dx) * (dy) * (1.0 - dz));
+          rhogrid[FI(slab_x, slab_yy, slab_zz)] += (mass * (1.0 - dx) * (dy) * (dz));
+        }
+
+      if(slab_to_task[slab_xx] == ThisTask)
+        {
+          slab_xx -= first_slab_x_of_task[ThisTask];
+
+          rhogrid[FI(slab_xx, slab_y, slab_z)] += (mass * (dx) * (1.0 - dy) * (1.0 - dz));
+          rhogrid[FI(slab_xx, slab_y, slab_zz)] += (mass * (dx) * (1.0 - dy) * (dz));
+
+          rhogrid[FI(slab_xx, slab_yy, slab_z)] += (mass * (dx) * (dy) * (1.0 - dz));
+          rhogrid[FI(slab_xx, slab_yy, slab_zz)] += (mass * (dx) * (dy) * (dz));
+        }
+    }
+}
 #else
+void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin)
+{
+  std::vector<partbuf> partout;
+  particle_data *P = Sp->P;
+
+  /* determine the slabs/columns each particles accesses */
+
+  int columns         = GRIDX * GRIDY;
+  int avg             = (columns - 1) / NTask + 1;
+  int exc             = NTask * avg - columns;
+  int tasklastsection = NTask - exc;
+  int pivotcol        = tasklastsection * avg;
+
+  for(int rep = 0; rep < 2; rep++)
+    {
+      /* each threads needs to do the loop to clear its send_count[] array */
+      for(int j = 0; j < NTask; j++)
+        Sndpm_count[j] = 0;
+
+      for(int idx = 0; idx < NSource; idx++)
+        {
+          int i = Sp->get_active_index(idx);
+
+          if(mode) /* only for power spectrum calculation */
+            if(typelist[P[i].getType()] == 0)
+              continue;
+
+          int slab_x;
+          if(mode == 2)
+            slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
+          else if(mode == 3)
+            slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
+          else
+            slab_x = P[i].IntPos[0] / INTCELL;
+
+          int slab_xx = slab_x + 1;
+
+          if(slab_xx >= GRIDX)
+            slab_xx = 0;
+
           int slab_y;
           if(mode == 2)
             slab_y = (P[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
@@ -689,7 +838,6 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
                     partout[ind3].IntPos[j] = P[i].IntPos[j];
                 }
             }
-#endif
         }
 
       if(rep == 0)
@@ -734,86 +882,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
   rhogrid.resize(maxfftsize);
   std::fill(rhogrid.begin(), rhogrid.end(), 0);
 
-#ifndef FFT_COLUMN_BASED
-  /* bin particle data onto mesh, in multi-threaded fashion */
-
-  for(size_t i = 0; i < nimport; i++)
-    {
-      int slab_x, slab_y, slab_z;
-      MyIntPosType rmd_x, rmd_y, rmd_z;
-
-      if(mode == 2)
-        {
-          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) % INTCELL;
-        }
-      else if(mode == 3)
-        {
-          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-        }
-      else
-        {
-          slab_x = partin[i].IntPos[0] / INTCELL;
-          rmd_x = partin[i].IntPos[0] % INTCELL;
-          slab_y = partin[i].IntPos[1] / INTCELL;
-          rmd_y = partin[i].IntPos[1] % INTCELL;
-          slab_z = partin[i].IntPos[2] / INTCELL;
-          rmd_z = partin[i].IntPos[2] % INTCELL;
-        }
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
-
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
-
-      double mass = partin[i].Mass;
-
-      if(slab_to_task[slab_x] == ThisTask)
-        {
-          slab_x -= first_slab_x_of_task[ThisTask];
-
-          rhogrid[FI(slab_x, slab_y, slab_z)] += (mass * (1.0 - dx) * (1.0 - dy) * (1.0 - dz));
-          rhogrid[FI(slab_x, slab_y, slab_zz)] += (mass * (1.0 - dx) * (1.0 - dy) * (dz));
-
-          rhogrid[FI(slab_x, slab_yy, slab_z)] += (mass * (1.0 - dx) * (dy) * (1.0 - dz));
-          rhogrid[FI(slab_x, slab_yy, slab_zz)] += (mass * (1.0 - dx) * (dy) * (dz));
-        }
-
-      if(slab_to_task[slab_xx] == ThisTask)
-        {
-          slab_xx -= first_slab_x_of_task[ThisTask];
-
-          rhogrid[FI(slab_xx, slab_y, slab_z)] += (mass * (dx) * (1.0 - dy) * (1.0 - dz));
-          rhogrid[FI(slab_xx, slab_y, slab_zz)] += (mass * (dx) * (1.0 - dy) * (dz));
-
-          rhogrid[FI(slab_xx, slab_yy, slab_z)] += (mass * (dx) * (dy) * (1.0 - dz));
-          rhogrid[FI(slab_xx, slab_yy, slab_zz)] += (mass * (dx) * (dy) * (dz));
-        }
-    }
-
-#else
-
   int first_col = firstcol_XY;
-  int last_col = firstcol_XY + ncol_XY - 1;
+  int last_col  = firstcol_XY + ncol_XY - 1;
 
   for(size_t i = 0; i < nimport; i++)
     {
@@ -822,23 +892,23 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
       if(mode == 2)
         {
           slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) % INTCELL;
+          rmd_x  = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) % INTCELL;
           slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) % INTCELL;
+          rmd_y  = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) % INTCELL;
         }
       else if(mode == 3)
         {
           slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
+          rmd_x  = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
           slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
+          rmd_y  = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
         }
       else
         {
           slab_x = partin[i].IntPos[0] / INTCELL;
-          rmd_x = partin[i].IntPos[0] % INTCELL;
+          rmd_x  = partin[i].IntPos[0] % INTCELL;
           slab_y = partin[i].IntPos[1] / INTCELL;
-          rmd_y = partin[i].IntPos[1] % INTCELL;
+          rmd_y  = partin[i].IntPos[1] % INTCELL;
         }
 
       double dx = rmd_x * (1.0 / INTCELL);
@@ -865,17 +935,17 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
       if(mode == 2)
         {
           slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) % INTCELL;
+          rmd_z  = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) % INTCELL;
         }
       else if(mode == 3)
         {
           slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
+          rmd_z  = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
         }
       else
         {
           slab_z = partin[i].IntPos[2] / INTCELL;
-          rmd_z = partin[i].IntPos[2] % INTCELL;
+          rmd_z  = partin[i].IntPos[2] % INTCELL;
         }
 
       double dz = rmd_z * (1.0 / INTCELL);
@@ -909,9 +979,8 @@ void pm_periodic::pmforce_uniform_optimized_prepare_density(int mode, int *typel
           rhogrid[FCxy(col3, slab_zz)] += (mass * (dx) * (dy) * (dz));
         }
     }
-
-#endif
 }
+#endif
 
 /* If dim<0, this function reads out the potential, otherwise Cartesian force components.
  */
@@ -1053,7 +1122,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
       if(task0 != task1)
         value += flistout[Sndpm_offset[task1] + Sndpm_count[task1]++];
 #else
-      int slab_y = P[i].IntPos[1] / INTCELL;
+      int slab_y  = P[i].IntPos[1] / INTCELL;
       int slab_yy = slab_y + 1;
 
       if(slab_yy >= GRIDY)
@@ -1768,7 +1837,12 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   pmforce_zoom_optimized_prepare_density(mode, typelist, part, localfield_globalindex, localfield_data);
 #else
   std::vector<partbuf> partin;
-  pmforce_uniform_optimized_prepare_density(mode, typelist, partin);
+
+#ifdef FFT_COLUMN_BASED
+  pmforce_uniform_optimized_columns_prepare_density(mode, typelist, partin);
+#else
+  pmforce_uniform_optimized_slabs_prepare_density(mode, typelist, partin);
+#endif
 #endif
 
   /* note: after density, we still keep the field 'partin' from the density assignment,
@@ -1980,8 +2054,8 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* x-direction */
-      my_slab_transposeA(&rhogrid, forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
-                                                      /* note: for the x-direction, we difference the transposed field */
+      my_slab_transposeA(rhogrid.data(), forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
+                                                            /* note: for the x-direction, we difference the transposed field */
 
       for(x = 0; x < GRIDX; x++)
         for(y = 0; y < nslab_y; y++)
@@ -2001,7 +2075,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
                                               (1.0 / 6) * (rhogrid[NI(xll, y, z)] - rhogrid[NI(xrr, y, z)]));
             }
 
-      my_slab_transposeB(&forcegrid, rhogrid); /* reverse the transpose from above */
+      my_slab_transposeB(forcegrid.data(), rhogrid.data()); /* reverse the transpose from above */
 
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);

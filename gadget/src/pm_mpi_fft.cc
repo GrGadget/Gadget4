@@ -55,11 +55,11 @@ pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
   subdivide_evenly(NgridX, NTask, ThisTask, &slabstart_x, &nslab_x);
   subdivide_evenly(NgridY, NTask, ThisTask, &slabstart_y, &nslab_y);
 
-  for(int task = 0; task < ntask; task++)
+  for(int task = 0; task < NTask; task++)
     {
       int start, n;
 
-      subdivide_evenly(NgridX, ntask, task, &start, &n);
+      subdivide_evenly(NgridX, NTask, task, &start, &n);
 
       for(int i = start; i < start + n; i++)
         slab_to_task[i] = task;

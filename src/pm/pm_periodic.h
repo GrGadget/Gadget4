@@ -141,7 +141,11 @@ class pm_periodic : public pm_mpi_fft
 
   size_t nimport, nexport;
 
-  void pmforce_uniform_optimized_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
+#ifndef FFT_COLUMN_BASED
+  void pmforce_uniform_optimized_slabs_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
+#else
+  void pmforce_uniform_optimized_columns_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
+#endif
   void pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin);
   void pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_real *grid, int dim);
   void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim);
