@@ -1794,13 +1794,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
  */
 void pm_periodic::pmforce_periodic(int mode, int *typelist)
 {
-  int x, y, z;
-
-  double tstart = MPI_Wtime();
-
-  if(mode == 0)
-    mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)\n", Sp->Rcut[0]);
-
 #ifdef HIERARCHICAL_GRAVITY
   NSource = Sp->TimeBinsGravity.NActiveParticles;
 #else
@@ -1816,18 +1809,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   if((((long long)Sp->NumPart) << 3) >= (((long long)1) << 31))
     Terminate("We are dealing with a too large particle number per MPI rank - enabling NUMPART_PER_TASK_LARGE might help.");
 #endif
-
-  double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
-  double d      = BoxSize / PMGRID;
-  double dhalf  = 0.5 * d;
-
-#ifdef GRAVITY_TALLBOX
-  double fac = 1.0 / (((double)GRIDX) * GRIDY * GRIDZ); /* to get potential  */
-#else
-  double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
-#endif
-
-  fac *= 1 / (2 * d); /* for finite differencing */
 
 #ifdef PM_ZOOM_OPTIMIZED
   std::vector<part_slab_data> part; /*!< array of part_slab_data linking the local particles to their mesh cells */
@@ -1865,354 +1846,344 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   if(mode != 0)
     {
       pmforce_measure_powerspec(mode - 1, typelist);
-
-#if defined(FFT_COLUMN_BASED) && !defined(PM_ZOOM_OPTIMIZED)
-#endif
+      return;
     }
-  else
-    {
-      /* multiply with Green's function in order to obtain the potential (or forces for spectral diffencing) */
+  /* multiply with Green's function in order to obtain the potential (or forces for spectral diffencing) */
 
-      double kfacx = 2.0 * M_PI / (GRIDX * d);
-      double kfacy = 2.0 * M_PI / (GRIDY * d);
-      double kfacz = 2.0 * M_PI / (GRIDZ * d);
+  const double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
+  const double d      = BoxSize / PMGRID;
+  const double dhalf  = 0.5 * d;
+  double kfacx        = 2.0 * M_PI / (GRIDX * d);
+  double kfacy        = 2.0 * M_PI / (GRIDY * d);
+  double kfacz        = 2.0 * M_PI / (GRIDZ * d);
 
 #ifdef FFT_COLUMN_BASED
-      for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
-        {
-          large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
-          y                         = ipcell / (GRIDX * GRIDz);
-          int yr                    = ipcell % (GRIDX * GRIDz);
-          z                         = yr / GRIDX;
-          x                         = yr % GRIDX;
+  for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
+    {
+      int x, y, z;
+      large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
+      y                         = ipcell / (GRIDX * GRIDz);
+      int yr                    = ipcell % (GRIDX * GRIDz);
+      z                         = yr / GRIDX;
+      x                         = yr % GRIDX;
 #else
-      for(x = 0; x < GRIDX; x++)
-        for(y = slabstart_y; y < slabstart_y + nslab_y; y++)
-          for(z = 0; z < GRIDz; z++)
-            {
+  for(int x = 0; x < GRIDX; x++)
+    for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
+      for(int z = 0; z < GRIDz; z++)
+        {
 #endif
-          int xx, yy, zz;
+      int xx, yy, zz;
 
-          if(x >= (GRIDX / 2))
-            xx = x - GRIDX;
-          else
-            xx = x;
-          if(y >= (GRIDY / 2))
-            yy = y - GRIDY;
-          else
-            yy = y;
-          if(z >= (GRIDZ / 2))
-            zz = z - GRIDZ;
-          else
-            zz = z;
+      if(x >= (GRIDX / 2))
+        xx = x - GRIDX;
+      else
+        xx = x;
+      if(y >= (GRIDY / 2))
+        yy = y - GRIDY;
+      else
+        yy = y;
+      if(z >= (GRIDZ / 2))
+        zz = z - GRIDZ;
+      else
+        zz = z;
 
-          double kx = kfacx * xx;
-          double ky = kfacy * yy;
-          double kz = kfacz * zz;
+      double kx = kfacx * xx;
+      double ky = kfacy * yy;
+      double kz = kfacz * zz;
 
-          double k2 = kx * kx + ky * ky + kz * kz;
+      double k2 = kx * kx + ky * ky + kz * kz;
 
-          double smth = 1.0, deconv = 1.0;
+      double smth = 1.0, deconv = 1.0;
 
-          if(k2 > 0)
+      if(k2 > 0)
+        {
+          smth = -exp(-k2 * asmth2) / k2;
+
+          /* do deconvolution */
+
+          double fx = 1, fy = 1, fz = 1;
+
+          if(xx != 0)
             {
-              smth = -exp(-k2 * asmth2) / k2;
-
-              /* do deconvolution */
-
-              double fx = 1, fy = 1, fz = 1;
-
-              if(xx != 0)
-                {
-                  fx = kx * dhalf;
-                  fx = sin(fx) / fx;
-                }
-              if(yy != 0)
-                {
-                  fy = ky * dhalf;
-                  fy = sin(fy) / fy;
-                }
-              if(zz != 0)
-                {
-                  fz = kz * dhalf;
-                  fz = sin(fz) / fz;
-                }
-
-              double ff = 1 / (fx * fy * fz);
-              deconv    = ff * ff * ff * ff;
-
-              smth *= deconv; /* deconvolution */
+              fx = kx * dhalf;
+              fx = sin(fx) / fx;
+            }
+          if(yy != 0)
+            {
+              fy = ky * dhalf;
+              fy = sin(fy) / fy;
+            }
+          if(zz != 0)
+            {
+              fz = kz * dhalf;
+              fz = sin(fz) / fz;
             }
 
+          double ff = 1 / (fx * fy * fz);
+          deconv    = ff * ff * ff * ff;
+
+          smth *= deconv; /* deconvolution */
+        }
+
 #ifndef FFT_COLUMN_BASED
-          large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
+      large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
 #endif
 
 #ifdef GRAVITY_TALLBOX
-          double re = fft_of_rhogrid[ip][0] * fft_of_kernel[ip][0] - fft_of_rhogrid[ip][1] * fft_of_kernel[ip][1];
-          double im = fft_of_rhogrid[ip][0] * fft_of_kernel[ip][1] + fft_of_rhogrid[ip][1] * fft_of_kernel[ip][0];
+      double re = fft_of_rhogrid[ip][0] * fft_of_kernel[ip][0] - fft_of_rhogrid[ip][1] * fft_of_kernel[ip][1];
+      double im = fft_of_rhogrid[ip][0] * fft_of_kernel[ip][1] + fft_of_rhogrid[ip][1] * fft_of_kernel[ip][0];
 
-          fft_of_rhogrid[ip][0] = re * deconv * exp(-k2 * asmth2);
-          fft_of_rhogrid[ip][1] = im * deconv * exp(-k2 * asmth2);
+      fft_of_rhogrid[ip][0] = re * deconv * exp(-k2 * asmth2);
+      fft_of_rhogrid[ip][1] = im * deconv * exp(-k2 * asmth2);
 #else
-              fft_of_rhogrid[ip][0] *= smth;
-              fft_of_rhogrid[ip][1] *= smth;
-#endif
-        }
-
-#ifndef GRAVITY_TALLBOX
-#ifdef FFT_COLUMN_BASED
-      if(second_transposed_firstcol == 0)
-        fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
-#else
-      if(slabstart_y == 0)
-        fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
-#endif
-#endif
-
-        /* Do the inverse FFT to get the potential/forces */
-
-#ifndef FFT_COLUMN_BASED
-      fft(rhogrid.data(), workspace.data(), -1);
-#else
-      fft(workspace.data(), rhogrid.data(), -1);
-#endif
-
-      /* Now rhogrid holds the potential/forces */
-
-#ifdef EVALPOTENTIAL
-#ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part, localfield_globalindex, localfield_data);
-#else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1, partin);
-#endif
-#endif
-
-      /* get the force components by finite differencing of the potential for each dimension,
-       * and send the results back to the right CPUs
-       */
-
-      /* we do the x component last, because for differencing the potential in the x-direction, we need to construct the
-       * transpose
-       */
-
-#ifndef FFT_COLUMN_BASED
-
-      /* z-direction */
-      for(y = 0; y < GRIDY; y++)
-        for(x = 0; x < nslab_x; x++)
-          for(z = 0; z < GRIDZ; z++)
-            {
-              int zr = z + 1, zl = z - 1, zrr = z + 2, zll = z - 2;
-              if(zr >= GRIDZ)
-                zr -= GRIDZ;
-              if(zrr >= GRIDZ)
-                zrr -= GRIDZ;
-              if(zl < 0)
-                zl += GRIDZ;
-              if(zll < 0)
-                zll += GRIDZ;
-
-              forcegrid[FI(x, y, z)] = fac * ((4.0 / 3) * (rhogrid[FI(x, y, zl)] - rhogrid[FI(x, y, zr)]) -
-                                              (1.0 / 6) * (rhogrid[FI(x, y, zll)] - rhogrid[FI(x, y, zrr)]));
-            }
-
-#ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
-#else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
-#endif
-
-      /* y-direction */
-      for(y = 0; y < GRIDY; y++)
-        for(x = 0; x < nslab_x; x++)
-          for(z = 0; z < GRIDZ; z++)
-            {
-              int yr = y + 1, yl = y - 1, yrr = y + 2, yll = y - 2;
-              if(yr >= GRIDY)
-                yr -= GRIDY;
-              if(yrr >= GRIDY)
-                yrr -= GRIDY;
-              if(yl < 0)
-                yl += GRIDY;
-              if(yll < 0)
-                yll += GRIDY;
-
-              forcegrid[FI(x, y, z)] = fac * ((4.0 / 3) * (rhogrid[FI(x, yl, z)] - rhogrid[FI(x, yr, z)]) -
-                                              (1.0 / 6) * (rhogrid[FI(x, yll, z)] - rhogrid[FI(x, yrr, z)]));
-            }
-
-#ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part, localfield_globalindex, localfield_data);
-#else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1, partin);
-#endif
-
-      /* x-direction */
-      transposeA(rhogrid.data(), forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
-                                                    /* note: for the x-direction, we difference the transposed field */
-
-      for(x = 0; x < GRIDX; x++)
-        for(y = 0; y < nslab_y; y++)
-          for(z = 0; z < GRIDZ; z++)
-            {
-              int xrr = x + 2, xll = x - 2, xr = x + 1, xl = x - 1;
-              if(xr >= GRIDX)
-                xr -= GRIDX;
-              if(xrr >= GRIDX)
-                xrr -= GRIDX;
-              if(xl < 0)
-                xl += GRIDX;
-              if(xll < 0)
-                xll += GRIDX;
-
-              forcegrid[NI(x, y, z)] = fac * ((4.0 / 3) * (rhogrid[NI(xl, y, z)] - rhogrid[NI(xr, y, z)]) -
-                                              (1.0 / 6) * (rhogrid[NI(xll, y, z)] - rhogrid[NI(xrr, y, z)]));
-            }
-
-      transposeB(forcegrid.data(), rhogrid.data()); /* reverse the transpose from above */
-
-#ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
-#else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0, partin);
-#endif
-
-#else
-
-      /* z-direction */
-      for(large_array_offset i = 0; i < ncol_XY; i++)
-        {
-          fft_real *const forcep = &forcegrid[GRID2 * i];
-          fft_real *const potp = &rhogrid[GRID2 * i];
-
-          for(int z = 0; z < GRIDZ; z++)
-            {
-              int zr = z + 1;
-              int zl = z - 1;
-              int zrr = z + 2;
-              int zll = z - 2;
-
-              if(zr >= GRIDZ)
-                zr -= GRIDZ;
-              if(zrr >= GRIDZ)
-                zrr -= GRIDZ;
-              if(zl < 0)
-                zl += GRIDZ;
-              if(zll < 0)
-                zll += GRIDZ;
-
-              forcep[z] = fac * ((4.0 / 3) * (potp[zl] - potp[zr]) - (1.0 / 6) * (potp[zll] - potp[zrr]));
-            }
-        }
-
-#ifdef PM_ZOOM_OPTIMIZED
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
-#else
-      pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
-
-      /* at this point we can free partin */
-#endif
-
-      /* y-direction */
-      swap23(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field, forcegrid the transposed field
-
-      /* make an in-place computation */
-      {
-        std::vector<fft_real> column(GRIDY);
-
-        for(large_array_offset i = 0; i < ncol_XZ; i++)
-          {
-            memcpy(column.data(), &forcegrid[GRIDY * i], GRIDY * sizeof(fft_real));
-
-            fft_real *const forcep = &forcegrid[GRIDY * i];
-
-            for(int y = 0; y < GRIDY; y++)
-              {
-                int yr = y + 1;
-                int yl = y - 1;
-                int yrr = y + 2;
-                int yll = y - 2;
-
-                if(yr >= GRIDY)
-                  yr -= GRIDY;
-                if(yrr >= GRIDY)
-                  yrr -= GRIDY;
-                if(yl < 0)
-                  yl += GRIDY;
-                if(yll < 0)
-                  yll += GRIDY;
-
-                forcep[y] = fac * ((4.0 / 3) * (column[yl] - column[yr]) - (1.0 / 6) * (column[yll] - column[yrr]));
-              }
-          }
-      }
-
-      /* now need to read out from forcegrid  in a non-standard way */
-
-#ifdef PM_ZOOM_OPTIMIZED
-      /* need a third field as scratch space */
-      {
-        std::vector<fft_real> scratch(fftsize);
-
-        swap23back(forcegrid.data(), scratch.data());
-        pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part, localfield_globalindex, localfield_data);
-      }
-#else
-      pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid.data(), 1);
-#endif
-
-      /* x-direction */
-      swap13(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field
-
-      for(large_array_offset i = 0; i < ncol_ZY; i++)
-        {
-          fft_real *forcep = &rhogrid[GRIDX * i];
-          fft_real *potp = &forcegrid[GRIDX * i];
-
-          for(int x = 0; x < GRIDX; x++)
-            {
-              int xr = x + 1;
-              int xl = x - 1;
-              int xrr = x + 2;
-              int xll = x - 2;
-
-              if(xr >= GRIDX)
-                xr -= GRIDX;
-              if(xrr >= GRIDX)
-                xrr -= GRIDX;
-              if(xl < 0)
-                xl += GRIDX;
-              if(xll < 0)
-                xll += GRIDX;
-
-              forcep[x] = fac * ((4.0 / 3) * (potp[xl] - potp[xr]) - (1.0 / 6) * (potp[xll] - potp[xrr]));
-            }
-        }
-
-        /* now need to read out from forcegrid in a non-standard way */
-#ifdef PM_ZOOM_OPTIMIZED
-      swap13back(rhogrid.data(), forcegrid.data());
-      pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
-#else
-      pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid.data(), 0);
-#endif
-
+          fft_of_rhogrid[ip][0] *= smth;
+          fft_of_rhogrid[ip][1] *= smth;
 #endif
     }
 
-    /* free stuff */
+#ifndef GRAVITY_TALLBOX
+#ifdef FFT_COLUMN_BASED
+  if(second_transposed_firstcol == 0)
+    fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
+#else
+  if(slabstart_y == 0)
+    fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
+#endif
+#endif
+
+    /* Do the inverse FFT to get the potential/forces */
+
+#ifndef FFT_COLUMN_BASED
+  fft(rhogrid.data(), workspace.data(), -1);
+#else
+  fft(workspace.data(), rhogrid.data(), -1);
+#endif
+
+  /* Now rhogrid holds the potential/forces */
+
+#ifdef EVALPOTENTIAL
+#ifdef PM_ZOOM_OPTIMIZED
+  pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part, localfield_globalindex, localfield_data);
+#else
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1, partin);
+#endif
+#endif
+
+  /* get the force components by finite differencing of the potential for each dimension,
+   * and send the results back to the right CPUs
+   */
+
+  /* we do the x component last, because for differencing the potential in the x-direction, we need to construct the
+   * transpose
+   */
+#ifdef GRAVITY_TALLBOX
+  double fac = 1.0 / (((double)GRIDX) * GRIDY * GRIDZ); /* to get potential  */
+#else
+  double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
+#endif
+
+  fac *= 1 / (2 * d); /* for finite differencing */
+
+#ifndef FFT_COLUMN_BASED
+
+  /* z-direction */
+  for(int y = 0; y < GRIDY; y++)
+    for(int x = 0; x < nslab_x; x++)
+      for(int z = 0; z < GRIDZ; z++)
+        {
+          int zr = z + 1, zl = z - 1, zrr = z + 2, zll = z - 2;
+          if(zr >= GRIDZ)
+            zr -= GRIDZ;
+          if(zrr >= GRIDZ)
+            zrr -= GRIDZ;
+          if(zl < 0)
+            zl += GRIDZ;
+          if(zll < 0)
+            zll += GRIDZ;
+
+          forcegrid[FI(x, y, z)] = fac * ((4.0 / 3) * (rhogrid[FI(x, y, zl)] - rhogrid[FI(x, y, zr)]) -
+                                          (1.0 / 6) * (rhogrid[FI(x, y, zll)] - rhogrid[FI(x, y, zrr)]));
+        }
 
 #ifdef PM_ZOOM_OPTIMIZED
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
 #else
-#ifndef FFT_COLUMN_BASED
-#endif
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
 #endif
 
-  double tend = MPI_Wtime();
+  /* y-direction */
+  for(int y = 0; y < GRIDY; y++)
+    for(int x = 0; x < nslab_x; x++)
+      for(int z = 0; z < GRIDZ; z++)
+        {
+          int yr = y + 1, yl = y - 1, yrr = y + 2, yll = y - 2;
+          if(yr >= GRIDY)
+            yr -= GRIDY;
+          if(yrr >= GRIDY)
+            yrr -= GRIDY;
+          if(yl < 0)
+            yl += GRIDY;
+          if(yll < 0)
+            yll += GRIDY;
 
-  if(mode == 0)
-    mpi_printf("PM-PERIODIC: done.  (took %g seconds)\n", tend - tstart);
+          forcegrid[FI(x, y, z)] = fac * ((4.0 / 3) * (rhogrid[FI(x, yl, z)] - rhogrid[FI(x, yr, z)]) -
+                                          (1.0 / 6) * (rhogrid[FI(x, yll, z)] - rhogrid[FI(x, yrr, z)]));
+        }
+
+#ifdef PM_ZOOM_OPTIMIZED
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part, localfield_globalindex, localfield_data);
+#else
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1, partin);
+#endif
+
+  /* x-direction */
+  transposeA(rhogrid.data(), forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
+                                                /* note: for the x-direction, we difference the transposed field */
+
+  for(int x = 0; x < GRIDX; x++)
+    for(int y = 0; y < nslab_y; y++)
+      for(int z = 0; z < GRIDZ; z++)
+        {
+          int xrr = x + 2, xll = x - 2, xr = x + 1, xl = x - 1;
+          if(xr >= GRIDX)
+            xr -= GRIDX;
+          if(xrr >= GRIDX)
+            xrr -= GRIDX;
+          if(xl < 0)
+            xl += GRIDX;
+          if(xll < 0)
+            xll += GRIDX;
+
+          forcegrid[NI(x, y, z)] = fac * ((4.0 / 3) * (rhogrid[NI(xl, y, z)] - rhogrid[NI(xr, y, z)]) -
+                                          (1.0 / 6) * (rhogrid[NI(xll, y, z)] - rhogrid[NI(xrr, y, z)]));
+        }
+
+  transposeB(forcegrid.data(), rhogrid.data()); /* reverse the transpose from above */
+
+#ifdef PM_ZOOM_OPTIMIZED
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
+#else
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0, partin);
+#endif
+
+#else
+
+  /* z-direction */
+  for(large_array_offset i = 0; i < ncol_XY; i++)
+    {
+      fft_real *const forcep = &forcegrid[GRID2 * i];
+      fft_real *const potp = &rhogrid[GRID2 * i];
+
+      for(int z = 0; z < GRIDZ; z++)
+        {
+          int zr = z + 1;
+          int zl = z - 1;
+          int zrr = z + 2;
+          int zll = z - 2;
+
+          if(zr >= GRIDZ)
+            zr -= GRIDZ;
+          if(zrr >= GRIDZ)
+            zrr -= GRIDZ;
+          if(zl < 0)
+            zl += GRIDZ;
+          if(zll < 0)
+            zll += GRIDZ;
+
+          forcep[z] = fac * ((4.0 / 3) * (potp[zl] - potp[zr]) - (1.0 / 6) * (potp[zll] - potp[zrr]));
+        }
+    }
+
+#ifdef PM_ZOOM_OPTIMIZED
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
+#else
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
+#endif
+
+  /* y-direction */
+  swap23(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field, forcegrid the transposed field
+
+  /* make an in-place computation */
+  {
+    std::vector<fft_real> column(GRIDY);
+
+    for(large_array_offset i = 0; i < ncol_XZ; i++)
+      {
+        memcpy(column.data(), &forcegrid[GRIDY * i], GRIDY * sizeof(fft_real));
+
+        fft_real *const forcep = &forcegrid[GRIDY * i];
+
+        for(int y = 0; y < GRIDY; y++)
+          {
+            int yr = y + 1;
+            int yl = y - 1;
+            int yrr = y + 2;
+            int yll = y - 2;
+
+            if(yr >= GRIDY)
+              yr -= GRIDY;
+            if(yrr >= GRIDY)
+              yrr -= GRIDY;
+            if(yl < 0)
+              yl += GRIDY;
+            if(yll < 0)
+              yll += GRIDY;
+
+            forcep[y] = fac * ((4.0 / 3) * (column[yl] - column[yr]) - (1.0 / 6) * (column[yll] - column[yrr]));
+          }
+      }
+  }
+
+  /* now need to read out from forcegrid  in a non-standard way */
+
+#ifdef PM_ZOOM_OPTIMIZED
+  /* need a third field as scratch space */
+  {
+    std::vector<fft_real> scratch(fftsize);
+    swap23back(forcegrid.data(), scratch.data());
+    pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part, localfield_globalindex, localfield_data);
+  }
+#else
+  pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid.data(), 1);
+#endif
+
+  /* x-direction */
+  swap13(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field
+
+  for(large_array_offset i = 0; i < ncol_ZY; i++)
+    {
+      fft_real *forcep = &rhogrid[GRIDX * i];
+      fft_real *potp = &forcegrid[GRIDX * i];
+
+      for(int x = 0; x < GRIDX; x++)
+        {
+          int xr = x + 1;
+          int xl = x - 1;
+          int xrr = x + 2;
+          int xll = x - 2;
+
+          if(xr >= GRIDX)
+            xr -= GRIDX;
+          if(xrr >= GRIDX)
+            xrr -= GRIDX;
+          if(xl < 0)
+            xl += GRIDX;
+          if(xll < 0)
+            xll += GRIDX;
+
+          forcep[x] = fac * ((4.0 / 3) * (potp[xl] - potp[xr]) - (1.0 / 6) * (potp[xll] - potp[xrr]));
+        }
+    }
+
+    /* now need to read out from forcegrid in a non-standard way */
+#ifdef PM_ZOOM_OPTIMIZED
+  swap13back(rhogrid.data(), forcegrid.data());
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
+#else
+  pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid.data(), 0);
+#endif
+
+#endif
 }
 
 #ifdef GRAVITY_TALLBOX
@@ -2223,8 +2194,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 void pm_periodic::pmforce_setup_tallbox_kernel(void)
 {
   double d = BoxSize / PMGRID;
-
-  mpi_printf("PM-PERIODIC: Setting up tallbox kernel (GRIDX=%d, GRIDY=%d, GRIDZ=%d)\n", GRIDX, GRIDY, GRIDZ);
 
   /* now set up kernel and its Fourier transform */
 
@@ -2288,8 +2257,6 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
 #else
   memcpy(kernel.get(), workspc.data(), maxfftsize * sizeof(fft_real));
 #endif
-
-  mpi_printf("PM-PERIODIC: Done setting up tallbox kernel\n");
 }
 
 double pm_periodic::pmperiodic_tallbox_long_range_potential(double x, double y, double z)
