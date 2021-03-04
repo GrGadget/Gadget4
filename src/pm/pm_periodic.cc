@@ -17,6 +17,7 @@
 #include <mpi.h>
 #include <sys/stat.h>  // mkdir
 #include <algorithm>   // sort, fill
+#include <numeric>     // accumulate
 #include <vector>
 
 #include "../pm/pm_periodic.h"
@@ -645,7 +646,7 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
 
   /* bin particle data onto mesh, in multi-threaded fashion */
 
-  for(size_t i = 0; i < nimport; i++)
+  for(size_t i = 0; i < partin.size(); i++)
     {
       int slab_x, slab_y, slab_z;
       MyIntPosType rmd_x, rmd_y, rmd_z;
@@ -885,7 +886,7 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
   int first_col = firstcol_XY;
   int last_col  = firstcol_XY + ncol_XY - 1;
 
-  for(size_t i = 0; i < nimport; i++)
+  for(size_t i = 0; i < partin.size(); i++)
     {
       int slab_x, slab_y;
       MyIntPosType rmd_x, rmd_y;
@@ -996,7 +997,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 #endif
 #endif
 
-  std::vector<MyFloat> flistin(nimport);
+  const size_t nexport = std::accumulate(Sndpm_count.begin(), Sndpm_count.end(), 0);
+  std::vector<MyFloat> flistin(partin.size());
   std::vector<MyFloat> flistout(nexport);
 
 #ifdef FFT_COLUMN_BASED
@@ -1007,7 +1009,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
   int pivotcol = tasklastsection * avg;
 #endif
 
-  for(size_t i = 0; i < nimport; i++)
+  for(size_t i = 0; i < partin.size(); i++)
     {
       flistin[i] = 0;
 
@@ -1205,8 +1207,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   std::vector<size_t> recv_offset(NTask);
 
   std::vector<partbuf> partin, partout;
-  // defined in the header
-  size_t nimport = 0, nexport = 0;
 
   particle_data *P = Sp->P;
 
@@ -1308,7 +1308,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
         {
           MPI_Alltoall(send_count.data(), sizeof(size_t), MPI_BYTE, recv_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
 
-          nimport = 0, nexport = 0;
+          size_t nimport = 0, nexport = 0;
           recv_offset[0] = send_offset[0] = 0;
 
           for(int j = 0; j < NTask; j++)
@@ -1343,10 +1343,10 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
                   sizeof(partbuf), flag_big_all, Communicator);
 
-  std::vector<MyFloat> flistin(nimport);
-  std::vector<MyFloat> flistout(nexport);
+  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistout(partout.size());
 
-  for(size_t i = 0; i < nimport; i++)
+  for(size_t i = 0; i < partin.size(); i++)
     {
       flistin[i] = 0;
 
@@ -1498,7 +1498,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
 
   std::vector<partbuf> partin, partout;
   // defined in the header
-  size_t nimport = 0, nexport = 0;
 
   particle_data *P = Sp->P;
 
@@ -1600,7 +1599,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
         {
           MPI_Alltoall(send_count.data(), sizeof(size_t), MPI_BYTE, recv_count.data(), sizeof(size_t), MPI_BYTE, Communicator);
 
-          nimport = 0, nexport = 0;
+          size_t nimport = 0, nexport = 0;
           recv_offset[0] = send_offset[0] = 0;
 
           for(int j = 0; j < NTask; j++)
@@ -1635,10 +1634,10 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
                   sizeof(partbuf), flag_big_all, Communicator);
 
-  std::vector<MyFloat> flistin(nimport);
-  std::vector<MyFloat> flistout(nexport);
+  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistout(partout.size());
 
-  for(size_t i = 0; i < nimport; i++)
+  for(size_t i = 0; i < partin.size(); i++)
     {
       flistin[i] = 0;
 

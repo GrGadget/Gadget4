@@ -139,8 +139,6 @@ class pm_periodic : public pm_mpi_fft
     MyIntPosType IntPos[3];
   };
 
-  size_t nimport, nexport;
-
 #ifndef FFT_COLUMN_BASED
   void pmforce_uniform_optimized_slabs_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
 #else
