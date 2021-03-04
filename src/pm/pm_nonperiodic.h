@@ -35,10 +35,25 @@
 #define FC(c, z) (((large_array_offset)GRID2) * ((c)-firstcol_XY) + (z))
 #define TI(x, y, z) (((large_array_offset)GRID) * ((x) + (y)*nslab_x) + (z))
 
-class pm_nonperiodic : public pm_mpi_fft
+class pm_nonperiodic :
+#ifdef FFT_COLUMN_BASED
+    public mpi_fft_columns
+#else
+    public mpi_fft_slabs
+#endif
 {
  public:
-  pm_nonperiodic(MPI_Comm comm) : pm_mpi_fft(comm, GRID, GRID, GRID) {}
+  pm_nonperiodic(MPI_Comm comm)
+      :
+#ifdef FFT_COLUMN_BASED
+        mpi_fft_columns(comm, GRID, GRID, GRID)
+  {
+  }
+#else
+        mpi_fft_slabs(comm, GRID, GRID, GRID)
+  {
+  }
+#endif
 
 #if defined(PMGRID) && (!defined(PERIODIC) || defined(PLACEHIGHRESREGION))
 

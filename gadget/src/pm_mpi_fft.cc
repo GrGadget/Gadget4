@@ -11,8 +11,6 @@
 
 #include "gadgetconfig.h"
 
-#if defined(PMGRID) || defined(NGENIC)
-
 #include <fftw3.h>
 #include <mpi.h>
 #include <cstdint>  // SIZE_MAX
@@ -34,8 +32,7 @@ extern template class std::vector<int>;
  * transferred betweeen processors.
  */
 
-#ifndef FFT_COLUMN_BASED
-pm_mpi_fft::fft_plan::fft_plan(int ntask, int ngridx, int ngridy, int ngridz)
+fft_plan_slabs::fft_plan_slabs(int ntask, int ngridx, int ngridy, int ngridz)
     : NgridX{ngridx},
       NgridY{ngridy},
       NgridZ{ngridz},
@@ -49,8 +46,42 @@ pm_mpi_fft::fft_plan::fft_plan(int ntask, int ngridx, int ngridy, int ngridz)
 {
 }
 
-pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
-    : setcomm{comm}, fft_plan{setcomm::NTask, ngridx, ngridy, ngridz}
+fft_plan_columns::fft_plan_columns(int ntask, int ngridx, int ngridy, int ngridz)
+    : NgridX{ngridx},
+      NgridY{ngridy},
+      NgridZ{ngridz},
+      Ngridz{NgridZ / 2 + 1},
+      Ngrid2{2 * Ngridz},
+      offsets_send_A(ntask),
+      offsets_recv_A(ntask),
+      offsets_send_B(ntask),
+      offsets_recv_B(ntask),
+      offsets_send_C(ntask),
+      offsets_recv_C(ntask),
+      offsets_send_D(ntask),
+      offsets_recv_D(ntask),
+
+      count_send_A(ntask),
+      count_recv_A(ntask),
+      count_send_B(ntask),
+      count_recv_B(ntask),
+      count_send_C(ntask),
+      count_recv_C(ntask),
+      count_send_D(ntask),
+      count_recv_D(ntask),
+      count_send_13(ntask),
+      count_recv_13(ntask),
+      count_send_23(ntask),
+      count_recv_23(ntask),
+      count_send_13back(ntask),
+      count_recv_13back(ntask),
+      count_send_23back(ntask),
+      count_recv_23back(ntask)
+{
+}
+
+mpi_fft_slabs::mpi_fft_slabs(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
+    : setcomm{comm}, fft_plan_slabs{setcomm::NTask, ngridx, ngridy, ngridz}
 {
   subdivide_evenly(NgridX, NTask, ThisTask, &slabstart_x, &nslab_x);
   subdivide_evenly(NgridY, NTask, ThisTask, &slabstart_y, &nslab_y);
@@ -87,7 +118,7 @@ pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
  * \param field The array to transpose
  * \param scratch scratch space used during communication (same size as field)
  */
-void pm_mpi_fft::my_slab_transposeA(fft_real *field, fft_real *scratch)
+void mpi_fft_slabs::transposeA(fft_real *field, fft_real *scratch)
 {
   int n, prod, task, flag_big = 0, flag_big_all = 0;
 
@@ -134,7 +165,7 @@ void pm_mpi_fft::my_slab_transposeA(fft_real *field, fft_real *scratch)
  * \param field The array to transpose
  * \param scratch scratch space used during communication (same size as field)
  */
-void pm_mpi_fft::my_slab_transposeB(fft_real *field, fft_real *scratch)
+void mpi_fft_slabs::transposeB(fft_real *field, fft_real *scratch)
 {
   int n, prod, task, flag_big = 0, flag_big_all = 0;
 
@@ -183,7 +214,7 @@ void pm_mpi_fft::my_slab_transposeB(fft_real *field, fft_real *scratch)
  *
  * if mode = 1, the reverse operation is carried out.
  */
-void pm_mpi_fft::my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int *sy, int *firsty, int nx, int ny, int nz, int mode)
+void mpi_fft_slabs::transpose(void *av, void *bv, int *sx, int *firstx, int *sy, int *firsty, int nx, int ny, int nz, int mode)
 {
   char *a = (char *)av;
   char *b = (char *)bv;
@@ -273,7 +304,7 @@ void pm_mpi_fft::my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int
   /* now the result is in b[] */
 }
 
-void pm_mpi_fft::my_slab_based_fft(fft_real *data, fft_real *workspace, int forward)
+void mpi_fft_slabs::fft(fft_real *data, fft_real *workspace, int forward)
 {
   int n, prod;
   int slabsx = slabs_x_per_task[ThisTask];
@@ -315,8 +346,8 @@ void pm_mpi_fft::my_slab_based_fft(fft_real *data, fft_real *workspace, int forw
       /* now our data resides in data_complex[] */
 
       /* do the transpose */
-      my_slab_transpose(data_complex, workspace_complex, slabs_x_per_task.data(), first_slab_x_of_task.data(), slabs_y_per_task.data(),
-                        first_slab_y_of_task.data(), ngridx, ngridy, ngridz, 0);
+      transpose(data_complex, workspace_complex, slabs_x_per_task.data(), first_slab_x_of_task.data(), slabs_y_per_task.data(),
+                first_slab_y_of_task.data(), ngridx, ngridy, ngridz, 0);
 
       /* now the data is in workspace_complex[] */
 
@@ -346,8 +377,8 @@ void pm_mpi_fft::my_slab_based_fft(fft_real *data, fft_real *workspace, int forw
           (backward_plan_xdir, data_complex + i * ngridz * ngridx_long + j, workspace_complex + i * ngridz * ngridx_long + j);
         }
 
-      my_slab_transpose(workspace_complex, data_complex, slabs_x_per_task.data(), first_slab_x_of_task.data(), slabs_y_per_task.data(),
-                        first_slab_y_of_task.data(), ngridx, ngridy, ngridz, 1);
+      transpose(workspace_complex, data_complex, slabs_x_per_task.data(), first_slab_x_of_task.data(), slabs_y_per_task.data(),
+                first_slab_y_of_task.data(), ngridx, ngridy, ngridz, 1);
 
       prod = slabsx * ngridz;
 
@@ -371,44 +402,8 @@ void pm_mpi_fft::my_slab_based_fft(fft_real *data, fft_real *workspace, int forw
     }
 }
 
-#else
-
-fft_plan::fft_plan(int ntask, int ngridx, int ngridy, int ngridz)
-    : NgridX{ngridx},
-      NgridY{ngridy},
-      NgridZ{ngridz},
-      Ngridz{NgridZ / 2 + 1},
-      Ngrid2{2 * Ngridz},
-      offsets_send_A(ntask),
-      offsets_recv_A(ntask),
-      offsets_send_B(ntask),
-      offsets_recv_B(ntask),
-      offsets_send_C(ntask),
-      offsets_recv_C(ntask),
-      offsets_send_D(ntask),
-      offsets_recv_D(ntask),
-
-      count_send_A(ntask),
-      count_recv_A(ntask),
-      count_send_B(ntask),
-      count_recv_B(ntask),
-      count_send_C(ntask),
-      count_recv_C(ntask),
-      count_send_D(ntask),
-      count_recv_D(ntask),
-      count_send_13(ntask),
-      count_recv_13(ntask),
-      count_send_23(ntask),
-      count_recv_23(ntask),
-      count_send_13back(ntask),
-      count_recv_13back(ntask),
-      count_send_23back(ntask),
-      count_recv_23back(ntask)
-{
-}
-
-pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
-    : setcomm{comm}, fft_plan{setcomm::NTask, ngridx, ngridy, ngridz}
+mpi_fft_columns::mpi_fft_columns(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
+    : setcomm{comm}, fft_plan_columns{setcomm::NTask, ngridx, ngridy, ngridz}
 {
   subdivide_evenly(NgridX * NgridY, NTask, ThisTask, &firstcol_XY, &ncol_XY);
   subdivide_evenly(NgridX * Ngrid2, NTask, ThisTask, &firstcol_XZ, &ncol_XZ);
@@ -434,90 +429,85 @@ pm_mpi_fft::pm_mpi_fft(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
   int dimA[3]  = {NgridX, NgridY, Ngridz};
   int permA[3] = {0, 2, 1};
 
-  my_fft_column_remap(NULL, dimA, firstcol_XY, ncol_XY, NULL, permA, transposed_firstcol, transposed_ncol, offsets_send_A.data(),
-                      offsets_recv_A.data(), count_send_A.data(), count_recv_A.data(), 1);
+  remap(NULL, dimA, firstcol_XY, ncol_XY, NULL, permA, transposed_firstcol, transposed_ncol, offsets_send_A.data(),
+        offsets_recv_A.data(), count_send_A.data(), count_recv_A.data(), 1);
 
   int dimB[3]  = {NgridX, Ngridz, NgridY};
   int permB[3] = {2, 1, 0};
 
-  my_fft_column_remap(NULL, dimB, transposed_firstcol, transposed_ncol, NULL, permB, second_transposed_firstcol,
-                      second_transposed_ncol, offsets_send_B.data(), offsets_recv_B.data(), count_send_B.data(), count_recv_B.data(),
-                      1);
+  remap(NULL, dimB, transposed_firstcol, transposed_ncol, NULL, permB, second_transposed_firstcol, second_transposed_ncol,
+        offsets_send_B.data(), offsets_recv_B.data(), count_send_B.data(), count_recv_B.data(), 1);
 
   int dimC[3]  = {NgridY, Ngridz, NgridX};
   int permC[3] = {2, 1, 0};
 
-  my_fft_column_remap(NULL, dimC, second_transposed_firstcol, second_transposed_ncol, NULL, permC, transposed_firstcol,
-                      transposed_ncol, offsets_send_C.data(), offsets_recv_C.data(), count_send_C.data(), count_recv_C.data(), 1);
+  remap(NULL, dimC, second_transposed_firstcol, second_transposed_ncol, NULL, permC, transposed_firstcol, transposed_ncol,
+        offsets_send_C.data(), offsets_recv_C.data(), count_send_C.data(), count_recv_C.data(), 1);
 
   int dimD[3]  = {NgridX, Ngridz, NgridY};
   int permD[3] = {0, 2, 1};
 
-  my_fft_column_remap(NULL, dimD, transposed_firstcol, transposed_ncol, NULL, permD, firstcol_XY, ncol_XY, offsets_send_D.data(),
-                      offsets_recv_D.data(), count_send_D.data(), count_recv_D.data(), 1);
+  remap(NULL, dimD, transposed_firstcol, transposed_ncol, NULL, permD, firstcol_XY, ncol_XY, offsets_send_D.data(),
+        offsets_recv_D.data(), count_send_D.data(), count_recv_D.data(), 1);
 
   int dim23[3]  = {NgridX, NgridY, Ngrid2};
   int perm23[3] = {0, 2, 1};
 
-  my_fft_column_transpose(NULL, dim23, firstcol_XY, ncol_XY, NULL, perm23, firstcol_XZ, ncol_XZ, count_send_23.data(),
-                          count_recv_23.data(), 1);
+  transpose(NULL, dim23, firstcol_XY, ncol_XY, NULL, perm23, firstcol_XZ, ncol_XZ, count_send_23.data(), count_recv_23.data(), 1);
 
   int dim23back[3]  = {NgridX, Ngrid2, NgridY};
   int perm23back[3] = {0, 2, 1};
 
-  my_fft_column_transpose(NULL, dim23back, firstcol_XZ, ncol_XZ, NULL, perm23back, firstcol_XY, ncol_XY, count_send_23back.data(),
-                          count_recv_23back.data(), 1);
+  transpose(NULL, dim23back, firstcol_XZ, ncol_XZ, NULL, perm23back, firstcol_XY, ncol_XY, count_send_23back.data(),
+            count_recv_23back.data(), 1);
 
   int dim13[3]  = {NgridX, NgridY, Ngrid2};
   int perm13[3] = {2, 1, 0};
 
-  my_fft_column_transpose(NULL, dim13, firstcol_XY, ncol_XY, NULL, perm13, firstcol_ZY, ncol_ZY, count_send_13.data(),
-                          count_recv_13.data(), 1);
+  transpose(NULL, dim13, firstcol_XY, ncol_XY, NULL, perm13, firstcol_ZY, ncol_ZY, count_send_13.data(), count_recv_13.data(), 1);
 
   int dim13back[3]  = {Ngrid2, NgridY, NgridX};
   int perm13back[3] = {2, 1, 0};
 
-  my_fft_column_transpose(NULL, dim13back, firstcol_ZY, ncol_ZY, NULL, perm13back, firstcol_XY, ncol_XY, count_send_13back.data(),
-                          count_recv_13back.data(), 1);
+  transpose(NULL, dim13back, firstcol_ZY, ncol_ZY, NULL, perm13back, firstcol_XY, ncol_XY, count_send_13back.data(),
+            count_recv_13back.data(), 1);
 }
 
-void pm_mpi_fft::my_fft_swap23(fft_real *data, fft_real *out)
+void mpi_fft_columns::swap23(fft_real *data, fft_real *out)
 {
   int dim23[3]  = {NgridX, NgridY, Ngrid2};
   int perm23[3] = {0, 2, 1};
 
-  my_fft_column_transpose(data, dim23, firstcol_XY, ncol_XY, out, perm23, firstcol_XZ, ncol_XZ, count_send_23.data(),
-                          count_recv_23.data(), 0);
+  transpose(data, dim23, firstcol_XY, ncol_XY, out, perm23, firstcol_XZ, ncol_XZ, count_send_23.data(), count_recv_23.data(), 0);
 }
 
-void pm_mpi_fft::my_fft_swap23back(fft_real *data, fft_real *out)
+void mpi_fft_columns::swap23back(fft_real *data, fft_real *out)
 {
   int dim23back[3]  = {NgridX, Ngrid2, NgridY};
   int perm23back[3] = {0, 2, 1};
 
-  my_fft_column_transpose(data, dim23back, firstcol_XZ, ncol_XZ, out, perm23back, firstcol_XY, ncol_XY, count_send_23back.data(),
-                          count_recv_23back.data(), 0);
+  transpose(data, dim23back, firstcol_XZ, ncol_XZ, out, perm23back, firstcol_XY, ncol_XY, count_send_23back.data(),
+            count_recv_23back.data(), 0);
 }
 
-void pm_mpi_fft::my_fft_swap13(fft_real *data, fft_real *out)
+void mpi_fft_columns::swap13(fft_real *data, fft_real *out)
 {
   int dim13[3]  = {NgridX, NgridY, Ngrid2};
   int perm13[3] = {2, 1, 0};
 
-  my_fft_column_transpose(data, dim13, firstcol_XY, ncol_XY, out, perm13, firstcol_ZY, ncol_ZY, count_send_13.data(),
-                          count_recv_13.data(), 0);
+  transpose(data, dim13, firstcol_XY, ncol_XY, out, perm13, firstcol_ZY, ncol_ZY, count_send_13.data(), count_recv_13.data(), 0);
 }
 
-void pm_mpi_fft::my_fft_swap13back(fft_real *data, fft_real *out)
+void mpi_fft_columns::swap13back(fft_real *data, fft_real *out)
 {
   int dim13back[3]  = {Ngrid2, NgridY, NgridX};
   int perm13back[3] = {2, 1, 0};
 
-  my_fft_column_transpose(data, dim13back, firstcol_ZY, ncol_ZY, out, perm13back, firstcol_XY, ncol_XY, count_send_13back.data(),
-                          count_recv_13back.data(), 0);
+  transpose(data, dim13back, firstcol_ZY, ncol_ZY, out, perm13back, firstcol_XY, ncol_XY, count_send_13back.data(),
+            count_recv_13back.data(), 0);
 }
 
-void pm_mpi_fft::my_column_based_fft(fft_real *data, fft_real *workspace, int forward)
+void mpi_fft_columns::fft(fft_real *data, fft_real *workspace, int forward)
 {
   size_t n;
   fft_real *data_real = (fft_real *)data, *workspace_real = (fft_real *)workspace;
@@ -532,8 +522,8 @@ void pm_mpi_fft::my_column_based_fft(fft_real *data, fft_real *workspace, int fo
       int dimA[3]  = {NgridX, NgridY, Ngridz};
       int permA[3] = {0, 2, 1};
 
-      my_fft_column_remap(workspace_complex, dimA, firstcol_XY, ncol_XY, data_complex, permA, transposed_firstcol, transposed_ncol,
-                          offsets_send_A.data(), offsets_recv_A.data(), count_send_A.data(), count_recv_A.data(), 0);
+      remap(workspace_complex, dimA, firstcol_XY, ncol_XY, data_complex, permA, transposed_firstcol, transposed_ncol,
+            offsets_send_A.data(), offsets_recv_A.data(), count_send_A.data(), count_recv_A.data(), 0);
 
       /* do the y-direction FFT in 'data', complex to complex */
       for(n = 0; n < transposed_ncol; n++)
@@ -542,9 +532,8 @@ void pm_mpi_fft::my_column_based_fft(fft_real *data, fft_real *workspace, int fo
       int dimB[3]  = {NgridX, Ngridz, NgridY};
       int permB[3] = {2, 1, 0};
 
-      my_fft_column_remap(workspace_complex, dimB, transposed_firstcol, transposed_ncol, data_complex, permB,
-                          second_transposed_firstcol, second_transposed_ncol, offsets_send_B.data(), offsets_recv_B.data(),
-                          count_send_B.data(), count_recv_B.data(), 0);
+      remap(workspace_complex, dimB, transposed_firstcol, transposed_ncol, data_complex, permB, second_transposed_firstcol,
+            second_transposed_ncol, offsets_send_B.data(), offsets_recv_B.data(), count_send_B.data(), count_recv_B.data(), 0);
 
       /* do the x-direction FFT in 'data', complex to complex */
       for(n = 0; n < second_transposed_ncol; n++)
@@ -561,9 +550,8 @@ void pm_mpi_fft::my_column_based_fft(fft_real *data, fft_real *workspace, int fo
       int dimC[3]  = {NgridY, Ngridz, NgridX};
       int permC[3] = {2, 1, 0};
 
-      my_fft_column_remap(workspace_complex, dimC, second_transposed_firstcol, second_transposed_ncol, data_complex, permC,
-                          transposed_firstcol, transposed_ncol, offsets_send_C.data(), offsets_recv_C.data(), count_send_C.data(),
-                          count_recv_C.data(), 0);
+      remap(workspace_complex, dimC, second_transposed_firstcol, second_transposed_ncol, data_complex, permC, transposed_firstcol,
+            transposed_ncol, offsets_send_C.data(), offsets_recv_C.data(), count_send_C.data(), count_recv_C.data(), 0);
 
       /* do inverse FFT in 'data' */
       for(n = 0; n < transposed_ncol; n++)
@@ -572,8 +560,8 @@ void pm_mpi_fft::my_column_based_fft(fft_real *data, fft_real *workspace, int fo
       int dimD[3]  = {NgridX, Ngridz, NgridY};
       int permD[3] = {0, 2, 1};
 
-      my_fft_column_remap(workspace_complex, dimD, transposed_firstcol, transposed_ncol, data_complex, permD, firstcol_XY, ncol_XY,
-                          offsets_send_D.data(), offsets_recv_D.data(), count_send_D.data(), count_recv_D.data(), 0);
+      remap(workspace_complex, dimD, transposed_firstcol, transposed_ncol, data_complex, permD, firstcol_XY, ncol_XY,
+            offsets_send_D.data(), offsets_recv_D.data(), count_send_D.data(), count_recv_D.data(), 0);
 
       /* do complex-to-real inverse transform on z-coordinates */
       for(n = 0; n < ncol_XY; n++)
@@ -581,10 +569,10 @@ void pm_mpi_fft::my_column_based_fft(fft_real *data, fft_real *workspace, int fo
     }
 }
 
-void pm_mpi_fft::my_fft_column_remap(fft_complex *data, int Ndims[3], /* global dimensions of data cube */
-                                     int in_firstcol, int in_ncol,    /* first column and number of columns */
-                                     fft_complex *out, int perm[3], int out_firstcol, int out_ncol, size_t *offset_send,
-                                     size_t *offset_recv, size_t *count_send, size_t *count_recv, size_t just_count_flag)
+void mpi_fft_columns::remap(fft_complex *data, int Ndims[3], /* global dimensions of data cube */
+                            int in_firstcol, int in_ncol,    /* first column and number of columns */
+                            fft_complex *out, int perm[3], int out_firstcol, int out_ncol, size_t *offset_send, size_t *offset_recv,
+                            size_t *count_send, size_t *count_recv, size_t just_count_flag)
 {
   int j, target, origin, ngrp, recvTask, perm_rev[3], xyz[3], uvw[3];
   size_t nimport, nexport;
@@ -774,10 +762,10 @@ void pm_mpi_fft::my_fft_column_remap(fft_complex *data, int Ndims[3], /* global 
     }
 }
 
-void pm_mpi_fft::my_fft_column_transpose(fft_real *data, int Ndims[3], /* global dimensions of data cube */
-                                         int in_firstcol, int in_ncol, /* first column and number of columns */
-                                         fft_real *out, int perm[3], int out_firstcol, int out_ncol, size_t *count_send,
-                                         size_t *count_recv, size_t just_count_flag)
+void mpi_fft_columns::transpose(fft_real *data, int Ndims[3], /* global dimensions of data cube */
+                                int in_firstcol, int in_ncol, /* first column and number of columns */
+                                fft_real *out, int perm[3], int out_firstcol, int out_ncol, size_t *count_send, size_t *count_recv,
+                                size_t just_count_flag)
 {
   /* determine the inverse permutation */
   int perm_rev[3];
@@ -1138,7 +1126,3 @@ void pm_mpi_fft::my_fft_column_transpose(fft_real *data, int Ndims[3], /* global
   if(just_count_flag)
     MPI_Alltoall(count_send, sizeof(size_t), MPI_BYTE, count_recv, sizeof(size_t), MPI_BYTE, Communicator);
 }
-
-#endif
-
-#endif

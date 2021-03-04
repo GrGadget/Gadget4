@@ -50,11 +50,21 @@ extern template class std::vector<size_t>;
 #define INTCELL ((~((MyIntPosType)0)) / PMGRID + 1)
 #endif
 
-class pm_periodic : public pm_mpi_fft
+class pm_periodic :
+
+#ifdef FFT_COLUMN_BASED
+    public mpi_fft_columns
+#else
+    public mpi_fft_slabs
+#endif
 {
  public:
   pm_periodic(MPI_Comm comm)
-      : pm_mpi_fft(comm, GRIDX, GRIDY, GRIDZ), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+#ifdef FFT_COLUMN_BASED
+      : mpi_fft_columns(comm, GRIDX, GRIDY, GRIDZ), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+#else
+      : mpi_fft_slabs(comm, GRIDX, GRIDY, GRIDZ), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+#endif
   {
   }
 

@@ -1860,11 +1860,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
   /* Do the FFT of the density field */
-#ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(rhogrid.data(), workspace.data(), 1);
-#else
-  my_column_based_fft(rhogrid.data(), workspace.data(), 1); /* result is in workspace, not in rhogrid ! */
-#endif
+  fft(rhogrid.data(), workspace.data(), 1);
 
   if(mode != 0)
     {
@@ -1977,9 +1973,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         /* Do the inverse FFT to get the potential/forces */
 
 #ifndef FFT_COLUMN_BASED
-      my_slab_based_fft(rhogrid.data(), workspace.data(), -1);
+      fft(rhogrid.data(), workspace.data(), -1);
 #else
-      my_column_based_fft(workspace.data(), rhogrid.data(), -1);
+      fft(workspace.data(), rhogrid.data(), -1);
 #endif
 
       /* Now rhogrid holds the potential/forces */
@@ -2053,8 +2049,8 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* x-direction */
-      my_slab_transposeA(rhogrid.data(), forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
-                                                            /* note: for the x-direction, we difference the transposed field */
+      transposeA(rhogrid.data(), forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
+                                                    /* note: for the x-direction, we difference the transposed field */
 
       for(x = 0; x < GRIDX; x++)
         for(y = 0; y < nslab_y; y++)
@@ -2074,7 +2070,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
                                               (1.0 / 6) * (rhogrid[NI(xll, y, z)] - rhogrid[NI(xrr, y, z)]));
             }
 
-      my_slab_transposeB(forcegrid.data(), rhogrid.data()); /* reverse the transpose from above */
+      transposeB(forcegrid.data(), rhogrid.data()); /* reverse the transpose from above */
 
 #ifdef PM_ZOOM_OPTIMIZED
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
@@ -2119,7 +2115,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* y-direction */
-      my_fft_swap23(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field, forcegrid the transposed field
+      swap23(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field, forcegrid the transposed field
 
       /* make an in-place computation */
       {
@@ -2159,7 +2155,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       {
         std::vector<fft_real> scratch(fftsize);
 
-        my_fft_swap23back(forcegrid.data(), scratch.data());
+        swap23back(forcegrid.data(), scratch.data());
         pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part, localfield_globalindex, localfield_data);
       }
 #else
@@ -2167,7 +2163,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 #endif
 
       /* x-direction */
-      my_fft_swap13(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field
+      swap13(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field
 
       for(large_array_offset i = 0; i < ncol_ZY; i++)
         {
@@ -2196,7 +2192,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
         /* now need to read out from forcegrid in a non-standard way */
 #ifdef PM_ZOOM_OPTIMIZED
-      my_fft_swap13back(rhogrid.data(), forcegrid.data());
+      swap13back(rhogrid.data(), forcegrid.data());
       pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
 #else
       pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid.data(), 0);
@@ -2287,10 +2283,9 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
 
   std::vector<fft_real> workspc(maxfftsize);
 
+  fft(kernel.get(), workspc.data(), 1); /* result is in workspace, not in kernel */
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(kernel.get(), workspc, 1);
 #else
-  my_column_based_fft(kernel.get(), workspc.data(), 1); /* result is in workspace, not in kernel */
   memcpy(kernel.get(), workspc.data(), maxfftsize * sizeof(fft_real));
 #endif
 
