@@ -127,6 +127,27 @@ class pm_periodic :
   }
   double green_function(std::array<int, 3> mode) const;
 
+  template <typename part_t>
+  static auto coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
+  {
+    std::array<int, 3> slab;
+    for(int i = 0; i < 3; ++i)
+      slab[i] = (P.IntPos[i] * fold_fact) / INTCELL;
+    return slab;
+  }
+
+  template <typename part_t>
+  static auto cell_coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
+  {
+    std::array<double, 3> dx;
+    for(int i = 0; i < 3; ++i)
+      {
+        MyIntPosType rmd = (P.IntPos[i] * fold_fact) % INTCELL;
+        dx[i]            = rmd * (1.0 / INTCELL);
+      }
+    return dx;
+  }
+
 #if defined(GRAVITY_TALLBOX)
   std::unique_ptr<fft_real[]> kernel; /*!< If the tallbox option is used, the code will construct and store the k-space Greens function
                        by FFTing it from real space */
@@ -170,27 +191,6 @@ class pm_periodic :
 #endif
     MyIntPosType IntPos[3];
   };
-
-  template <typename part_t>
-  static auto coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
-  {
-    std::array<int, 3> slab;
-    for(int i = 0; i < 3; ++i)
-      slab[i] = (P.IntPos[i] * fold_fact) / INTCELL;
-    return slab;
-  }
-
-  template <typename part_t>
-  static auto cell_coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
-  {
-    std::array<double, 3> dx;
-    for(int i = 0; i < 3; ++i)
-      {
-        MyIntPosType rmd = (P.IntPos[i] * fold_fact) % INTCELL;
-        dx[i]            = rmd * (1.0 / INTCELL);
-      }
-    return dx;
-  }
 
 #ifndef FFT_COLUMN_BASED
   void pmforce_uniform_optimized_slabs_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
