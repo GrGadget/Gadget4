@@ -706,7 +706,7 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
               default:
                 fact = 1;
             }
-          auto [slab_x, slab_y, slab_z] = coordinates(partin[i], fact);
+          auto [slab_x, slab_y, slab_z] = coordinates(P[i], fact);
 
           int slab_xx = slab_x + 1;
 
