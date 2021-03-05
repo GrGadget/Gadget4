@@ -17,6 +17,7 @@
 #include <algorithm>   // sort, fill
 #include <cmath>       // sin, exp
 #include <numeric>     // accumulate
+#include <tuple>
 #include <vector>
 
 #include "../pm/pm_periodic.h"
@@ -192,42 +193,26 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
     {
       int i = Sp->get_active_index(idx);
 
-      int slab_x, slab_y, slab_z;
-      if(mode == 2)
+      int fact{1};
+      switch(mode)
         {
-          slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
-          slab_y = (P[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
-          slab_z = (P[i].IntPos[2] * POWERSPEC_FOLDFAC) / INTCELL;
+          case 2:
+            break;
+          case 3:
+            break;
+          default:
+            fact = 1;
         }
-      else if(mode == 3)
-        {
-          slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          slab_y = (P[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          slab_z = (P[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-        }
-      else
-        {
-          slab_x = P[i].IntPos[0] / INTCELL;
-          slab_y = P[i].IntPos[1] / INTCELL;
-          slab_z = P[i].IntPos[2] / INTCELL;
-        }
-
+      auto [slab_x, slab_y, slab_z]    = coordinates(P[i], fact);
       large_numpart_type index_on_grid = ((large_numpart_type)idx) * 8;
 
       for(int xx = 0; xx < 2; xx++)
         for(int yy = 0; yy < 2; yy++)
           for(int zz = 0; zz < 2; zz++)
             {
-              int slab_xx = slab_x + xx;
-              int slab_yy = slab_y + yy;
-              int slab_zz = slab_z + zz;
-
-              if(slab_xx >= GRIDX)
-                slab_xx = 0;
-              if(slab_yy >= GRIDY)
-                slab_yy = 0;
-              if(slab_zz >= GRIDZ)
-                slab_zz = 0;
+              int slab_xx = (slab_x + xx) % GRIDX;
+              int slab_yy = (slab_y + yy) % GRIDY;
+              int slab_zz = (slab_z + zz) % GRIDZ;
 
               large_array_offset offset = FI(slab_xx, slab_yy, slab_zz);
 
@@ -310,31 +295,20 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
   for(large_numpart_type i = 0; i < num_on_grid; i += 8)
     {
-      int pindex = (part[i].partindex >> 3);
-      MyIntPosType rmd_x, rmd_y, rmd_z;
-
-      if(mode == 2)
+      int fact{1};
+      switch(mode)
         {
-          rmd_x = (P[pindex].IntPos[0] * POWERSPEC_FOLDFAC) % INTCELL;
-          rmd_y = (P[pindex].IntPos[1] * POWERSPEC_FOLDFAC) % INTCELL;
-          rmd_z = (P[pindex].IntPos[2] * POWERSPEC_FOLDFAC) % INTCELL;
+          case 2:
+            fact = POWERSPEC_FOLDFAC;
+            break;
+          case 3:
+            fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
+            break;
+          default:
+            fact = 1;
         }
-      else if(mode == 3)
-        {
-          rmd_x = (P[pindex].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-          rmd_y = (P[pindex].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-          rmd_z = (P[pindex].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-        }
-      else
-        {
-          rmd_x = P[pindex].IntPos[0] % INTCELL;
-          rmd_y = P[pindex].IntPos[1] % INTCELL;
-          rmd_z = P[pindex].IntPos[2] % INTCELL;
-        }
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
+      int pindex        = (part[i].partindex >> 3);
+      auto [dx, dy, dz] = cell_coordinates(P[pindex], fact);
 
       double weight = P[pindex].getMass();
 
@@ -493,13 +467,7 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
 
       large_numpart_type j = idx * 8;
 
-      MyIntPosType rmd_x = P[i].IntPos[0] % INTCELL;
-      MyIntPosType rmd_y = P[i].IntPos[1] % INTCELL;
-      MyIntPosType rmd_z = P[i].IntPos[2] % INTCELL;
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
+      auto [dx, dy, dz] = cell_coordinates(P[i]);
 
       double value = localfield_data[part[j + 0].localindex] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                      localfield_data[part[j + 1].localindex] * (1.0 - dx) * (1.0 - dy) * dz +
@@ -647,40 +615,20 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      int slab_x, slab_y, slab_z;
-      MyIntPosType rmd_x, rmd_y, rmd_z;
-
-      if(mode == 2)
+      int fact{1};
+      switch(mode)
         {
-          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) % INTCELL;
+          case 2:
+            fact = POWERSPEC_FOLDFAC;
+            break;
+          case 3:
+            fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
+            break;
+          default:
+            fact = 1;
         }
-      else if(mode == 3)
-        {
-          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-        }
-      else
-        {
-          slab_x = partin[i].IntPos[0] / INTCELL;
-          rmd_x = partin[i].IntPos[0] % INTCELL;
-          slab_y = partin[i].IntPos[1] / INTCELL;
-          rmd_y = partin[i].IntPos[1] % INTCELL;
-          slab_z = partin[i].IntPos[2] / INTCELL;
-          rmd_z = partin[i].IntPos[2] % INTCELL;
-        }
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
+      auto [slab_x, slab_y, slab_z] = coordinates(partin[i], fact);
+      auto [dx, dy, dz] = cell_coordinates(partin[i], fact);
 
       int slab_xx = slab_x + 1;
       int slab_yy = slab_y + 1;
@@ -746,26 +694,24 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
             if(typelist[P[i].getType()] == 0)
               continue;
 
-          int slab_x;
-          if(mode == 2)
-            slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
-          else if(mode == 3)
-            slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          else
-            slab_x = P[i].IntPos[0] / INTCELL;
+          int fact{1};
+          switch(mode)
+            {
+              case 2:
+                fact = POWERSPEC_FOLDFAC;
+                break;
+              case 3:
+                fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
+                break;
+              default:
+                fact = 1;
+            }
+          auto [slab_x, slab_y, slab_z] = coordinates(parint[i], fact);
 
           int slab_xx = slab_x + 1;
 
           if(slab_xx >= GRIDX)
             slab_xx = 0;
-
-          int slab_y;
-          if(mode == 2)
-            slab_y = (P[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
-          else if(mode == 3)
-            slab_y = (P[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          else
-            slab_y = P[i].IntPos[1] / INTCELL;
 
           int slab_yy = slab_y + 1;
 
@@ -887,32 +833,20 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      int slab_x, slab_y;
-      MyIntPosType rmd_x, rmd_y;
-      if(mode == 2)
+      int fact{1};
+      switch(mode)
         {
-          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x  = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y  = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC) % INTCELL;
+          case 2:
+            fact = POWERSPEC_FOLDFAC;
+            break;
+          case 3:
+            fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
+            break;
+          default:
+            fact = 1;
         }
-      else if(mode == 3)
-        {
-          slab_x = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_x  = (partin[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-          slab_y = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_y  = (partin[i].IntPos[1] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-        }
-      else
-        {
-          slab_x = partin[i].IntPos[0] / INTCELL;
-          rmd_x  = partin[i].IntPos[0] % INTCELL;
-          slab_y = partin[i].IntPos[1] / INTCELL;
-          rmd_y  = partin[i].IntPos[1] % INTCELL;
-        }
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
+      auto [slab_x, slab_y, slab_z] = coordinates(partin[i], fact);
+      auto [dx, dy, dz]             = cell_coordinates(partin[i], fact);
 
       int slab_xx = slab_x + 1;
       int slab_yy = slab_y + 1;
@@ -929,26 +863,6 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
       int col3 = slab_xx * GRIDY + slab_yy;
 
       double mass = partin[i].Mass;
-
-      int slab_z;
-      MyIntPosType rmd_z;
-      if(mode == 2)
-        {
-          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z  = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC) % INTCELL;
-        }
-      else if(mode == 3)
-        {
-          slab_z = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          rmd_z  = (partin[i].IntPos[2] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) % INTCELL;
-        }
-      else
-        {
-          slab_z = partin[i].IntPos[2] / INTCELL;
-          rmd_z  = partin[i].IntPos[2] % INTCELL;
-        }
-
-      double dz = rmd_z * (1.0 / INTCELL);
 
       int slab_zz = slab_z + 1;
 
@@ -997,7 +911,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 #endif
 
   const size_t nexport = std::accumulate(Sndpm_count.begin(), Sndpm_count.end(), 0);
-  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistin(partin.size(), 0.0);
   std::vector<MyFloat> flistout(nexport);
 
 #ifdef FFT_COLUMN_BASED
@@ -1010,30 +924,9 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      flistin[i] = 0;
-
-      int slab_x = partin[i].IntPos[0] / INTCELL;
-      int slab_y = partin[i].IntPos[1] / INTCELL;
-      int slab_z = partin[i].IntPos[2] / INTCELL;
-
-      MyIntPosType rmd_x = partin[i].IntPos[0] % INTCELL;
-      MyIntPosType rmd_y = partin[i].IntPos[1] % INTCELL;
-      MyIntPosType rmd_z = partin[i].IntPos[2] % INTCELL;
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
-
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
+      auto [slab_x, slab_y, slab_z] = coordinates(partin[i]);
+      auto [dx, dy, dz] = cell_coordinates(partin[i]);
+      int slab_xx = (slab_x + 1) % GRIDX, slab_yy = (slab_y + 1) % GRIDY, slab_zz = (slab_z + 1) % GRIDZ;
 
 #ifndef FFT_COLUMN_BASED
       if(slab_to_task[slab_x] == ThisTask)
@@ -1108,7 +1001,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
     {
       int i = Sp->get_active_index(idx);
 
-      int slab_x = P[i].IntPos[0] / INTCELL;
+      auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
       int slab_xx = slab_x + 1;
 
       if(slab_xx >= GRIDX)
@@ -1123,7 +1016,6 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
       if(task0 != task1)
         value += flistout[Sndpm_offset[task1] + Sndpm_count[task1]++];
 #else
-      int slab_y  = P[i].IntPos[1] / INTCELL;
       int slab_yy = slab_y + 1;
 
       if(slab_yy >= GRIDY)
@@ -1225,13 +1117,12 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
         {
           int i = Sp->get_active_index(idx);
 
-          int slab_x = P[i].IntPos[0] / INTCELL;
+          auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
           int slab_xx = slab_x + 1;
 
           if(slab_xx >= GRIDX)
             slab_xx = 0;
 
-          int slab_z = P[i].IntPos[2] / INTCELL;
           int slab_zz = slab_z + 1;
 
           if(slab_zz >= GRIDZ)
@@ -1342,35 +1233,14 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
                   sizeof(partbuf), flag_big_all, Communicator);
 
-  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistin(partin.size(), 0.0);
   std::vector<MyFloat> flistout(partout.size());
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      flistin[i] = 0;
-
-      int slab_x = partin[i].IntPos[0] / INTCELL;
-      int slab_y = partin[i].IntPos[1] / INTCELL;
-      int slab_z = partin[i].IntPos[2] / INTCELL;
-
-      MyIntPosType rmd_x = partin[i].IntPos[0] % INTCELL;
-      MyIntPosType rmd_y = partin[i].IntPos[1] % INTCELL;
-      MyIntPosType rmd_z = partin[i].IntPos[2] % INTCELL;
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
-
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
+      auto [slab_x, slab_y, slab_z] = coordinates(partin[i]);
+      auto [dx, dy, dz] = cell_coordinates(partin[i]);
+      int slab_xx = (slab_x + 1) % GRIDX, slab_yy = (slab_y + 1) % GRIDY, slab_zz = (slab_z + 1) % GRIDZ;
 
       int column0 = slab_x * GRID2 + slab_z;
       int column1 = slab_x * GRID2 + slab_zz;
@@ -1422,13 +1292,12 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
     {
       int i = Sp->get_active_index(idx);
 
-      int slab_x = P[i].IntPos[0] / INTCELL;
+      auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
       int slab_xx = slab_x + 1;
 
       if(slab_xx >= GRIDX)
         slab_xx = 0;
 
-      int slab_z = P[i].IntPos[2] / INTCELL;
       int slab_zz = slab_z + 1;
 
       if(slab_zz >= GRIDZ)
@@ -1515,14 +1384,13 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
       for(int idx = 0; idx < NSource; idx++)
         {
           int i = Sp->get_active_index(idx);
+          auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
 
-          int slab_z = P[i].IntPos[2] / INTCELL;
           int slab_zz = slab_z + 1;
 
           if(slab_zz >= GRIDZ)
             slab_zz = 0;
 
-          int slab_y = P[i].IntPos[1] / INTCELL;
           int slab_yy = slab_y + 1;
 
           if(slab_yy >= GRIDY)
@@ -1633,35 +1501,14 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
                   sizeof(partbuf), flag_big_all, Communicator);
 
-  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistin(partin.size(), 0.0);
   std::vector<MyFloat> flistout(partout.size());
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      flistin[i] = 0;
-
-      int slab_x = partin[i].IntPos[0] / INTCELL;
-      int slab_y = partin[i].IntPos[1] / INTCELL;
-      int slab_z = partin[i].IntPos[2] / INTCELL;
-
-      MyIntPosType rmd_x = partin[i].IntPos[0] % INTCELL;
-      MyIntPosType rmd_y = partin[i].IntPos[1] % INTCELL;
-      MyIntPosType rmd_z = partin[i].IntPos[2] % INTCELL;
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
-
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
+      auto [slab_x, slab_y, slab_z] = coordinates(partin[i]);
+      auto [dx, dy, dz] = cell_coordinates(partin[i]);
+      int slab_xx = (slab_x + 1) % GRIDX, slab_yy = (slab_y + 1) % GRIDY, slab_zz = (slab_z + 1) % GRIDZ;
 
       int column0 = slab_z * GRIDY + slab_y;
       int column1 = slab_z * GRIDY + slab_yy;
@@ -1712,14 +1559,13 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   for(int idx = 0; idx < NSource; idx++)
     {
       int i = Sp->get_active_index(idx);
+      auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
 
-      int slab_z = P[i].IntPos[2] / INTCELL;
       int slab_zz = slab_z + 1;
 
       if(slab_zz >= GRIDZ)
         slab_zz = 0;
 
-      int slab_y = P[i].IntPos[1] / INTCELL;
       int slab_yy = slab_y + 1;
 
       if(slab_yy >= GRIDY)
