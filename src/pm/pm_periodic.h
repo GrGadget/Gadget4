@@ -170,22 +170,26 @@ class pm_periodic :
 #endif
     MyIntPosType IntPos[3];
   };
-  auto coordinates(const partbuf &P) const
-  {
-    // example use:
-    // auto [slab_down,slab_up,d] = coordinates(partin[i]);
-    constexpr std::array<int, 3> grid{GRIDX, GRIDY, GRIDZ};
-    std::array<int, 3> slab_up, slab_down;
-    std::array<double, 3> dx;
 
+  template <typename part_t>
+  static auto coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
+  {
+    std::array<int, 3> slab;
+    for(int i = 0; i < 3; ++i)
+      slab[i] = (P.IntPos[i] * fold_fact) / INTCELL;
+    return slab;
+  }
+
+  template <typename part_t>
+  static auto cell_coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
+  {
+    std::array<double, 3> dx;
     for(int i = 0; i < 3; ++i)
       {
-        slab_down[i]     = P.IntPos[i] / INTCELL;
-        MyIntPosType rmd = P.IntPos[i] % INTCELL;
+        MyIntPosType rmd = (P.IntPos[i] * fold_fact) % INTCELL;
         dx[i]            = rmd * (1.0 / INTCELL);
-        slab_up[i]       = (slab_down[i] + 1) % grid[i];
       }
-    return std::make_tuple(slab_down, slab_up, dx);
+    return dx;
   }
 
 #ifndef FFT_COLUMN_BASED
