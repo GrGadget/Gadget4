@@ -2615,8 +2615,12 @@ void pm_periodic::compute_potential_kspace()
 
 double pm_periodic::green_function(std::array<int, 3> mode) const
 {
+#ifdef PM_ONLY
+  const double asmth2 = 0.0;
+#else
   const double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
-  const double dhalf  = 0.5 * BoxSize / PMGRID;
+#endif
+  const double dhalf = 0.5 * BoxSize / PMGRID;
   std::array<double, 3> k;
   double k2{0.0};
 

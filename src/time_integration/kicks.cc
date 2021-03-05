@@ -362,7 +362,7 @@ void sim::do_gravity_step_second_half(void)
                     {
                       for(int j = 0; j < 3; j++)
                         {
-                          Sp.SphP[target].VelPred[j]       = Sp.P[target].Vel[j];
+                          Sp.SphP[target].VelPred[j] = Sp.P[target].Vel[j];
 #ifndef PM_ONLY
                           Sp.SphP[target].FullGravAccel[j] = Sp.P[target].GravAccel[j];
 #else
