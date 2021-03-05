@@ -17,6 +17,7 @@
 #include <atomic>
 #include <cstring>  // memcpy
 
+#include "gadget/dtypes.h"      // integertime
 #include "gadget/idstorage.h"   // MyIDStorage
 #include "gadget/peano.h"       // peanokey
 #include "gadget/symtensors.h"  // vector
@@ -72,12 +73,13 @@ struct particle_data
   approxlen PrevSizeOfSubhalo;      // 2-byte
 #endif
 
-#ifndef LEAN
  private:
+#ifndef LEAN
   unsigned char Type; /**< flags particle type.  0=gas, 1=halo, 2=disk, 3=bulge, 4=stars, 5=bndry */
- public:
+#else
+  static constexpr char Type = 1;
 #endif
-
+ public:
 #ifndef LEAN
   std::atomic_flag access;
 #endif
@@ -131,14 +133,7 @@ struct particle_data
   MyFloat Metallicity; /**< metallicity of gas or star particle */
 #endif
 
-  inline unsigned char getType(void)
-  {
-#ifdef LEAN
-    return 1;
-#else
-    return Type;
-#endif
-  }
+  inline unsigned char getType(void) { return Type; }
 
   inline unsigned char getTimeBinHydro(void)
   {

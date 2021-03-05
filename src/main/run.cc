@@ -53,7 +53,8 @@ void sim::run(void)
   snap_io Snap(&Sp, Communicator, All.SnapFormat);             /* get an I/O object */
   Snap.write_snapshot(All.SnapshotFileCount, NORMAL_SNAPSHOT); /* write snapshot file */
 #if defined(POWERSPEC_ON_OUTPUT)
-  PM.calculate_power_spectra(All.SnapshotFileCount);
+  sincronize_particles();
+  PM.calculate_power_spectra(All.SnapshotFileCount, All.OutputDir);
 #endif
   return;
 #endif
@@ -601,7 +602,8 @@ void sim::create_snapshot_if_desired(void)
 #endif
 
 #if defined(POWERSPEC_ON_OUTPUT) && defined(PERIODIC) && defined(PMGRID)
-        PM.calculate_power_spectra(All.SnapshotFileCount);
+        sincronize_particles();
+        PM.calculate_power_spectra(All.SnapshotFileCount, All.OutputDir);
 #endif
 
         All.SnapshotFileCount++;
@@ -787,4 +789,23 @@ void sim::print_particle_info_from_ID(MyIDType ID)
   for(int i = 0; i < Sp.NumPart; i++)
     if(Sp.P[i].ID.get() == ID)
       print_particle_info(i);
+}
+
+/*
+    S
+*/
+void sim::sincronize_particles()
+{
+#ifdef HIERARCHICAL_GRAVITY
+  int NSource = Sp.TimeBinsGravity.NActiveParticles;
+#else
+  int NSource = Sp.NumPart;
+#endif
+  for(int idx = 0; idx < NSource; idx++)
+    {
+      int i = Sp.get_active_index(idx);
+
+      if(Sp.P[i].Ti_Current != All.Ti_Current)
+        Sp.drift_particle(&Sp.P[i], &Sp.SphP[i], All.Ti_Current);
+    }
 }

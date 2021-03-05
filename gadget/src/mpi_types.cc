@@ -21,7 +21,7 @@ MPI_Op MPI_MAX_MyIntPosType;
 MPI_Op MPI_MIN_MySignedIntPosType;
 MPI_Op MPI_MAX_MySignedIntPosType;
 
-static void min_MPI_MyIntPosType(void *in, void *inout, int *len, MPI_Datatype *type)
+static void min_MPI_MyIntPosType(void *in, void *inout, int *len, [[maybe_unused]] MPI_Datatype *type)
 {
   /* we here trust that this is called only for the correct type  */
 
@@ -33,7 +33,7 @@ static void min_MPI_MyIntPosType(void *in, void *inout, int *len, MPI_Datatype *
       inoutvalues[i] = invalues[i];
 }
 
-static void max_MPI_MyIntPosType(void *in, void *inout, int *len, MPI_Datatype *type)
+static void max_MPI_MyIntPosType(void *in, void *inout, int *len, [[maybe_unused]] MPI_Datatype *type)
 {
   /* we here trust that this is called only for the correct type  */
 
@@ -45,7 +45,7 @@ static void max_MPI_MyIntPosType(void *in, void *inout, int *len, MPI_Datatype *
       inoutvalues[i] = invalues[i];
 }
 
-static void min_MPI_MySignedIntPosType(void *in, void *inout, int *len, MPI_Datatype *type)
+static void min_MPI_MySignedIntPosType(void *in, void *inout, int *len, [[maybe_unused]] MPI_Datatype *type)
 {
   /* we here trust that this is called only for the correct type  */
 
@@ -57,7 +57,7 @@ static void min_MPI_MySignedIntPosType(void *in, void *inout, int *len, MPI_Data
       inoutvalues[i] = invalues[i];
 }
 
-static void max_MPI_MySignedIntPosType(void *in, void *inout, int *len, MPI_Datatype *type)
+static void max_MPI_MySignedIntPosType(void *in, void *inout, int *len, [[maybe_unused]] MPI_Datatype *type)
 {
   /* we here trust that this is called only for the correct type  */
 

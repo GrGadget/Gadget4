@@ -96,11 +96,7 @@ void sim::init(int RestartSnapNum)
   for(int i = 0; i < Sp.NumPart; i++)
     if(All.MassTable[Sp.P[i].getType()] != 0)
       {
-#ifndef LEAN
         Sp.P[i].setMass(All.MassTable[Sp.P[i].getType()]);
-#else
-        All.PartMass = All.MassTable[Sp.P[i].getType()];
-#endif
       }
 
 #if NSOFTCLASSES > 1
@@ -456,7 +452,7 @@ void sim::init(int RestartSnapNum)
     {
 #if defined(PMGRID) && defined(PERIODIC)
 
-      PM.calculate_power_spectra(RestartSnapNum);
+      PM.calculate_power_spectra(RestartSnapNum, All.OutputDir);
 #else
       mpi_printf("\nThis option (Power Spectrum) only works for PERIODIC and enabled PMGRID.\n\n");
 #endif

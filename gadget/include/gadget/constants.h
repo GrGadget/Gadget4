@@ -313,18 +313,6 @@
 #define NSOFTCLASSES_HYDRO 0
 #endif
 
-#ifdef ENLARGE_DYNAMIC_RANGE_IN_TIME
-typedef long long integertime;
-#define TIMEBINS 60
-#define TIMEBASE                                                                                           \
-  (((long long)1) << TIMEBINS) /* The simulated timespan is mapped onto the integer interval [0,TIMESPAN], \
-                                *  where TIMESPAN needs to be a power of 2. */
-#else
-typedef int integertime;
-#define TIMEBINS 29
-#define TIMEBASE (1 << TIMEBINS)
-#endif
-
 #if(NSOFTCLASSES + NSOFTCLASSES_HYDRO) >= 128
 #error "(NSOFTCLASSES + NSOFTCLASSES_HYDRO) must be smaller than 128"
 #endif

@@ -14,6 +14,7 @@
 
 #include <vector>
 #include "gadget/setcomm.h"
+#include "gadgetconfig.h"
 
 #ifdef DOUBLEPRECISION_FFTW
 typedef double fft_real;
@@ -35,9 +36,9 @@ typedef fftwf_complex fft_complex;
 extern template class std::vector<size_t>;
 extern template class std::vector<int>;
 
-struct fft_plan
+struct fft_plan_slabs
 {
-  fft_plan(int ntask, int ngridx, int ngridy, int ngridz);
+  fft_plan_slabs(int ntask, int ngridx, int ngridy, int ngridz);
 
   int NgridX, NgridY, NgridZ;
   int Ngridz, Ngrid2;
@@ -50,8 +51,6 @@ struct fft_plan
   FFTW(plan) backward_plan_ydir;
   FFTW(plan) backward_plan_xdir;
 
-#ifndef FFT_COLUMN_BASED
-
   std::vector<int> slab_to_task; /*!< Maps a slab index to the task responsible for the slab */
   std::vector<int> slabs_x_per_task;
   std::vector<int> first_slab_x_of_task; /*!< Array containing the index of the first slab of each task */
@@ -61,8 +60,22 @@ struct fft_plan
   int nslab_x, slabstart_x, nslab_y, slabstart_y;
   int largest_x_slab; /*!< size of the largest slab in x direction */
   int largest_y_slab; /*!< size of the largest slab in y direction */
+};
+struct fft_plan_columns
+{
+  fft_plan_columns(int ntask, int ngridx, int ngridy, int ngridz);
 
-#else
+  int NgridX, NgridY, NgridZ;
+  int Ngridz, Ngrid2;
+
+  FFTW(plan) forward_plan_zdir;
+  FFTW(plan) forward_plan_xdir;
+  FFTW(plan) forward_plan_ydir;
+
+  FFTW(plan) backward_plan_zdir;
+  FFTW(plan) backward_plan_ydir;
+  FFTW(plan) backward_plan_xdir;
+
   size_t max_datasize;
   size_t fftsize;
 
@@ -84,42 +97,41 @@ struct fft_plan
   std::vector<size_t> count_send_A, count_recv_A, count_send_B, count_recv_B, count_send_C, count_recv_C, count_send_D, count_recv_D,
       count_send_13, count_recv_13, count_send_23, count_recv_23, count_send_13back, count_recv_13back, count_send_23back,
       count_recv_23back;
-#endif
 };
 
-class pm_mpi_fft : public setcomm, public fft_plan
+/* Slab based fft */
+class mpi_fft_slabs : public setcomm, public fft_plan_slabs
 {
+  void transpose(void *av, void *bv, int *sx, int *firstx, int *sy, int *firsty, int nx, int ny, int nz, int mode);
+
+ protected:
+  void transposeA(fft_real *field, fft_real *scratch);
+  void transposeB(fft_real *field, fft_real *scratch);
+
  public:
-  pm_mpi_fft(MPI_Comm comm, int nx, int ny, int nz);
+  mpi_fft_slabs(MPI_Comm comm, int nx, int ny, int nz);
+  void fft(fft_real *data, fft_real *workspace, int forward);
+};
+/* Column based fft */
+class mpi_fft_columns : public setcomm, public fft_plan_columns
+{
+  void remap(fft_complex *data, int Ndims[3], int in_firstcol, int in_ncol, fft_complex *out, int perm[3], int out_firstcol,
+             int out_ncol, size_t *offset_send, size_t *offset_recv, size_t *count_send, size_t *count_recv, size_t just_count_flag);
 
-  void my_slab_based_fft(fft_real *data, fft_real *workspace, int forward);
+  void transpose(fft_real *data, int Ndims[3], /* global dimensions of data cube */
+                 int in_firstcol, int in_ncol, /* first column and number of columns */
+                 fft_real *out, int perm[3], int out_firstcol, int out_ncol, size_t *count_send, size_t *count_recv,
+                 size_t just_count_flag);
 
-  void my_column_based_fft(fft_real *data, fft_real *workspace, int forward);
+ protected:
+  void swap23(fft_real *data, fft_real *out);
+  void swap13(fft_real *data, fft_real *out);
+  void swap23back(fft_real *data, fft_real *out);
+  void swap13back(fft_real *data, fft_real *out);
 
-  void my_slab_transposeA(fft_real *field, fft_real *scratch);
-  void my_slab_transposeB(fft_real *field, fft_real *scratch);
-
-  void my_fft_swap23(fft_real *data, fft_real *out);
-  void my_fft_swap13(fft_real *data, fft_real *out);
-  void my_fft_swap23back(fft_real *data, fft_real *out);
-  void my_fft_swap13back(fft_real *data, fft_real *out);
-
- private:
-#ifndef FFT_COLUMN_BASED
-
-  void my_slab_transpose(void *av, void *bv, int *sx, int *firstx, int *sy, int *firsty, int nx, int ny, int nz, int mode);
-
-#else
-  void my_fft_column_remap(fft_complex *data, int Ndims[3], int in_firstcol, int in_ncol, fft_complex *out, int perm[3],
-                           int out_firstcol, int out_ncol, size_t *offset_send, size_t *offset_recv, size_t *count_send,
-                           size_t *count_recv, size_t just_count_flag);
-
-  void my_fft_column_transpose(fft_real *data, int Ndims[3], /* global dimensions of data cube */
-                               int in_firstcol, int in_ncol, /* first column and number of columns */
-                               fft_real *out, int perm[3], int out_firstcol, int out_ncol, size_t *count_send, size_t *count_recv,
-                               size_t just_count_flag);
-
-#endif
+ public:
+  mpi_fft_columns(MPI_Comm comm, int nx, int ny, int nz);
+  void fft(fft_real *data, fft_real *workspace, int forward);
 };
 
 #endif

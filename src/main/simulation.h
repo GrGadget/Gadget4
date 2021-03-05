@@ -121,6 +121,7 @@ class sim : public test_io_bandwidth
   void rearrange_write(partset &Tp, int num, int conenr);
 
  private:
+  void sincronize_particles();
 #ifdef PERIODIC
   void check_omega(void);
 #endif

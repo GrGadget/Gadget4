@@ -38,18 +38,20 @@ struct lightcone_particle_data
   unsigned long long TreeID;
 #endif
 
-#ifndef LEAN
  private:
+#ifndef LEAN
   MyDouble Mass; /**< particle mass */
- public:
+#else
+  static MyDouble Mass; /**< all particles mass */
 #endif
-
-#ifndef LEAN
+ public:
  private:
+#ifndef LEAN
   unsigned char Type; /**< flags particle type.  0=gas, 1=halo, 2=disk, 3=bulge, 4=stars, 5=bndry */
- public:
+#else
+  static constexpr char Type = 1;
 #endif
-
+ public:
 #if NSOFTCLASSES > 1
  private:
   unsigned char
@@ -99,14 +101,7 @@ struct lightcone_particle_data
 
 #endif
 
-  inline unsigned char getType(void)
-  {
-#ifdef LEAN
-    return 1;
-#else
-    return Type;
-#endif
-  }
+  inline unsigned char getType(void) { return Type; }
 
   inline double getAscale(void) { return Ascale; }
 
@@ -117,23 +112,11 @@ struct lightcone_particle_data
 #endif
   }
 
-  inline MyDouble getMass(void)
-  {
-#ifdef LEAN
-    return All.PartMass;
-#else
-    return Mass;
-#endif
-  }
+  inline MyDouble getMass(void) { return Mass; }
 
   inline integertime get_Ti_Current(void) { return 0; }
 
-  inline void setMass(MyDouble mass)
-  {
-#ifndef LEAN
-    Mass = mass;
-#endif
-  }
+  inline void setMass(MyDouble mass) { Mass = mass; }
 
   inline float getOldAcc(void) { return 0; }
 

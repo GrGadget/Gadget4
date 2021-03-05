@@ -392,7 +392,14 @@ void sim::gravity_pm(int timebin)
   if((GravTree.DoPM & TREE_DO_BASE_PM))
     {
 #ifdef PERIODIC
-      PM.pmforce_periodic(LOW_MESH, NULL);
+      {
+        sincronize_particles();
+        double tstart = MPI_Wtime();
+        mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)\n", Sp.Rcut[0]);
+        PM.pmforce_periodic(LOW_MESH, NULL);
+        double tend = MPI_Wtime();
+        mpi_printf("PM-PERIODIC: done.  (took %g seconds)\n", tend - tstart);
+      }
 #else
       /* non periodic PM mesh */
       PM.pmforce_nonperiodic(LOW_MESH);
@@ -432,7 +439,14 @@ void sim::gravity_long_range_force(void)
 #endif
     }
 
-  PM.pmforce_periodic(0, NULL);
+  {
+    sincronize_particles();
+    double tstart = MPI_Wtime();
+    mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)\n", Sp.Rcut[0]);
+    PM.pmforce_periodic(0, NULL);
+    double tend = MPI_Wtime();
+    mpi_printf("PM-PERIODIC: done.  (took %g seconds)\n", tend - tstart);
+  }
 
   /* multiply with the gravitational constant */
   for(int i = 0; i < Sp.NumPart; i++)
