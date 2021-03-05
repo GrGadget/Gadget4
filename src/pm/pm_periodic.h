@@ -14,6 +14,7 @@
 #include <array>
 #include <complex>
 #include <memory>  // unique_ptr
+#include <tuple>
 #include <vector>
 extern template class std::vector<size_t>;
 
@@ -169,6 +170,23 @@ class pm_periodic :
 #endif
     MyIntPosType IntPos[3];
   };
+  auto coordinates(const partbuf &P) const
+  {
+    // example use:
+    // auto [slab_down,slab_up,d] = coordinates(partin[i]);
+    constexpr std::array<int, 3> grid{GRIDX, GRIDY, GRIDZ};
+    std::array<int, 3> slab_up, slab_down;
+    std::array<double, 3> dx;
+
+    for(int i = 0; i < 3; ++i)
+      {
+        slab_down[i]     = P.IntPos[i] / INTCELL;
+        MyIntPosType rmd = P.IntPos[i] % INTCELL;
+        dx[i]            = rmd * (1.0 / INTCELL);
+        slab_up[i]       = (slab_down[i] + 1) % grid[i];
+      }
+    return std::make_tuple(slab_down, slab_up, dx);
+  }
 
 #ifndef FFT_COLUMN_BASED
   void pmforce_uniform_optimized_slabs_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);

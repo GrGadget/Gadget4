@@ -997,7 +997,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 #endif
 
   const size_t nexport = std::accumulate(Sndpm_count.begin(), Sndpm_count.end(), 0);
-  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistin(partin.size(), 0.0);
   std::vector<MyFloat> flistout(nexport);
 
 #ifdef FFT_COLUMN_BASED
@@ -1010,30 +1010,10 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      flistin[i] = 0;
-
-      int slab_x = partin[i].IntPos[0] / INTCELL;
-      int slab_y = partin[i].IntPos[1] / INTCELL;
-      int slab_z = partin[i].IntPos[2] / INTCELL;
-
-      MyIntPosType rmd_x = partin[i].IntPos[0] % INTCELL;
-      MyIntPosType rmd_y = partin[i].IntPos[1] % INTCELL;
-      MyIntPosType rmd_z = partin[i].IntPos[2] % INTCELL;
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
-
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
+      auto [slab_down, slab_up, d] = coordinates(partin[i]);
+      auto [slab_x, slab_y, slab_z] = slab_down;
+      auto [slab_xx, slab_yy, slab_zz] = slab_up;
+      auto [dx, dy, dz] = d;
 
 #ifndef FFT_COLUMN_BASED
       if(slab_to_task[slab_x] == ThisTask)
@@ -1342,35 +1322,15 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
   myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
                   sizeof(partbuf), flag_big_all, Communicator);
 
-  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistin(partin.size(), 0.0);
   std::vector<MyFloat> flistout(partout.size());
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      flistin[i] = 0;
-
-      int slab_x = partin[i].IntPos[0] / INTCELL;
-      int slab_y = partin[i].IntPos[1] / INTCELL;
-      int slab_z = partin[i].IntPos[2] / INTCELL;
-
-      MyIntPosType rmd_x = partin[i].IntPos[0] % INTCELL;
-      MyIntPosType rmd_y = partin[i].IntPos[1] % INTCELL;
-      MyIntPosType rmd_z = partin[i].IntPos[2] % INTCELL;
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
-
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
+      auto [slab_down, slab_up, d] = coordinates(partin[i]);
+      auto [slab_x, slab_y, slab_z] = slab_down;
+      auto [slab_xx, slab_yy, slab_zz] = slab_up;
+      auto [dx, dy, dz] = d;
 
       int column0 = slab_x * GRID2 + slab_z;
       int column1 = slab_x * GRID2 + slab_zz;
@@ -1633,35 +1593,15 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   myMPI_Alltoallv(partout.data(), send_count.data(), send_offset.data(), partin.data(), recv_count.data(), recv_offset.data(),
                   sizeof(partbuf), flag_big_all, Communicator);
 
-  std::vector<MyFloat> flistin(partin.size());
+  std::vector<MyFloat> flistin(partin.size(), 0.0);
   std::vector<MyFloat> flistout(partout.size());
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      flistin[i] = 0;
-
-      int slab_x = partin[i].IntPos[0] / INTCELL;
-      int slab_y = partin[i].IntPos[1] / INTCELL;
-      int slab_z = partin[i].IntPos[2] / INTCELL;
-
-      MyIntPosType rmd_x = partin[i].IntPos[0] % INTCELL;
-      MyIntPosType rmd_y = partin[i].IntPos[1] % INTCELL;
-      MyIntPosType rmd_z = partin[i].IntPos[2] % INTCELL;
-
-      double dx = rmd_x * (1.0 / INTCELL);
-      double dy = rmd_y * (1.0 / INTCELL);
-      double dz = rmd_z * (1.0 / INTCELL);
-
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
+      auto [slab_down, slab_up, d] = coordinates(partin[i]);
+      auto [slab_x, slab_y, slab_z] = slab_down;
+      auto [slab_xx, slab_yy, slab_zz] = slab_up;
+      auto [dx, dy, dz] = d;
 
       int column0 = slab_z * GRIDY + slab_y;
       int column1 = slab_z * GRIDY + slab_yy;
