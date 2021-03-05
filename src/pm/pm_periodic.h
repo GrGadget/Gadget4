@@ -9,9 +9,10 @@
  *  \brief declaration of a class used for periodic PM-force calculations
  */
 
-#ifndef PM_PERIODIC_H
-#define PM_PERIODIC_H
+#pragma once
 
+#include <array>
+#include <complex>
 #include <memory>  // unique_ptr
 #include <vector>
 extern template class std::vector<size_t>;
@@ -104,11 +105,31 @@ class pm_periodic :
 
   void pmforce_measure_powerspec(int flag, int *typeflag);
   void pmforce_do_powerspec(int *typeflag);
+  void compute_potential_kspace();
+  static int signed_mode(int x, int L) noexcept { return x >= L / 2 ? x - L : x; }
+  int k_fundamental(int dim) const noexcept
+  {
+    double d = BoxSize / PMGRID;
+    switch(dim)
+      {
+        case 0:
+          d *= GRIDX;
+          break;
+        case 1:
+          d *= GRIDY;
+          break;
+        case 2:
+          d *= GRIDZ;
+          break;
+      }
+    return 2.0 * M_PI / d;
+  }
+  double green_function(std::array<int, 3> mode) const;
 
 #if defined(GRAVITY_TALLBOX)
   std::unique_ptr<fft_real[]> kernel; /*!< If the tallbox option is used, the code will construct and store the k-space Greens function
                        by FFTing it from real space */
-  fft_complex *fft_of_kernel;
+  std::complex<fft_real> *fft_of_kernel;
   void pmforce_setup_tallbox_kernel(void);
   double pmperiodic_tallbox_long_range_potential(double x, double y, double z);
 #endif
@@ -159,5 +180,3 @@ class pm_periodic :
   void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim);
 #endif
 };
-
-#endif

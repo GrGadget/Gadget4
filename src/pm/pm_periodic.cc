@@ -11,12 +11,11 @@
 
 #include "gadgetconfig.h"
 
-#if defined(PMGRID) && defined(PERIODIC)
-
 #include <fftw3.h>
 #include <mpi.h>
 #include <sys/stat.h>  // mkdir
 #include <algorithm>   // sort, fill
+#include <cmath>       // sin, exp
 #include <numeric>     // accumulate
 #include <vector>
 
@@ -148,7 +147,7 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
 
 #if defined(GRAVITY_TALLBOX)
   kernel.reset(new fft_real[maxfftsize]);
-  fft_of_kernel = (fft_complex *)kernel.get();
+  fft_of_kernel = (std::complex<fft_real> *)kernel.get();
 
   pmforce_setup_tallbox_kernel();
 #endif
@@ -1834,12 +1833,6 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   forcegrid.resize(maxfftsize);
   auto &workspace = forcegrid;
 
-#ifndef FFT_COLUMN_BASED
-  fft_complex *const fft_of_rhogrid = (fft_complex *)rhogrid.data();
-#else
-  fft_complex *const fft_of_rhogrid = (fft_complex *)workspace.data();
-#endif
-
   /* Do the FFT of the density field */
   fft(rhogrid.data(), workspace.data(), 1);
 
@@ -1849,109 +1842,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
       return;
     }
   /* multiply with Green's function in order to obtain the potential (or forces for spectral diffencing) */
+  compute_potential_kspace();
 
-  const double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
-  const double d      = BoxSize / PMGRID;
-  const double dhalf  = 0.5 * d;
-  double kfacx        = 2.0 * M_PI / (GRIDX * d);
-  double kfacy        = 2.0 * M_PI / (GRIDY * d);
-  double kfacz        = 2.0 * M_PI / (GRIDZ * d);
-
-#ifdef FFT_COLUMN_BASED
-  for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
-    {
-      int x, y, z;
-      large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
-      y                         = ipcell / (GRIDX * GRIDz);
-      int yr                    = ipcell % (GRIDX * GRIDz);
-      z                         = yr / GRIDX;
-      x                         = yr % GRIDX;
-#else
-  for(int x = 0; x < GRIDX; x++)
-    for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
-      for(int z = 0; z < GRIDz; z++)
-        {
-#endif
-      int xx, yy, zz;
-
-      if(x >= (GRIDX / 2))
-        xx = x - GRIDX;
-      else
-        xx = x;
-      if(y >= (GRIDY / 2))
-        yy = y - GRIDY;
-      else
-        yy = y;
-      if(z >= (GRIDZ / 2))
-        zz = z - GRIDZ;
-      else
-        zz = z;
-
-      double kx = kfacx * xx;
-      double ky = kfacy * yy;
-      double kz = kfacz * zz;
-
-      double k2 = kx * kx + ky * ky + kz * kz;
-
-      double smth = 1.0, deconv = 1.0;
-
-      if(k2 > 0)
-        {
-          smth = -exp(-k2 * asmth2) / k2;
-
-          /* do deconvolution */
-
-          double fx = 1, fy = 1, fz = 1;
-
-          if(xx != 0)
-            {
-              fx = kx * dhalf;
-              fx = sin(fx) / fx;
-            }
-          if(yy != 0)
-            {
-              fy = ky * dhalf;
-              fy = sin(fy) / fy;
-            }
-          if(zz != 0)
-            {
-              fz = kz * dhalf;
-              fz = sin(fz) / fz;
-            }
-
-          double ff = 1 / (fx * fy * fz);
-          deconv    = ff * ff * ff * ff;
-
-          smth *= deconv; /* deconvolution */
-        }
-
-#ifndef FFT_COLUMN_BASED
-      large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
-#endif
-
-#ifdef GRAVITY_TALLBOX
-      double re = fft_of_rhogrid[ip][0] * fft_of_kernel[ip][0] - fft_of_rhogrid[ip][1] * fft_of_kernel[ip][1];
-      double im = fft_of_rhogrid[ip][0] * fft_of_kernel[ip][1] + fft_of_rhogrid[ip][1] * fft_of_kernel[ip][0];
-
-      fft_of_rhogrid[ip][0] = re * deconv * exp(-k2 * asmth2);
-      fft_of_rhogrid[ip][1] = im * deconv * exp(-k2 * asmth2);
-#else
-          fft_of_rhogrid[ip][0] *= smth;
-          fft_of_rhogrid[ip][1] *= smth;
-#endif
-    }
-
-#ifndef GRAVITY_TALLBOX
-#ifdef FFT_COLUMN_BASED
-  if(second_transposed_firstcol == 0)
-    fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
-#else
-  if(slabstart_y == 0)
-    fft_of_rhogrid[0][0] = fft_of_rhogrid[0][1] = 0.0;
-#endif
-#endif
-
-    /* Do the inverse FFT to get the potential/forces */
+  /* Do the inverse FFT to get the potential/forces */
 
 #ifndef FFT_COLUMN_BASED
   fft(rhogrid.data(), workspace.data(), -1);
@@ -1982,6 +1875,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
 #endif
 
+  const double d = BoxSize / PMGRID;
   fac *= 1 / (2 * d); /* for finite differencing */
 
 #ifndef FFT_COLUMN_BASED
@@ -2569,8 +2463,8 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
           large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
 #endif
 
-          const fft_complex *const fft_of_rhogrid = (fft_complex *)rhogrid.data();
-          double po = (fft_of_rhogrid[ip][0] * fft_of_rhogrid[ip][0] + fft_of_rhogrid[ip][1] * fft_of_rhogrid[ip][1]);
+          const std::complex<fft_real> *const fft_of_rhogrid = (std::complex<fft_real> *)rhogrid.data();
+          double po                                          = std::norm(fft_of_rhogrid[ip]);
 
           po *= fac * fac * smth;
 
@@ -2664,4 +2558,95 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
     }
 }
 
+#ifdef FFT_COLUMN_BASED
+/* multiply with Green's function in order to obtain the potential (or forces for spectral diffencing) */
+void pm_periodic::compute_potential_kspace()
+{
+  std::complex<fft_real> *const fft_of_rhogrid = (std::complex<fft_real> *)forcegrid.data();
+
+  for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
+    {
+      int x, y, z;
+      large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * GRIDX;
+      y                         = ipcell / (GRIDX * GRIDz);
+      int yr                    = ipcell % (GRIDX * GRIDz);
+      z                         = yr / GRIDX;
+      x                         = yr % GRIDX;
+      const int xx = signed_mode(x, GRIDX), yy = signed_mode(y, GRIDY), zz = signed_mode(z, GRIDZ);
+
+      fft_of_rhogrid[ip] *= green_function({xx, yy, zz});
+
+#ifdef GRAVITY_TALLBOX
+      fft_of_rhogrid[ip] *= fft_of_kernel[ip];
 #endif
+    }
+
+#ifndef GRAVITY_TALLBOX
+  if(second_transposed_firstcol == 0)
+    fft_of_rhogrid[0] = 0.0;
+#endif
+}
+#else
+/* multiply with Green's function in order to obtain the potential (or forces for spectral diffencing) */
+void pm_periodic::compute_potential_kspace()
+{
+  std::complex<fft_real> *const fft_of_rhogrid = (std::complex<fft_real> *)rhogrid.data();
+
+  for(int x = 0; x < GRIDX; x++)
+    for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
+      for(int z = 0; z < GRIDz; z++)
+        {
+          large_array_offset ip = ((large_array_offset)GRIDz) * (GRIDX * (y - slabstart_y) + x) + z;
+          const int xx = signed_mode(x, GRIDX), yy = signed_mode(y, GRIDY), zz = signed_mode(z, GRIDZ);
+
+          fft_of_rhogrid[ip] *= green_function({xx, yy, zz});
+
+#ifdef GRAVITY_TALLBOX
+          fft_of_rhogrid[ip] *= fft_of_kernel[ip];
+#endif
+        }
+
+#ifndef GRAVITY_TALLBOX
+  if(slabstart_y == 0)
+    fft_of_rhogrid[0] = 0.0;
+#endif
+}
+#endif
+
+double pm_periodic::green_function(std::array<int, 3> mode) const
+{
+  const double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
+  const double dhalf  = 0.5 * BoxSize / PMGRID;
+  std::array<double, 3> k;
+  double k2{0.0};
+
+  for(int i = 0; i < 3; ++i)
+    k[i] = mode[i] * k_fundamental(i);
+  for(auto kx : k)
+    k2 += kx * kx;
+
+  double smth = 1.0, deconv = 1.0;
+
+  if(k2 > 0)
+    {
+      smth = -std::exp(-k2 * asmth2) / k2;
+
+      /* do deconvolution */
+      double ff = 1.0;
+
+      for(int i = 0; i < 3; ++i)
+        if(mode[i] != 0)
+          {
+            double fx = k[i] * dhalf;
+            ff *= fx / std::sin(fx);
+          }
+      deconv = ff * ff * ff * ff;
+      smth *= deconv; /* deconvolution */
+    }
+
+#ifdef GRAVITY_TALLBOX
+  return deconv * std::exp(-k2 * asmth2);
+#else
+  return smth;
+#endif
+}
