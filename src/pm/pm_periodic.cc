@@ -197,8 +197,10 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
       switch(mode)
         {
           case 2:
+            fact = POWERSPEC_FOLDFAC;
             break;
           case 3:
+            fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
             break;
           default:
             fact = 1;
