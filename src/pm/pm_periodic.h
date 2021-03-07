@@ -108,7 +108,23 @@ class pm_periodic :
   void pmforce_do_powerspec(int *typeflag);
   void compute_potential_kspace();
   static int signed_mode(int x, int L) noexcept { return x >= L / 2 ? x - L : x; }
-  int k_fundamental(int dim) const noexcept
+  static int pw_fold_factor(int mode) noexcept
+  {
+    int fact = 1;
+    switch(mode)
+      {
+        case 2:
+          fact = POWERSPEC_FOLDFAC;
+          break;
+        case 3:
+          fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
+          break;
+        default:
+          fact = 1;
+      }
+    return fact;
+  }
+  double k_fundamental(int dim) const noexcept
   {
     double d = BoxSize / PMGRID;
     switch(dim)

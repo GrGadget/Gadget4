@@ -193,16 +193,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
     {
       int i = Sp->get_active_index(idx);
 
-      int fact{1};
-      switch(mode)
-        {
-          case 2:
-            break;
-          case 3:
-            break;
-          default:
-            fact = 1;
-        }
+      int fact                         = pw_fold_factor(mode);
       auto [slab_x, slab_y, slab_z]    = coordinates(P[i], fact);
       large_numpart_type index_on_grid = ((large_numpart_type)idx) * 8;
 
@@ -295,18 +286,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
   for(large_numpart_type i = 0; i < num_on_grid; i += 8)
     {
-      int fact{1};
-      switch(mode)
-        {
-          case 2:
-            fact = POWERSPEC_FOLDFAC;
-            break;
-          case 3:
-            fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
-            break;
-          default:
-            fact = 1;
-        }
+      int fact          = pw_fold_factor(mode);
       int pindex        = (part[i].partindex >> 3);
       auto [dx, dy, dz] = cell_coordinates(P[pindex], fact);
 
@@ -526,18 +506,9 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
             if(typelist[P[i].getType()] == 0)
               continue;
 
-          int slab_x;
-          if(mode == 2)
-            slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC) / INTCELL;
-          else if(mode == 3)
-            slab_x = (P[i].IntPos[0] * POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC) / INTCELL;
-          else
-            slab_x = P[i].IntPos[0] / INTCELL;
-
-          int slab_xx = slab_x + 1;
-
-          if(slab_xx >= GRIDX)
-            slab_xx = 0;
+          int fact = pw_fold_factor(mode);
+          auto [slab_x, slab_y, slab_z] = coordinates(P[i], fact);
+          int slab_xx = (slab_x + 1) % GRIDX;
 
           if(rep == 0)
             {
@@ -615,31 +586,13 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      int fact{1};
-      switch(mode)
-        {
-          case 2:
-            fact = POWERSPEC_FOLDFAC;
-            break;
-          case 3:
-            fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
-            break;
-          default:
-            fact = 1;
-        }
+      int fact = pw_fold_factor(mode);
       auto [slab_x, slab_y, slab_z] = coordinates(partin[i], fact);
       auto [dx, dy, dz] = cell_coordinates(partin[i], fact);
 
-      int slab_xx = slab_x + 1;
-      int slab_yy = slab_y + 1;
-      int slab_zz = slab_z + 1;
-
-      if(slab_xx >= GRIDX)
-        slab_xx = 0;
-      if(slab_yy >= GRIDY)
-        slab_yy = 0;
-      if(slab_zz >= GRIDZ)
-        slab_zz = 0;
+      int slab_xx = (slab_x + 1) % GRIDX;
+      int slab_yy = (slab_y + 1) % GRIDY;
+      int slab_zz = (slab_z + 1) % GRIDZ;
 
       double mass = partin[i].Mass;
 
@@ -694,18 +647,7 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
             if(typelist[P[i].getType()] == 0)
               continue;
 
-          int fact{1};
-          switch(mode)
-            {
-              case 2:
-                fact = POWERSPEC_FOLDFAC;
-                break;
-              case 3:
-                fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
-                break;
-              default:
-                fact = 1;
-            }
+          int fact                      = pw_fold_factor(mode);
           auto [slab_x, slab_y, slab_z] = coordinates(P[i], fact);
 
           int slab_xx = slab_x + 1;
@@ -833,18 +775,7 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      int fact{1};
-      switch(mode)
-        {
-          case 2:
-            fact = POWERSPEC_FOLDFAC;
-            break;
-          case 3:
-            fact = POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC;
-            break;
-          default:
-            fact = 1;
-        }
+      int fact                      = pw_fold_factor(mode);
       auto [slab_x, slab_y, slab_z] = coordinates(partin[i], fact);
       auto [dx, dy, dz]             = cell_coordinates(partin[i], fact);
 
