@@ -60,19 +60,6 @@ extern template class std::vector<size_t>;
  * to accidentally forget this.
  */
 
-#define GRIDz (Ngrid[2] / 2 + 1)
-#define GRID2 (2 * GRIDz)
-
-/* short-cut macros for accessing different 3D arrays */
-#define FI(x, y, z) (((large_array_offset)GRID2) * (Ngrid[1] * (x) + (y)) + (z))
-#define FCxy(c, z) (((large_array_offset)GRID2) * ((c)-firstcol_XY) + (z))
-#define FCxz(c, y) (((large_array_offset)Ngrid[1]) * ((c)-firstcol_XZ) + (y))
-#define FCzy(c, x) (((large_array_offset)Ngrid[0]) * ((c)-firstcol_ZY) + (x))
-
-#ifndef FFT_COLUMN_BASED
-#define NI(x, y, z) (((large_array_offset)Ngrid[2]) * ((y) + (x)*nslab_y) + (z))
-#endif
-
 #ifdef LEAN
 MyFloat pm_periodic::partbuf::Mass;
 #endif
@@ -94,12 +81,12 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
   int ndimy[1] = {Ngrid[1]}; /* dimension of the 1D transforms */
   int ndimz[1] = {Ngrid[2]}; /* dimension of the 1D transforms */
 
-  int max_GRID2 = 2 * (std::max<int>(std::max<int>(Ngrid[0], Ngrid[1]), Ngrid[2]) / 2 + 1);
+  int max_Ngrid2 = 2 * (std::max<int>(std::max<int>(Ngrid[0], Ngrid[1]), Ngrid[2]) / 2 + 1);
 
   /* temporarily allocate some arrays to make sure that out-of-place plans are created */
-  rhogrid.resize(max_GRID2);
+  rhogrid.resize(max_Ngrid2);
   std::fill(rhogrid.begin(), rhogrid.end(), 0);
-  forcegrid.resize(max_GRID2);
+  forcegrid.resize(max_Ngrid2);
 
 #ifdef DOUBLEPRECISION_FFTW
   int alignflag = 0;
@@ -108,37 +95,37 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
   int alignflag = FFTW_UNALIGNED;
 #endif
 
-  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, rhogrid.data(), 0, 1, GRID2, (fft_complex *)forcegrid.data(), 0, 1, GRIDz,
+  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndimz, 1, rhogrid.data(), 0, 1, Ngrid2, (fft_complex *)forcegrid.data(), 0, 1, Ngridz,
                                               FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
 #ifndef FFT_COLUMN_BASED
-  int stride = GRIDz;
+  int stride = Ngridz;
 #else
   int stride    = 1;
 #endif
 
   forward_plan_ydir =
-      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * Ngrid[1], (fft_complex *)forcegrid.data(), 0,
-                          stride, GRIDz * Ngrid[1], FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid.data(), 0, stride, Ngridz * Ngrid[1], (fft_complex *)forcegrid.data(), 0,
+                          stride, Ngridz * Ngrid[1], FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
   forward_plan_xdir =
-      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * Ngrid[0], (fft_complex *)forcegrid.data(), 0,
-                          stride, GRIDz * Ngrid[0], FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid.data(), 0, stride, Ngridz * Ngrid[0], (fft_complex *)forcegrid.data(), 0,
+                          stride, Ngridz * Ngrid[0], FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
   backward_plan_xdir =
-      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * Ngrid[0], (fft_complex *)forcegrid.data(), 0,
-                          stride, GRIDz * Ngrid[0], FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+      FFTW(plan_many_dft)(1, ndimx, 1, (fft_complex *)rhogrid.data(), 0, stride, Ngridz * Ngrid[0], (fft_complex *)forcegrid.data(), 0,
+                          stride, Ngridz * Ngrid[0], FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
   backward_plan_ydir =
-      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid.data(), 0, stride, GRIDz * Ngrid[1], (fft_complex *)forcegrid.data(), 0,
-                          stride, GRIDz * Ngrid[1], FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+      FFTW(plan_many_dft)(1, ndimy, 1, (fft_complex *)rhogrid.data(), 0, stride, Ngridz * Ngrid[1], (fft_complex *)forcegrid.data(), 0,
+                          stride, Ngridz * Ngrid[1], FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)rhogrid.data(), 0, 1, GRIDz, forcegrid.data(), 0, 1, GRID2,
-                                               FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndimz, 1, (fft_complex *)rhogrid.data(), 0, 1, Ngridz, forcegrid.data(), 0, 1,
+                                               Ngrid2, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
 #ifndef FFT_COLUMN_BASED
 
-  maxfftsize = std::max<int>(largest_x_slab * Ngrid[1], largest_y_slab * Ngrid[0]) * ((size_t)GRID2);
+  maxfftsize = std::max<int>(largest_x_slab * Ngrid[1], largest_y_slab * Ngrid[0]) * ((size_t)Ngrid2);
 
 #else
 
@@ -258,10 +245,10 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
       localfield_globalindex[num_field_points] = part[part_sortindex[i]].globalindex;
 
 #ifndef FFT_COLUMN_BASED
-      int slab = part[part_sortindex[i]].globalindex / (Ngrid[1] * GRID2);
+      int slab = part[part_sortindex[i]].globalindex / (Ngrid[1] * Ngrid2);
       int task = slab_to_task[slab];
 #else
-      int task, column = part[part_sortindex[i]].globalindex / (GRID2);
+      int task, column = part[part_sortindex[i]].globalindex / (Ngrid2);
 
       if(column < pivotcol)
         task = column / avg;
@@ -355,9 +342,9 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
               /* determine offset in local FFT slab */
 #ifndef FFT_COLUMN_BASED
               large_array_offset offset =
-                  import_globalindex[i] - first_slab_x_of_task[ThisTask] * Ngrid[1] * ((large_array_offset)GRID2);
+                  import_globalindex[i] - first_slab_x_of_task[ThisTask] * Ngrid[1] * ((large_array_offset)Ngrid2);
 #else
-              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)Ngrid2);
 #endif
               rhogrid[offset] += import_data[i];
             }
@@ -420,9 +407,9 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
             {
 #ifndef FFT_COLUMN_BASED
               large_array_offset offset =
-                  import_globalindex[i] - first_slab_x_of_task[ThisTask] * Ngrid[1] * ((large_array_offset)GRID2);
+                  import_globalindex[i] - first_slab_x_of_task[ThisTask] * Ngrid[1] * ((large_array_offset)Ngrid2);
 #else
-              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)Ngrid2);
 #endif
               import_data[i] = grid[offset];
             }
@@ -1034,7 +1021,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
 
   particle_data *P = Sp->P;
 
-  int columns = Ngrid[0] * GRID2;
+  int columns = Ngrid[0] * Ngrid2;
   int avg = (columns - 1) / NTask + 1;
   int exc = NTask * avg - columns;
   int tasklastsection = NTask - exc;
@@ -1061,10 +1048,10 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
           if(slab_zz >= Ngrid[2])
             slab_zz = 0;
 
-          int column0 = slab_x * GRID2 + slab_z;
-          int column1 = slab_x * GRID2 + slab_zz;
-          int column2 = slab_xx * GRID2 + slab_z;
-          int column3 = slab_xx * GRID2 + slab_zz;
+          int column0 = slab_x * Ngrid2 + slab_z;
+          int column1 = slab_x * Ngrid2 + slab_zz;
+          int column2 = slab_xx * Ngrid2 + slab_z;
+          int column3 = slab_xx * Ngrid2 + slab_zz;
 
           int task0, task1, task2, task3;
 
@@ -1175,10 +1162,10 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
       auto [dx, dy, dz] = cell_coordinates(partin[i]);
       int slab_xx = (slab_x + 1) % Ngrid[0], slab_yy = (slab_y + 1) % Ngrid[1], slab_zz = (slab_z + 1) % Ngrid[2];
 
-      int column0 = slab_x * GRID2 + slab_z;
-      int column1 = slab_x * GRID2 + slab_zz;
-      int column2 = slab_xx * GRID2 + slab_z;
-      int column3 = slab_xx * GRID2 + slab_zz;
+      int column0 = slab_x * Ngrid2 + slab_z;
+      int column1 = slab_x * Ngrid2 + slab_zz;
+      int column2 = slab_xx * Ngrid2 + slab_z;
+      int column3 = slab_xx * Ngrid2 + slab_zz;
 
       if(column0 >= firstcol_XZ && column0 <= lastcol_XZ)
         {
@@ -1236,10 +1223,10 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
       if(slab_zz >= Ngrid[2])
         slab_zz = 0;
 
-      int column0 = slab_x * GRID2 + slab_z;
-      int column1 = slab_x * GRID2 + slab_zz;
-      int column2 = slab_xx * GRID2 + slab_z;
-      int column3 = slab_xx * GRID2 + slab_zz;
+      int column0 = slab_x * Ngrid2 + slab_z;
+      int column1 = slab_x * Ngrid2 + slab_zz;
+      int column2 = slab_xx * Ngrid2 + slab_z;
+      int column3 = slab_xx * Ngrid2 + slab_zz;
 
       int task0, task1, task2, task3;
 
@@ -1302,7 +1289,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
 
   particle_data *P = Sp->P;
 
-  int columns = GRID2 * Ngrid[1];
+  int columns = Ngrid2 * Ngrid[1];
   int avg = (columns - 1) / NTask + 1;
   int exc = NTask * avg - columns;
   int tasklastsection = NTask - exc;
@@ -1744,8 +1731,8 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   /* z-direction */
   for(large_array_offset i = 0; i < ncol_XY; i++)
     {
-      fft_real *const forcep = &forcegrid[GRID2 * i];
-      fft_real *const potp = &rhogrid[GRID2 * i];
+      fft_real *const forcep = &forcegrid[Ngrid2 * i];
+      fft_real *const potp = &rhogrid[Ngrid2 * i];
 
       for(int z = 0; z < Ngrid[2]; z++)
         {
@@ -2169,14 +2156,14 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
   for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
     {
       large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * Ngrid[0];
-      int y                     = ipcell / (Ngrid[0] * GRIDz);
-      int yr                    = ipcell % (Ngrid[0] * GRIDz);
+      int y                     = ipcell / (Ngrid[0] * Ngridz);
+      int yr                    = ipcell % (Ngrid[0] * Ngridz);
       int z                     = yr / Ngrid[0];
       int x                     = yr % Ngrid[0];
 #else
   for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
     for(int x = 0; x < Ngrid[0]; x++)
-      for(int z = 0; z < GRIDz; z++)
+      for(int z = 0; z < Ngridz; z++)
         {
 #endif
       int count_double;
@@ -2239,7 +2226,7 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
           /* end deconvolution */
 
 #ifndef FFT_COLUMN_BASED
-          large_array_offset ip = ((large_array_offset)GRIDz) * (Ngrid[0] * (y - slabstart_y) + x) + z;
+          large_array_offset ip = ((large_array_offset)Ngridz) * (Ngrid[0] * (y - slabstart_y) + x) + z;
 #endif
 
           const std::complex<fft_real> *const fft_of_rhogrid = (std::complex<fft_real> *)rhogrid.data();
@@ -2347,8 +2334,8 @@ void pm_periodic::compute_potential_kspace()
     {
       int x, y, z;
       large_array_offset ipcell = ip + ((large_array_offset)second_transposed_firstcol) * Ngrid[0];
-      y                         = ipcell / (Ngrid[0] * GRIDz);
-      int yr                    = ipcell % (Ngrid[0] * GRIDz);
+      y                         = ipcell / (Ngrid[0] * Ngridz);
+      int yr                    = ipcell % (Ngrid[0] * Ngridz);
       z                         = yr / Ngrid[0];
       x                         = yr % Ngrid[0];
       const int xx = signed_mode(x, Ngrid[0]), yy = signed_mode(y, Ngrid[1]), zz = signed_mode(z, Ngrid[2]);
@@ -2373,9 +2360,9 @@ void pm_periodic::compute_potential_kspace()
 
   for(int x = 0; x < Ngrid[0]; x++)
     for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
-      for(int z = 0; z < GRIDz; z++)
+      for(int z = 0; z < Ngridz; z++)
         {
-          large_array_offset ip = ((large_array_offset)GRIDz) * (Ngrid[0] * (y - slabstart_y) + x) + z;
+          large_array_offset ip = ((large_array_offset)Ngridz) * (Ngrid[0] * (y - slabstart_y) + x) + z;
           const int xx = signed_mode(x, Ngrid[0]), yy = signed_mode(y, Ngrid[1]), zz = signed_mode(z, Ngrid[2]);
 
           fft_of_rhogrid[ip] *= green_function({xx, yy, zz});

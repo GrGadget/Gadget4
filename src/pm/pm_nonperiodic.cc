@@ -34,6 +34,7 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/pm_mpi_fft.h"
 #include "gadget/timebindata.h"
+#include "gadget/utils.h"  // subdivide_evenly
 
 /*! This function determines the particle extension of all particles, and for
  *  those types selected with PLACEHIGHRESREGION if this is used, and then
@@ -996,7 +997,7 @@ void pm_nonperiodic::pmforce_nonperiodic_uniform_optimized_prepare_density(int g
   /* bin particle data onto mesh, in multi-threaded fashion */
   {
     int first_y, count_y;
-    subdivide_evenly(GRID, 1, 0, &first_y, &count_y);
+    subdivide_evenly(Ngrid[0], 1, 0, &first_y, &count_y);
     int last_y = first_y + count_y - 1;
 
     for(size_t i = 0; i < nimport; i++)
@@ -1729,7 +1730,7 @@ void pm_nonperiodic::pm_setup_nonperiodic_kernel(void)
     fft_real *workspc = (fft_real *)Mem.mymalloc("workspc", maxfftsize * sizeof(fft_real));
     /* Do the FFT of the kernel */
 #ifndef FFT_COLUMN_BASED
-    fft(kernel, workspc, 1);
+    fft((fft_real *)kernel, workspc, 1);
 #else
     fft((fft_real *)kernel, workspc, 1); /* result is in workspace, not in kernel */
     memcpy(kernel, workspc, maxfftsize * sizeof(fft_real));

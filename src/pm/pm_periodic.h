@@ -50,6 +50,16 @@ class pm_periodic :
   void calculate_power_spectra(int num, char *OutputDir);
 
  private:
+  /* short-cut macros for accessing different 3D arrays */
+  inline auto FI(int x, int y, int z) const { return ((large_array_offset)Ngrid2) * (Ngrid[1] * x + y) + z; }
+#ifdef FFT_COLUMN_BASED
+  inline auto FCxy(int c, int z) const { return ((large_array_offset)Ngrid2) * (c - firstcol_XY) + z; }
+  inline auto FCxz(int c, int y) const { return ((large_array_offset)Ngrid[1]) * (c - firstcol_XZ) + y; }
+  inline auto FCzy(int c, int x) const { return ((large_array_offset)Ngrid[0]) * (c - firstcol_ZY) + x; }
+#else
+  inline auto NI(int x, int y, int z) const { return ((large_array_offset)Ngrid[2]) * (y + x * nslab_y) + z; }
+#endif
+
   typedef long long large_array_offset; /* use a larger data type in this case so that we can always address all cells of the 3D grid
                                            with a single index */
   std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;

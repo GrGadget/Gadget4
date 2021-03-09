@@ -27,10 +27,6 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
-#define FI(x, y, z) (((large_array_offset)Ngrid2) * (Ngrid[0] * (x) + (y)) + (z))
-#define FC(c, z) (((large_array_offset)Ngrid2) * ((c)-firstcol_XY) + (z))
-#define TI(x, y, z) (((large_array_offset)Ngrid) * ((x) + (y)*nslab_x) + (z))
-
 class pm_nonperiodic :
 #ifdef FFT_COLUMN_BASED
     public mpi_fft_columns
@@ -49,9 +45,15 @@ class pm_nonperiodic :
   {
   }
 
-#if defined(PMGRID) && (!defined(PERIODIC) || defined(PLACEHIGHRESREGION))
+  //#if defined(PMGRID) && (!defined(PERIODIC) || defined(PLACEHIGHRESREGION))
 
  private:
+  inline auto FI(int x, int y, int z) const { return ((large_array_offset)Ngrid2) * (Ngrid[0] * x + y) + z; }
+#ifdef FFT_COLUMN_BASED
+  inline auto FC(int c, int z) const { return ((large_array_offset)Ngrid2) * (c - firstcol_XY) + z; }
+#else
+  inline auto TI(int x, int y, int z) const { return ((large_array_offset)Ngrid[0]) * (x + y * nslab_x) + z; }
+#endif
 #if defined(LONG_X_BITS) || defined(LONG_Y_BITS) || defined(LONG_Z_BITS)
 #error "LONG_X/Y/Z_BITS not supported for the non-periodic FFT gravity code"
 #endif
@@ -178,7 +180,7 @@ class pm_nonperiodic :
 
 #endif
 
-#endif
+  //#endif
 };
 
 #endif
