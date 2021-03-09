@@ -27,13 +27,9 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
-#define GRID (HRPMGRID)
-#define GRIDz (GRID / 2 + 1)
-#define GRID2 (2 * GRIDz)
-
-#define FI(x, y, z) (((large_array_offset)GRID2) * (GRID * (x) + (y)) + (z))
-#define FC(c, z) (((large_array_offset)GRID2) * ((c)-firstcol_XY) + (z))
-#define TI(x, y, z) (((large_array_offset)GRID) * ((x) + (y)*nslab_x) + (z))
+#define FI(x, y, z) (((large_array_offset)Ngrid2) * (Ngrid[0] * (x) + (y)) + (z))
+#define FC(c, z) (((large_array_offset)Ngrid2) * ((c)-firstcol_XY) + (z))
+#define TI(x, y, z) (((large_array_offset)Ngrid) * ((x) + (y)*nslab_x) + (z))
 
 class pm_nonperiodic :
 #ifdef FFT_COLUMN_BASED
@@ -43,17 +39,15 @@ class pm_nonperiodic :
 #endif
 {
  public:
-  pm_nonperiodic(MPI_Comm comm)
+  pm_nonperiodic(MPI_Comm comm, int ngrid)
       :
 #ifdef FFT_COLUMN_BASED
-        mpi_fft_columns(comm, {GRID, GRID, GRID})
-  {
-  }
+        mpi_fft_columns(comm, {ngrid, ngrid, ngrid})
 #else
-        mpi_fft_slabs(comm, GRID, GRID, GRID)
+        mpi_fft_slabs(comm, {ngrid, ngrid, ngrid})
+#endif
   {
   }
-#endif
 
 #if defined(PMGRID) && (!defined(PERIODIC) || defined(PLACEHIGHRESREGION))
 

@@ -25,32 +25,7 @@ extern template class std::vector<size_t>;
 
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
-#if defined(PMGRID) && defined(PERIODIC)
-
-#ifdef LONG_X_BITS
-#if PMGRID != ((PMGRID / LONG_X) * LONG_X)
-#error "PMGRID must be a multiple of the stretch factor in the x-direction"
-#endif
-#endif
-
-#ifdef LONG_Y_BITS
-#if PMGRID != ((PMGRID / LONG_Y) * LONG_Y)
-#error "PMGRID must be a multiple of the stretch factor in the y-direction"
-#endif
-#endif
-
-#ifdef LONG_Z_BITS
-#if PMGRID != ((PMGRID / LONG_Z) * LONG_Z)
-#error "PMGRID must be a multiple of the stretch factor in the x-direction"
-#endif
-#endif
-
-#define GRIDX ((PMGRID / LONG_X) * DBX + DBX_EXTRA)
-#define GRIDY ((PMGRID / LONG_Y) * DBY + DBY_EXTRA)
-#define GRIDZ ((PMGRID / LONG_Z) * DBZ + DBZ_EXTRA)
-
 #define INTCELL ((~((MyIntPosType)0)) / PMGRID + 1)
-#endif
 
 class pm_periodic :
 
@@ -61,11 +36,11 @@ class pm_periodic :
 #endif
 {
  public:
-  pm_periodic(MPI_Comm comm)
+  pm_periodic(MPI_Comm comm, std::array<int, 3> ngrid)
 #ifdef FFT_COLUMN_BASED
-      : mpi_fft_columns(comm, {GRIDX, GRIDY, GRIDZ}), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+      : mpi_fft_columns(comm, ngrid), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
 #else
-      : mpi_fft_slabs(comm, {GRIDX, GRIDY, GRIDZ}), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+      : mpi_fft_slabs(comm, ngrid), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
 #endif
   {
   }
@@ -126,19 +101,7 @@ class pm_periodic :
   }
   double k_fundamental(int dim) const noexcept
   {
-    double d = BoxSize / PMGRID;
-    switch(dim)
-      {
-        case 0:
-          d *= GRIDX;
-          break;
-        case 1:
-          d *= GRIDY;
-          break;
-        case 2:
-          d *= GRIDZ;
-          break;
-      }
+    double d = Ngrid[dim] * BoxSize / PMGRID;
     return 2.0 * M_PI / d;
   }
   double green_function(std::array<int, 3> mode) const;

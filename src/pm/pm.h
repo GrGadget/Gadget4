@@ -12,9 +12,8 @@
 #ifndef PM_H
 #define PM_H
 
-#if defined(PMGRID) || defined(NGENIC)
-
 #include <fftw3.h>
+#include <array>
 
 #include "../pm/pm_nonperiodic.h"
 #include "../pm/pm_periodic.h"
@@ -24,16 +23,14 @@
 class pm : public pm_periodic
 {
  public:
-  pm(MPI_Comm comm) : pm_periodic(comm) {}
+  pm(MPI_Comm comm, std::array<int, 3> ngrid) : pm_periodic(comm, ngrid) {}
 };
 #else
 class pm : public pm_nonperiodic
 {
  public:
-  pm(MPI_Comm comm) : pm_nonperiodic(comm) {}
+  pm(MPI_Comm comm, int ngrid) : pm_nonperiodic(comm, ngrid) {}
 };
-#endif
-
 #endif
 
 #endif

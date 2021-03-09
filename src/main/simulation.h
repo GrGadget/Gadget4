@@ -45,10 +45,51 @@
 #include "gadget/parameters.h"
 #include "gadget/setcomm.h"
 
+#define GRID (HRPMGRID)
+
+#if defined(PMGRID) && defined(PERIODIC)
+
+#ifdef LONG_X_BITS
+#if PMGRID != ((PMGRID / LONG_X) * LONG_X)
+#error "PMGRID must be a multiple of the stretch factor in the x-direction"
+#endif
+#endif
+
+#ifdef LONG_Y_BITS
+#if PMGRID != ((PMGRID / LONG_Y) * LONG_Y)
+#error "PMGRID must be a multiple of the stretch factor in the y-direction"
+#endif
+#endif
+
+#ifdef LONG_Z_BITS
+#if PMGRID != ((PMGRID / LONG_Z) * LONG_Z)
+#error "PMGRID must be a multiple of the stretch factor in the x-direction"
+#endif
+#endif
+
+#define GRIDX ((PMGRID / LONG_X) * DBX + DBX_EXTRA)
+#define GRIDY ((PMGRID / LONG_Y) * DBY + DBY_EXTRA)
+#define GRIDZ ((PMGRID / LONG_Z) * DBZ + DBZ_EXTRA)
+
+#endif
+
 class sim : public test_io_bandwidth
 {
  public:
-  sim(MPI_Comm comm) : setcomm(comm), test_io_bandwidth(comm) {}
+  sim(MPI_Comm comm)
+      : setcomm(comm),
+        test_io_bandwidth(comm)
+#ifdef PMGRID
+#ifdef PERIODIC
+        ,
+        PM(comm, {GRIDX, GRIDY, GRIDZ})
+#else
+        ,
+        PM(comm, HRPMGRID)
+#endif
+#endif
+  {
+  }
 
   /* here come the main classes the code operates on */
 
@@ -67,7 +108,7 @@ class sim : public test_io_bandwidth
   sph NgbTree; /* get an instance of a neighbour search tree */
 
 #ifdef PMGRID
-  pm PM{Communicator};
+  pm PM;
 #endif
 
 #ifdef MERGERTREE
