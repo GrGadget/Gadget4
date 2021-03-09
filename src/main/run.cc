@@ -766,7 +766,7 @@ void sim::print_particle_info(int i)
 #else
 #ifndef LEAN
   printf("GravAccel=%g|%g|%g, Soft=%g, SoftType=%d\n", Sp.P[i].GravAccel[0], Sp.P[i].GravAccel[1], Sp.P[i].GravAccel[2],
-         All.ForceSoftening[P[i].getSofteningClass()], Sp.P[i].getSofteningClass());
+         All.ForceSoftening[Sp.P[i].getSofteningClass()], Sp.P[i].getSofteningClass());
 #endif
 #endif
 
