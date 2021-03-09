@@ -63,9 +63,9 @@ class pm_periodic :
  public:
   pm_periodic(MPI_Comm comm)
 #ifdef FFT_COLUMN_BASED
-      : mpi_fft_columns(comm, GRIDX, GRIDY, GRIDZ), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+      : mpi_fft_columns(comm, {GRIDX, GRIDY, GRIDZ}), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
 #else
-      : mpi_fft_slabs(comm, GRIDX, GRIDY, GRIDZ), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+      : mpi_fft_slabs(comm, {GRIDX, GRIDY, GRIDZ}), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
 #endif
   {
   }

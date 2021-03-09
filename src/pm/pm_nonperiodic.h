@@ -46,7 +46,7 @@ class pm_nonperiodic :
   pm_nonperiodic(MPI_Comm comm)
       :
 #ifdef FFT_COLUMN_BASED
-        mpi_fft_columns(comm, GRID, GRID, GRID)
+        mpi_fft_columns(comm, {GRID, GRID, GRID})
   {
   }
 #else

@@ -13,6 +13,7 @@
 
 #include <fftw3.h>
 #include <mpi.h>
+#include <array>
 #include <cstdint>  // SIZE_MAX
 #include <cstring>  // memset
 #include <vector>
@@ -32,13 +33,11 @@ extern template class std::vector<int>;
  * transferred betweeen processors.
  */
 
-fft_plan_slabs::fft_plan_slabs(int ntask, int ngridx, int ngridy, int ngridz)
-    : NgridX{ngridx},
-      NgridY{ngridy},
-      NgridZ{ngridz},
-      Ngridz{NgridZ / 2 + 1},
+fft_plan_slabs::fft_plan_slabs(int ntask, std::array<int, 3> ngrid)
+    : Ngrid{ngrid},
+      Ngridz{Ngrid[2] / 2 + 1},
       Ngrid2{2 * Ngridz},
-      slab_to_task(NgridX),
+      slab_to_task(Ngrid[0]),
       slabs_x_per_task(ntask),
       first_slab_x_of_task(ntask),
       slabs_y_per_task(ntask),
@@ -46,11 +45,9 @@ fft_plan_slabs::fft_plan_slabs(int ntask, int ngridx, int ngridy, int ngridz)
 {
 }
 
-fft_plan_columns::fft_plan_columns(int ntask, int ngridx, int ngridy, int ngridz)
-    : NgridX{ngridx},
-      NgridY{ngridy},
-      NgridZ{ngridz},
-      Ngridz{NgridZ / 2 + 1},
+fft_plan_columns::fft_plan_columns(int ntask, std::array<int, 3> ngrid)
+    : Ngrid{ngrid},
+      Ngridz{Ngrid[2] / 2 + 1},
       Ngrid2{2 * Ngridz},
       offsets_send_A(ntask),
       offsets_recv_A(ntask),
@@ -80,17 +77,16 @@ fft_plan_columns::fft_plan_columns(int ntask, int ngridx, int ngridy, int ngridz
 {
 }
 
-mpi_fft_slabs::mpi_fft_slabs(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
-    : setcomm{comm}, fft_plan_slabs{setcomm::NTask, ngridx, ngridy, ngridz}
+mpi_fft_slabs::mpi_fft_slabs(MPI_Comm comm, std::array<int, 3> ngrid) : setcomm{comm}, fft_plan_slabs{setcomm::NTask, ngrid}
 {
-  subdivide_evenly(NgridX, NTask, ThisTask, &slabstart_x, &nslab_x);
-  subdivide_evenly(NgridY, NTask, ThisTask, &slabstart_y, &nslab_y);
+  subdivide_evenly(Ngrid[0], NTask, ThisTask, &slabstart_x, &nslab_x);
+  subdivide_evenly(Ngrid[1], NTask, ThisTask, &slabstart_y, &nslab_y);
 
   for(int task = 0; task < NTask; task++)
     {
       int start, n;
 
-      subdivide_evenly(NgridX, NTask, task, &start, &n);
+      subdivide_evenly(Ngrid[0], NTask, task, &start, &n);
 
       for(int i = start; i < start + n; i++)
         slab_to_task[i] = task;
@@ -132,20 +128,20 @@ void mpi_fft_slabs::transposeA(fft_real *field, fft_real *scratch)
       int y;
 
       for(y = first_slab_y_of_task[task]; y < first_slab_y_of_task[task] + slabs_y_per_task[task]; y++)
-        memcpy(scratch + ((size_t)NgridZ) *
+        memcpy(scratch + ((size_t)Ngrid[2]) *
                              (first_slab_y_of_task[task] * nslab_x + x * slabs_y_per_task[task] + (y - first_slab_y_of_task[task])),
-               field + ((size_t)Ngrid2) * (NgridY * x + y), NgridZ * sizeof(fft_real));
+               field + ((size_t)Ngrid2) * (Ngrid[1] * x + y), Ngrid[2] * sizeof(fft_real));
     }
 
   std::vector<size_t> scount(NTask), rcount(NTask), soff(NTask), roff(NTask);
 
   for(task = 0; task < NTask; task++)
     {
-      scount[task] = nslab_x * slabs_y_per_task[task] * (NgridZ * sizeof(fft_real));
-      rcount[task] = nslab_y * slabs_x_per_task[task] * (NgridZ * sizeof(fft_real));
+      scount[task] = nslab_x * slabs_y_per_task[task] * (Ngrid[2] * sizeof(fft_real));
+      rcount[task] = nslab_y * slabs_x_per_task[task] * (Ngrid[2] * sizeof(fft_real));
 
-      soff[task] = first_slab_y_of_task[task] * nslab_x * (NgridZ * sizeof(fft_real));
-      roff[task] = first_slab_x_of_task[task] * nslab_y * (NgridZ * sizeof(fft_real));
+      soff[task] = first_slab_y_of_task[task] * nslab_x * (Ngrid[2] * sizeof(fft_real));
+      roff[task] = first_slab_x_of_task[task] * nslab_y * (Ngrid[2] * sizeof(fft_real));
 
       if(scount[task] > MPI_MESSAGE_SIZELIMIT_IN_BYTES)
         flag_big = 1;
@@ -173,11 +169,11 @@ void mpi_fft_slabs::transposeB(fft_real *field, fft_real *scratch)
 
   for(task = 0; task < NTask; task++)
     {
-      rcount[task] = nslab_x * slabs_y_per_task[task] * (NgridZ * sizeof(fft_real));
-      scount[task] = nslab_y * slabs_x_per_task[task] * (NgridZ * sizeof(fft_real));
+      rcount[task] = nslab_x * slabs_y_per_task[task] * (Ngrid[2] * sizeof(fft_real));
+      scount[task] = nslab_y * slabs_x_per_task[task] * (Ngrid[2] * sizeof(fft_real));
 
-      roff[task] = first_slab_y_of_task[task] * nslab_x * (NgridZ * sizeof(fft_real));
-      soff[task] = first_slab_x_of_task[task] * nslab_y * (NgridZ * sizeof(fft_real));
+      roff[task] = first_slab_y_of_task[task] * nslab_x * (Ngrid[2] * sizeof(fft_real));
+      soff[task] = first_slab_x_of_task[task] * nslab_y * (Ngrid[2] * sizeof(fft_real));
 
       if(scount[task] > MPI_MESSAGE_SIZELIMIT_IN_BYTES)
         flag_big = 1;
@@ -196,10 +192,10 @@ void mpi_fft_slabs::transposeB(fft_real *field, fft_real *scratch)
 
       int y;
       for(y = first_slab_y_of_task[task]; y < first_slab_y_of_task[task] + slabs_y_per_task[task]; y++)
-        memcpy(field + ((size_t)Ngrid2) * (NgridY * x + y),
-               scratch + ((size_t)NgridZ) *
+        memcpy(field + ((size_t)Ngrid2) * (Ngrid[1] * x + y),
+               scratch + ((size_t)Ngrid[2]) *
                              (first_slab_y_of_task[task] * nslab_x + x * slabs_y_per_task[task] + (y - first_slab_y_of_task[task])),
-               NgridZ * sizeof(fft_real));
+               Ngrid[2] * sizeof(fft_real));
     }
 }
 
@@ -310,8 +306,8 @@ void mpi_fft_slabs::fft(fft_real *data, fft_real *workspace, int forward)
   int slabsx = slabs_x_per_task[ThisTask];
   int slabsy = slabs_y_per_task[ThisTask];
 
-  int ngridx  = NgridX;
-  int ngridy  = NgridY;
+  int ngridx  = Ngrid[0];
+  int ngridy  = Ngrid[1];
   int ngridz  = Ngridz;
   int ngridz2 = 2 * ngridz;
 
@@ -402,71 +398,70 @@ void mpi_fft_slabs::fft(fft_real *data, fft_real *workspace, int forward)
     }
 }
 
-mpi_fft_columns::mpi_fft_columns(MPI_Comm comm, int ngridx, int ngridy, int ngridz)
-    : setcomm{comm}, fft_plan_columns{setcomm::NTask, ngridx, ngridy, ngridz}
+mpi_fft_columns::mpi_fft_columns(MPI_Comm comm, std::array<int, 3> ngrid) : setcomm{comm}, fft_plan_columns{setcomm::NTask, ngrid}
 {
-  subdivide_evenly(NgridX * NgridY, NTask, ThisTask, &firstcol_XY, &ncol_XY);
-  subdivide_evenly(NgridX * Ngrid2, NTask, ThisTask, &firstcol_XZ, &ncol_XZ);
-  subdivide_evenly(Ngrid2 * NgridY, NTask, ThisTask, &firstcol_ZY, &ncol_ZY);
+  subdivide_evenly(Ngrid[0] * Ngrid[1], NTask, ThisTask, &firstcol_XY, &ncol_XY);
+  subdivide_evenly(Ngrid[0] * Ngrid2, NTask, ThisTask, &firstcol_XZ, &ncol_XZ);
+  subdivide_evenly(Ngrid2 * Ngrid[1], NTask, ThisTask, &firstcol_ZY, &ncol_ZY);
 
   lastcol_XY = firstcol_XY + ncol_XY - 1;
   lastcol_XZ = firstcol_XZ + ncol_XZ - 1;
   lastcol_ZY = firstcol_ZY + ncol_ZY - 1;
 
-  subdivide_evenly(NgridX * Ngridz, NTask, ThisTask, &transposed_firstcol, &transposed_ncol);
-  subdivide_evenly(NgridY * Ngridz, NTask, ThisTask, &second_transposed_firstcol, &second_transposed_ncol);
+  subdivide_evenly(Ngrid[0] * Ngridz, NTask, ThisTask, &transposed_firstcol, &transposed_ncol);
+  subdivide_evenly(Ngrid[1] * Ngridz, NTask, ThisTask, &second_transposed_firstcol, &second_transposed_ncol);
 
-  second_transposed_ncells = ((size_t)NgridX) * second_transposed_ncol;
+  second_transposed_ncells = ((size_t)Ngrid[0]) * second_transposed_ncol;
 
   max_datasize = ((size_t)Ngrid2) * ncol_XY;
-  max_datasize = std::max<size_t>(max_datasize, 2 * ((size_t)NgridY) * transposed_ncol);
-  max_datasize = std::max<size_t>(max_datasize, 2 * ((size_t)NgridX) * second_transposed_ncol);
-  max_datasize = std::max<size_t>(max_datasize, ((size_t)ncol_XZ) * NgridY);
-  max_datasize = std::max<size_t>(max_datasize, ((size_t)ncol_ZY) * NgridX);
+  max_datasize = std::max<size_t>(max_datasize, 2 * ((size_t)Ngrid[1]) * transposed_ncol);
+  max_datasize = std::max<size_t>(max_datasize, 2 * ((size_t)Ngrid[0]) * second_transposed_ncol);
+  max_datasize = std::max<size_t>(max_datasize, ((size_t)ncol_XZ) * Ngrid[1]);
+  max_datasize = std::max<size_t>(max_datasize, ((size_t)ncol_ZY) * Ngrid[0]);
 
   fftsize = max_datasize;
 
-  int dimA[3]  = {NgridX, NgridY, Ngridz};
+  int dimA[3]  = {Ngrid[0], Ngrid[1], Ngridz};
   int permA[3] = {0, 2, 1};
 
   remap(NULL, dimA, firstcol_XY, ncol_XY, NULL, permA, transposed_firstcol, transposed_ncol, offsets_send_A.data(),
         offsets_recv_A.data(), count_send_A.data(), count_recv_A.data(), 1);
 
-  int dimB[3]  = {NgridX, Ngridz, NgridY};
+  int dimB[3]  = {Ngrid[0], Ngridz, Ngrid[1]};
   int permB[3] = {2, 1, 0};
 
   remap(NULL, dimB, transposed_firstcol, transposed_ncol, NULL, permB, second_transposed_firstcol, second_transposed_ncol,
         offsets_send_B.data(), offsets_recv_B.data(), count_send_B.data(), count_recv_B.data(), 1);
 
-  int dimC[3]  = {NgridY, Ngridz, NgridX};
+  int dimC[3]  = {Ngrid[1], Ngridz, Ngrid[0]};
   int permC[3] = {2, 1, 0};
 
   remap(NULL, dimC, second_transposed_firstcol, second_transposed_ncol, NULL, permC, transposed_firstcol, transposed_ncol,
         offsets_send_C.data(), offsets_recv_C.data(), count_send_C.data(), count_recv_C.data(), 1);
 
-  int dimD[3]  = {NgridX, Ngridz, NgridY};
+  int dimD[3]  = {Ngrid[0], Ngridz, Ngrid[1]};
   int permD[3] = {0, 2, 1};
 
   remap(NULL, dimD, transposed_firstcol, transposed_ncol, NULL, permD, firstcol_XY, ncol_XY, offsets_send_D.data(),
         offsets_recv_D.data(), count_send_D.data(), count_recv_D.data(), 1);
 
-  int dim23[3]  = {NgridX, NgridY, Ngrid2};
+  int dim23[3]  = {Ngrid[0], Ngrid[1], Ngrid2};
   int perm23[3] = {0, 2, 1};
 
   transpose(NULL, dim23, firstcol_XY, ncol_XY, NULL, perm23, firstcol_XZ, ncol_XZ, count_send_23.data(), count_recv_23.data(), 1);
 
-  int dim23back[3]  = {NgridX, Ngrid2, NgridY};
+  int dim23back[3]  = {Ngrid[0], Ngrid2, Ngrid[1]};
   int perm23back[3] = {0, 2, 1};
 
   transpose(NULL, dim23back, firstcol_XZ, ncol_XZ, NULL, perm23back, firstcol_XY, ncol_XY, count_send_23back.data(),
             count_recv_23back.data(), 1);
 
-  int dim13[3]  = {NgridX, NgridY, Ngrid2};
+  int dim13[3]  = {Ngrid[0], Ngrid[1], Ngrid2};
   int perm13[3] = {2, 1, 0};
 
   transpose(NULL, dim13, firstcol_XY, ncol_XY, NULL, perm13, firstcol_ZY, ncol_ZY, count_send_13.data(), count_recv_13.data(), 1);
 
-  int dim13back[3]  = {Ngrid2, NgridY, NgridX};
+  int dim13back[3]  = {Ngrid2, Ngrid[1], Ngrid[0]};
   int perm13back[3] = {2, 1, 0};
 
   transpose(NULL, dim13back, firstcol_ZY, ncol_ZY, NULL, perm13back, firstcol_XY, ncol_XY, count_send_13back.data(),
@@ -475,7 +470,7 @@ mpi_fft_columns::mpi_fft_columns(MPI_Comm comm, int ngridx, int ngridy, int ngri
 
 void mpi_fft_columns::swap23(fft_real *data, fft_real *out)
 {
-  int dim23[3]  = {NgridX, NgridY, Ngrid2};
+  int dim23[3]  = {Ngrid[0], Ngrid[1], Ngrid2};
   int perm23[3] = {0, 2, 1};
 
   transpose(data, dim23, firstcol_XY, ncol_XY, out, perm23, firstcol_XZ, ncol_XZ, count_send_23.data(), count_recv_23.data(), 0);
@@ -483,7 +478,7 @@ void mpi_fft_columns::swap23(fft_real *data, fft_real *out)
 
 void mpi_fft_columns::swap23back(fft_real *data, fft_real *out)
 {
-  int dim23back[3]  = {NgridX, Ngrid2, NgridY};
+  int dim23back[3]  = {Ngrid[0], Ngrid2, Ngrid[1]};
   int perm23back[3] = {0, 2, 1};
 
   transpose(data, dim23back, firstcol_XZ, ncol_XZ, out, perm23back, firstcol_XY, ncol_XY, count_send_23back.data(),
@@ -492,7 +487,7 @@ void mpi_fft_columns::swap23back(fft_real *data, fft_real *out)
 
 void mpi_fft_columns::swap13(fft_real *data, fft_real *out)
 {
-  int dim13[3]  = {NgridX, NgridY, Ngrid2};
+  int dim13[3]  = {Ngrid[0], Ngrid[1], Ngrid2};
   int perm13[3] = {2, 1, 0};
 
   transpose(data, dim13, firstcol_XY, ncol_XY, out, perm13, firstcol_ZY, ncol_ZY, count_send_13.data(), count_recv_13.data(), 0);
@@ -500,7 +495,7 @@ void mpi_fft_columns::swap13(fft_real *data, fft_real *out)
 
 void mpi_fft_columns::swap13back(fft_real *data, fft_real *out)
 {
-  int dim13back[3]  = {Ngrid2, NgridY, NgridX};
+  int dim13back[3]  = {Ngrid2, Ngrid[1], Ngrid[0]};
   int perm13back[3] = {2, 1, 0};
 
   transpose(data, dim13back, firstcol_ZY, ncol_ZY, out, perm13back, firstcol_XY, ncol_XY, count_send_13back.data(),
@@ -519,7 +514,7 @@ void mpi_fft_columns::fft(fft_real *data, fft_real *workspace, int forward)
       for(n = 0; n < ncol_XY; n++)
         FFTW(execute_dft_r2c)(forward_plan_zdir, data_real + n * Ngrid2, workspace_complex + n * Ngridz);
 
-      int dimA[3]  = {NgridX, NgridY, Ngridz};
+      int dimA[3]  = {Ngrid[0], Ngrid[1], Ngridz};
       int permA[3] = {0, 2, 1};
 
       remap(workspace_complex, dimA, firstcol_XY, ncol_XY, data_complex, permA, transposed_firstcol, transposed_ncol,
@@ -527,9 +522,9 @@ void mpi_fft_columns::fft(fft_real *data, fft_real *workspace, int forward)
 
       /* do the y-direction FFT in 'data', complex to complex */
       for(n = 0; n < transposed_ncol; n++)
-        FFTW(execute_dft)(forward_plan_ydir, data_complex + n * NgridY, workspace_complex + n * NgridY);
+        FFTW(execute_dft)(forward_plan_ydir, data_complex + n * Ngrid[1], workspace_complex + n * Ngrid[1]);
 
-      int dimB[3]  = {NgridX, Ngridz, NgridY};
+      int dimB[3]  = {Ngrid[0], Ngridz, Ngrid[1]};
       int permB[3] = {2, 1, 0};
 
       remap(workspace_complex, dimB, transposed_firstcol, transposed_ncol, data_complex, permB, second_transposed_firstcol,
@@ -537,7 +532,7 @@ void mpi_fft_columns::fft(fft_real *data, fft_real *workspace, int forward)
 
       /* do the x-direction FFT in 'data', complex to complex */
       for(n = 0; n < second_transposed_ncol; n++)
-        FFTW(execute_dft)(forward_plan_xdir, data_complex + n * NgridX, workspace_complex + n * NgridX);
+        FFTW(execute_dft)(forward_plan_xdir, data_complex + n * Ngrid[0], workspace_complex + n * Ngrid[0]);
 
       /* result is now in workspace */
     }
@@ -545,9 +540,9 @@ void mpi_fft_columns::fft(fft_real *data, fft_real *workspace, int forward)
     {
       /* do inverse FFT in 'data' */
       for(n = 0; n < second_transposed_ncol; n++)
-        FFTW(execute_dft)(backward_plan_xdir, data_complex + n * NgridX, workspace_complex + n * NgridX);
+        FFTW(execute_dft)(backward_plan_xdir, data_complex + n * Ngrid[0], workspace_complex + n * Ngrid[0]);
 
-      int dimC[3]  = {NgridY, Ngridz, NgridX};
+      int dimC[3]  = {Ngrid[1], Ngridz, Ngrid[0]};
       int permC[3] = {2, 1, 0};
 
       remap(workspace_complex, dimC, second_transposed_firstcol, second_transposed_ncol, data_complex, permC, transposed_firstcol,
@@ -555,9 +550,9 @@ void mpi_fft_columns::fft(fft_real *data, fft_real *workspace, int forward)
 
       /* do inverse FFT in 'data' */
       for(n = 0; n < transposed_ncol; n++)
-        FFTW(execute_dft)(backward_plan_ydir, data_complex + n * NgridY, workspace_complex + n * NgridY);
+        FFTW(execute_dft)(backward_plan_ydir, data_complex + n * Ngrid[1], workspace_complex + n * Ngrid[1]);
 
-      int dimD[3]  = {NgridX, Ngridz, NgridY};
+      int dimD[3]  = {Ngrid[0], Ngridz, Ngrid[1]};
       int permD[3] = {0, 2, 1};
 
       remap(workspace_complex, dimD, transposed_firstcol, transposed_ncol, data_complex, permD, firstcol_XY, ncol_XY,

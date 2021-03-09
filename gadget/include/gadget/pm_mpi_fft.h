@@ -12,6 +12,7 @@
 #ifndef PM_MPI_FFT_H
 #define PM_MPI_FFT_H
 
+#include <array>
 #include <vector>
 #include "gadget/setcomm.h"
 #include "gadgetconfig.h"
@@ -38,9 +39,9 @@ extern template class std::vector<int>;
 
 struct fft_plan_slabs
 {
-  fft_plan_slabs(int ntask, int ngridx, int ngridy, int ngridz);
+  fft_plan_slabs(int ntask, std::array<int, 3> ngrid);
 
-  int NgridX, NgridY, NgridZ;
+  std::array<int, 3> Ngrid;
   int Ngridz, Ngrid2;
 
   FFTW(plan) forward_plan_zdir;
@@ -63,9 +64,9 @@ struct fft_plan_slabs
 };
 struct fft_plan_columns
 {
-  fft_plan_columns(int ntask, int ngridx, int ngridy, int ngridz);
+  fft_plan_columns(int ntask, std::array<int, 3> ngrid);
 
-  int NgridX, NgridY, NgridZ;
+  std::array<int, 3> Ngrid;
   int Ngridz, Ngrid2;
 
   FFTW(plan) forward_plan_zdir;
@@ -109,7 +110,7 @@ class mpi_fft_slabs : public setcomm, public fft_plan_slabs
   void transposeB(fft_real *field, fft_real *scratch);
 
  public:
-  mpi_fft_slabs(MPI_Comm comm, int nx, int ny, int nz);
+  mpi_fft_slabs(MPI_Comm comm, std::array<int, 3> n);
   void fft(fft_real *data, fft_real *workspace, int forward);
 };
 /* Column based fft */
@@ -130,7 +131,7 @@ class mpi_fft_columns : public setcomm, public fft_plan_columns
   void swap13back(fft_real *data, fft_real *out);
 
  public:
-  mpi_fft_columns(MPI_Comm comm, int nx, int ny, int nz);
+  mpi_fft_columns(MPI_Comm comm, std::array<int, 3> n);
   void fft(fft_real *data, fft_real *workspace, int forward);
 };
 
