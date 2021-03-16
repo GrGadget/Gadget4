@@ -13,6 +13,7 @@
 
 #include <array>
 #include <complex>
+#include <limits>  // numeric_limits
 #include <memory>  // unique_ptr
 #include <tuple>
 #include <vector>
@@ -20,12 +21,9 @@ extern template class std::vector<size_t>;
 
 #include "../data/simparticles.h"  // simparticles
 #include "gadget/constants.h"      // MAXLEN_PATH_EXTRA
-#include "gadget/dtypes.h"         // LONG_X
+#include "gadget/dtypes.h"         // MyIntPosType
+#include "gadget/pm_mpi_fft.h"     // pm_mpi_fft
 #include "gadgetconfig.h"
-
-#include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
-
-#define INTCELL ((~((MyIntPosType)0)) / PMGRID + 1)
 
 class pm_periodic :
 
@@ -35,13 +33,26 @@ class pm_periodic :
     public mpi_fft_slabs
 #endif
 {
+  const MyIntPosType INTCELL;
+
  public:
   pm_periodic(MPI_Comm comm, std::array<int, 3> ngrid)
+      :
 #ifdef FFT_COLUMN_BASED
-      : mpi_fft_columns(comm, ngrid), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+        mpi_fft_columns(comm, ngrid),
+        Sndpm_count(NTask),
+        Sndpm_offset(NTask),
+        Rcvpm_count(NTask),
+        Rcvpm_offset(NTask)
 #else
-      : mpi_fft_slabs(comm, ngrid), Sndpm_count(NTask), Sndpm_offset(NTask), Rcvpm_count(NTask), Rcvpm_offset(NTask)
+        mpi_fft_slabs(comm, ngrid),
+        Sndpm_count(NTask),
+        Sndpm_offset(NTask),
+        Rcvpm_count(NTask),
+        Rcvpm_offset(NTask)
 #endif
+        ,
+        INTCELL{std::numeric_limits<MyIntPosType>::max() / Ngrid[0] + 1}
   {
   }
 
@@ -111,13 +122,14 @@ class pm_periodic :
   }
   double k_fundamental(int dim) const noexcept
   {
-    double d = Ngrid[dim] * BoxSize / PMGRID;
+    double d = BoxSize;  // double d = Ngrid[dim] * BoxSize / PMGRID;
     return 2.0 * M_PI / d;
   }
   double green_function(std::array<int, 3> mode) const;
 
   template <typename part_t>
-  static auto coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
+  auto coordinates(const part_t &P, int fold_fact = 1 /*for power
+  spectrum computations only*/)const
   {
     std::array<int, 3> slab;
     for(int i = 0; i < 3; ++i)
@@ -126,7 +138,8 @@ class pm_periodic :
   }
 
   template <typename part_t>
-  static auto cell_coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum computations only*/)
+  auto cell_coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum
+    computations only*/) const
   {
     std::array<double, 3> dx;
     for(int i = 0; i < 3; ++i)

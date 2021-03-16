@@ -73,8 +73,8 @@ void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
   BoxSize = boxsize;
   Sp      = Sp_ptr;
 
-  Sp->Asmth[0] = ASMTH * BoxSize / PMGRID;  // TODO: not here
-  Sp->Rcut[0]  = RCUT * Sp->Asmth[0];       // TODO: not here
+  Sp->Asmth[0] = ASMTH * BoxSize / Ngrid[0];  // TODO: not here
+  Sp->Rcut[0]  = RCUT * Sp->Asmth[0];         // TODO: not here
 
   /* Set up the FFTW-3 plan files. */
   int ndimx[1] = {Ngrid[0]}; /* dimension of the 1D transforms */
@@ -1641,7 +1641,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
 #endif
 
-  const double d = BoxSize / PMGRID;
+  const double d = BoxSize / Ngrid[0];
   fac *= 1 / (2 * d); /* for finite differencing */
 
 #ifndef FFT_COLUMN_BASED
@@ -1853,7 +1853,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
  */
 void pm_periodic::pmforce_setup_tallbox_kernel(void)
 {
-  double d = BoxSize / PMGRID;
+  double d = BoxSize / Ngrid[0];
 
   /* now set up kernel and its Fourier transform */
 
@@ -2132,13 +2132,13 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
   MPI_Allreduce(MPI_IN_PLACE, &mass2, 1, MPI_DOUBLE, MPI_SUM, Communicator);
   MPI_Allreduce(MPI_IN_PLACE, &count, 1, MPI_DOUBLE, MPI_SUM, Communicator);
 
-  double d     = BoxSize / PMGRID;
+  double d     = BoxSize / Ngrid[0];
   double dhalf = 0.5 * d;
 
   double fac = 1.0 / mass;
 
-  double K0     = 2 * M_PI / BoxSize;                                                        /* minimum k */
-  double K1     = 2 * M_PI / BoxSize * (POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC * PMGRID / 2); /* maximum k that can be measured */
+  double K0     = 2 * M_PI / BoxSize;                                                          /* minimum k */
+  double K1     = 2 * M_PI / BoxSize * (POWERSPEC_FOLDFAC * POWERSPEC_FOLDFAC * Ngrid[0] / 2); /* maximum k that can be measured */
   double binfac = BINS_PS / (log(K1) - log(K0));
 
   double kfacx = 2.0 * M_PI * LONG_X / BoxSize;
@@ -2305,7 +2305,7 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
       // fprintf(fd, "%g\n", All.Time);
       fprintf(fd, "%d\n", count_non_zero_bins);
       fprintf(fd, "%g\n", BoxSize);
-      fprintf(fd, "%d\n", (int)(PMGRID));
+      fprintf(fd, "%d\n", (int)(Ngrid[0]));
       // if(All.ComovingIntegrationOn)
       //  fprintf(fd, "%g\n", All.ComovingIntegrationOn > 0 ? linear_growth_factor(All.Time, 1.0) : 1.0);
 
@@ -2382,7 +2382,7 @@ void pm_periodic::compute_potential_kspace()
 double pm_periodic::green_function(std::array<int, 3> mode) const
 {
   const double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
-  const double dhalf  = 0.5 * BoxSize / PMGRID;
+  const double dhalf  = 0.5 * BoxSize / Ngrid[0];
   std::array<double, 3> k;
   double k2{0.0};
 
