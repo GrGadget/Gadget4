@@ -2421,7 +2421,8 @@ double pm_periodic::green_function(std::array<int, 3> mode) const
             double fx = k[i] * dhalf;
             ff *= fx / std::sin(fx);
           }
-      deconv = ff * ff * ff * ff;
+      // deconv = ff * ff * ff * ff;
+      deconv = ff*ff; // CIC is 2nd order
       smth *= deconv; /* deconvolution */
     }
 
