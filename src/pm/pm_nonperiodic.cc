@@ -23,17 +23,18 @@
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
+#include "../gravtree/gravtree.h"
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../pm/pm.h"
-#include "../pm/pm_mpi_fft.h"
 #include "../pm/pm_nonperiodic.h"
-#include "../src/gravtree/gravtree.h"
 #include "../system/system.h"
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
+#include "gadget/pm_mpi_fft.h"
 #include "gadget/timebindata.h"
+#include "gadget/utils.h"  // subdivide_evenly
 
 /*! This function determines the particle extension of all particles, and for
  *  those types selected with PLACEHIGHRESREGION if this is used, and then
@@ -291,8 +292,8 @@ void pm_nonperiodic::pm_init_nonperiodic(simparticles *Sp_ptr)
   int ndim[1] = {GRID}; /* dimension of the 1D transforms */
 
   /* temporarily allocate some arrays to make sure that out-of-place plans are created */
-  rhogrid   = (fft_real *)Mem.mymalloc("rhogrid", GRID2 * sizeof(fft_real));
-  forcegrid = (fft_real *)Mem.mymalloc("forcegrid", GRID2 * sizeof(fft_real));
+  rhogrid   = (fft_real *)Mem.mymalloc("rhogrid", Ngrid2 * sizeof(fft_real));
+  forcegrid = (fft_real *)Mem.mymalloc("forcegrid", Ngrid2 * sizeof(fft_real));
 
 #ifdef DOUBLEPRECISION_FFTW
   int alignflag = 0;
@@ -301,35 +302,35 @@ void pm_nonperiodic::pm_init_nonperiodic(simparticles *Sp_ptr)
   int alignflag = FFTW_UNALIGNED;
 #endif
 #ifndef FFT_COLUMN_BASED
-  int stride = GRIDz;
+  int stride = Ngridz;
 #else
   int stride    = 1;
 #endif
 
-  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndim, 1, rhogrid, 0, 1, GRID2, (fft_complex *)forcegrid, 0, 1, GRIDz,
+  forward_plan_zdir = FFTW(plan_many_dft_r2c)(1, ndim, 1, rhogrid, 0, 1, Ngrid2, (fft_complex *)forcegrid, 0, 1, Ngridz,
                                               FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  forward_plan_xdir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRID, (fft_complex *)forcegrid, 0,
-                                          stride, GRIDz * GRID, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_xdir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, Ngridz * GRID, (fft_complex *)forcegrid, 0,
+                                          stride, Ngridz * GRID, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  forward_plan_ydir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRID, (fft_complex *)forcegrid, 0,
-                                          stride, GRIDz * GRID, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  forward_plan_ydir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, Ngridz * GRID, (fft_complex *)forcegrid, 0,
+                                          stride, Ngridz * GRID, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndim, 1, (fft_complex *)rhogrid, 0, 1, GRIDz, forcegrid, 0, 1, GRID2,
+  backward_plan_zdir = FFTW(plan_many_dft_c2r)(1, ndim, 1, (fft_complex *)rhogrid, 0, 1, Ngridz, forcegrid, 0, 1, Ngrid2,
                                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  backward_plan_xdir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRID, (fft_complex *)forcegrid, 0,
-                                           stride, GRIDz * GRID, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_xdir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, Ngridz * GRID, (fft_complex *)forcegrid, 0,
+                                           stride, Ngridz * GRID, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
-  backward_plan_ydir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, GRIDz * GRID, (fft_complex *)forcegrid, 0,
-                                           stride, GRIDz * GRID, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
+  backward_plan_ydir = FFTW(plan_many_dft)(1, ndim, 1, (fft_complex *)rhogrid, 0, stride, Ngridz * GRID, (fft_complex *)forcegrid, 0,
+                                           stride, Ngridz * GRID, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_DESTROY_INPUT | alignflag);
 
   Mem.myfree(forcegrid);
   Mem.myfree(rhogrid);
 
 #ifndef FFT_COLUMN_BASED
 
-  maxfftsize = largest_x_slab * GRID * ((size_t)GRID2);
+  maxfftsize = largest_x_slab * GRID * ((size_t)Ngrid2);
 
 #else
 
@@ -373,7 +374,7 @@ void pm_nonperiodic::pmforce_nonperiodic_zoom_optimized_prepare_density(int grnr
   int ngrid = 0;
 
 #ifdef FFT_COLUMN_BASED
-  int columns         = GRIDX * GRIDY;
+  int columns         = Ngrid[0] * Ngrid[1];
   int avg             = (columns - 1) / NTask + 1;
   int exc             = NTask * avg - columns;
   int tasklastsection = NTask - exc;
@@ -490,10 +491,10 @@ void pm_nonperiodic::pmforce_nonperiodic_zoom_optimized_prepare_density(int grnr
       localfield_globalindex[num_field_points] = part[part_sortindex[i]].globalindex;
 
 #ifndef FFT_COLUMN_BASED
-      int slab = part[part_sortindex[i]].globalindex / (GRID * GRID2);
+      int slab = part[part_sortindex[i]].globalindex / (GRID * Ngrid2);
       int task = slab_to_task[slab];
 #else
-      int task, column = part[part_sortindex[i]].globalindex / (GRID2);
+      int task, column = part[part_sortindex[i]].globalindex / (Ngrid2);
 
       if(column < pivotcol)
         task = column / avg;
@@ -596,9 +597,9 @@ void pm_nonperiodic::pmforce_nonperiodic_zoom_optimized_prepare_density(int grnr
             {
               /* determine offset in local FFT slab */
 #ifndef FFT_COLUMN_BASED
-              large_array_offset offset = import_globalindex[i] - first_slab_x_of_task[ThisTask] * GRID * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - first_slab_x_of_task[ThisTask] * GRID * ((large_array_offset)Ngrid2);
 #else
-              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)Ngrid2);
 #endif
               rhogrid[offset] += import_data[i];
             }
@@ -663,9 +664,9 @@ void pm_nonperiodic::pmforce_nonperiodic_zoom_optimized_readout_forces_or_potent
           for(large_numpart_type i = 0; i < localfield_recvcount[recvTask]; i++)
             {
 #ifndef FFT_COLUMN_BASED
-              large_array_offset offset = import_globalindex[i] - first_slab_x_of_task[ThisTask] * GRID * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - first_slab_x_of_task[ThisTask] * GRID * ((large_array_offset)Ngrid2);
 #else
-              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)GRID2);
+              large_array_offset offset = import_globalindex[i] - firstcol_XY * ((large_array_offset)Ngrid2);
 #endif
               import_data[i] = grid[offset];
             }
@@ -748,7 +749,7 @@ void pm_nonperiodic::pmforce_nonperiodic_uniform_optimized_prepare_density(int g
   Rcvpm_offset = (size_t *)Mem.mymalloc("Rcvpm_offset", NTask * sizeof(size_t));
 
 #ifdef FFT_COLUMN_BASED
-  int columns = GRIDX * GRIDY;
+  int columns = Ngrid[0] * Ngrid[1];
   int avg = (columns - 1) / NTask + 1;
   int exc = NTask * avg - columns;
   int tasklastsection = NTask - exc;
@@ -996,7 +997,7 @@ void pm_nonperiodic::pmforce_nonperiodic_uniform_optimized_prepare_density(int g
   /* bin particle data onto mesh, in multi-threaded fashion */
   {
     int first_y, count_y;
-    subdivide_evenly(GRID, 1, 0, &first_y, &count_y);
+    subdivide_evenly(Ngrid[0], 1, 0, &first_y, &count_y);
     int last_y = first_y + count_y - 1;
 
     for(size_t i = 0; i < nimport; i++)
@@ -1225,7 +1226,7 @@ void pm_nonperiodic::pmforce_nonperiodic_uniform_optimized_readout_forces_or_pot
     grid = forcegrid;
 
 #ifdef FFT_COLUMN_BASED
-  int columns = GRIDX * GRIDY;
+  int columns = Ngrid[0] * Ngrid[1];
   int avg = (columns - 1) / NTask + 1;
   int exc = NTask * avg - columns;
   int tasklastsection = NTask - exc;
@@ -1474,16 +1475,16 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
   workspace = forcegrid;
 
 #ifndef FFT_COLUMN_BASED
-  fft_of_rhogrid = (fft_complex *)&rhogrid[0];
+  fft_of_rhogrid = (fft_complex *)rhogrid;
 #else
-  fft_of_rhogrid = (fft_complex *)&workspace[0];
+  fft_of_rhogrid = (fft_complex *)workspace;
 #endif
 
   /* Do the FFT of the density field */
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&&rhogrid[0], &workspace[0], 1);
+  fft(rhogrid, workspace, 1);
 #else
-  my_column_based_fft(&rhogrid, workspace, 1); /* result is in workspace, not in rhogrid ! */
+  fft(rhogrid, workspace, 1); /* result is in workspace, not in rhogrid ! */
 #endif
 
   /* multiply with kernel in Fourier space */
@@ -1497,12 +1498,12 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
 #else
   for(int x = 0; x < GRID; x++)
     for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
-      for(int z = 0; z < GRIDz; z++)
+      for(int z = 0; z < Ngridz; z++)
         {
 #endif
 
 #ifndef FFT_COLUMN_BASED
-      large_array_offset ip = ((large_array_offset)GRIDz) * (GRID * (y - slabstart_y) + x) + z;
+      large_array_offset ip = ((large_array_offset)Ngridz) * (GRID * (y - slabstart_y) + x) + z;
 #endif
 
       double re = fft_of_rhogrid[ip][0] * fft_of_kernel[grnr][ip][0] - fft_of_rhogrid[ip][1] * fft_of_kernel[grnr][ip][1];
@@ -1515,9 +1516,9 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
     /* Do the inverse FFT to get the potential */
 
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&rhogrid, workspace, -1);
+  fft(rhogrid, workspace, -1);
 #else
-  my_column_based_fft(&workspace, rhogrid, -1);
+  fft(workspace, rhogrid, -1);
 #endif
 
   /* Now rhogrid holds the potential */
@@ -1538,7 +1539,7 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
       /* we do the x component last, because for differencing the potential in the x-direction, we need to construct the transpose */
 #ifndef FFT_COLUMN_BASED
       if(dim == 0)
-        my_slab_transposeA(&rhogrid, forcegrid); /* compute the transpose of the potential field for finite differencing */
+        transposeA(rhogrid, forcegrid); /* compute the transpose of the potential field for finite differencing */
 
       for(int y = 2; y < GRID / 2 - 2; y++)
         for(int x = 0; x < nslab_x; x++)
@@ -1576,7 +1577,7 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
               }
 
       if(dim == 0)
-        my_slab_transposeB(&forcegrid, rhogrid); /* reverse the transpose from above */
+        transposeB(forcegrid, rhogrid); /* reverse the transpose from above */
 #else
       fft_real *scratch;
 
@@ -1586,9 +1587,9 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
           memcpy(scratch, rhogrid, fftsize * sizeof(fft_real));
 
           if(dim == 1)
-            my_fft_swap23(&scratch, forcegrid);
+            swap23(scratch, forcegrid);
           else
-            my_fft_swap13(&scratch, forcegrid);
+            swap13(scratch, forcegrid);
         }
 
       int ncols;
@@ -1610,8 +1611,8 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
             }
           else
             {
-              forcep = &forcegrid[GRID2 * i];
-              potp = &rhogrid[GRID2 * i];
+              forcep = &forcegrid[Ngrid2 * i];
+              potp = &rhogrid[Ngrid2 * i];
             }
 
           for(int z = 2; z < GRID / 2 - 2; z++)
@@ -1628,9 +1629,9 @@ int pm_nonperiodic::pmforce_nonperiodic(int grnr)
       if(dim != 2)
         {
           if(dim == 1)
-            my_fft_swap23back(&scratch, forcegrid);
+            swap23back(scratch, forcegrid);
           else
-            my_fft_swap13back(&scratch, forcegrid);
+            swap13back(scratch, forcegrid);
 
           Mem.myfree(scratch);
         }
@@ -1729,10 +1730,10 @@ void pm_nonperiodic::pm_setup_nonperiodic_kernel(void)
     fft_real *workspc = (fft_real *)Mem.mymalloc("workspc", maxfftsize * sizeof(fft_real));
     /* Do the FFT of the kernel */
 #ifndef FFT_COLUMN_BASED
-    my_slab_based_fft(&kernel[0], workspc, 1);
+    fft((fft_real *)kernel, workspc, 1);
 #else
-    my_column_based_fft(&kernel[0], workspc, 1); /* result is in workspace, not in kernel */
-    memcpy(kernel[0], workspc, maxfftsize * sizeof(fft_real));
+    fft((fft_real *)kernel, workspc, 1); /* result is in workspace, not in kernel */
+    memcpy(kernel, workspc, maxfftsize * sizeof(fft_real));
 #endif
     Mem.myfree(workspc);
   }
@@ -1797,9 +1798,9 @@ void pm_nonperiodic::pm_setup_nonperiodic_kernel(void)
     fft_real *workspc = (fft_real *)Mem.mymalloc("workspc", maxfftsize * sizeof(fft_real));
     /* Do the FFT of the kernel */
 #ifndef FFT_COLUMN_BASED
-    my_slab_based_fft(&kernel[1], workspc, 1);
+    fft(&kernel[1], workspc, 1);
 #else
-    my_column_based_fft(&kernel[1], workspc, 1); /* result is in workspace, not in kernel */
+    fft(&kernel[1], workspc, 1); /* result is in workspace, not in kernel */
     memcpy(kernel[1], workspc, maxfftsize * sizeof(fft_real));
 #endif
     Mem.myfree(workspc);
@@ -1813,14 +1814,14 @@ void pm_nonperiodic::pm_setup_nonperiodic_kernel(void)
   for(large_array_offset ip = 0; ip < second_transposed_ncells; ip++)
     {
       large_array_offset ipcell = ip + transposed_firstcol * GRID;
-      int y                     = ipcell / (GRID * GRIDz);
-      int yr                    = ipcell % (GRID * GRIDz);
+      int y                     = ipcell / (GRID * Ngridz);
+      int yr                    = ipcell % (GRID * Ngridz);
       int z                     = yr / GRID;
       int x                     = yr % GRID;
 #else
   for(int x = 0; x < GRID; x++)
     for(int y = slabstart_y; y < slabstart_y + nslab_y; y++)
-      for(int z = 0; z < GRIDz; z++)
+      for(int z = 0; z < Ngridz; z++)
         {
 #endif
       double kx, ky, kz;
@@ -1864,7 +1865,7 @@ void pm_nonperiodic::pm_setup_nonperiodic_kernel(void)
           ff        = ff * ff * ff * ff;
 
 #ifndef FFT_COLUMN_BASED
-          large_array_offset ip = ((large_array_offset)GRIDz) * (GRID * (y - slabstart_y) + x) + z;
+          large_array_offset ip = ((large_array_offset)Ngridz) * (GRID * (y - slabstart_y) + x) + z;
 #endif
 #if !defined(PERIODIC)
           fft_of_kernel[0][ip][0] *= ff;
