@@ -32,13 +32,27 @@ typedef fftwf_complex fft_complex;
 #include "../data/simparticles.h"
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
-class ngenic : public pm_mpi_fft
+class ngenic :
+#ifdef FFT_COLUMN_BASED
+    public mpi_fft_columns
+#else
+    public mpi_fft_slabs
+#endif
 {
  private:
   simparticles *Sp;
 
  public:
-  ngenic(MPI_Comm comm, simparticles *Sp_ptr) : pm_mpi_fft{comm, NGENIC, NGENIC, NGENIC} { Sp = Sp_ptr; }
+  ngenic(MPI_Comm comm, simparticles *Sp_ptr)
+      :
+#ifdef FFT_COLUMN_BASED
+        mpi_fft_columns(comm, {NGENIC, NGENIC, NGENIC})
+#else
+        mpi_fft_slabs(comm, {NGENIC, NGENIC, NGENIC})
+#endif
+  {
+    Sp = Sp_ptr;
+  }
 
  public:
   void ngenic_displace_particles(void);

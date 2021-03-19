@@ -2386,7 +2386,7 @@ double pm_periodic::green_function(std::array<int, 3> mode) const
 #else
   const double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
 #endif
-  const double dhalf  = 0.5 * BoxSize / Ngrid[0];
+  const double dhalf = 0.5 * BoxSize / Ngrid[0];
   std::array<double, 3> k;
   double k2{0.0};
 
@@ -2411,8 +2411,8 @@ double pm_periodic::green_function(std::array<int, 3> mode) const
             ff *= fx / std::sin(fx);
           }
       // deconv = ff * ff * ff * ff;
-      deconv = ff*ff; // CIC is 2nd order
-      smth *= deconv; /* deconvolution */
+      deconv = ff * ff;  // CIC is 2nd order
+      smth *= deconv;    /* deconvolution */
     }
 
 #ifdef GRAVITY_TALLBOX

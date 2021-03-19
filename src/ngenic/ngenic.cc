@@ -525,9 +525,9 @@ void ngenic::ngenic_compute_transform_of_source_potential(fft_real *pot)
   fft_real *workspace = (fft_real *)Mem.mymalloc("workspace", maxfftsize * sizeof(fft_real));
 
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&pot[0], &workspace[0], +1);
+  fft(&pot[0], &workspace[0], +1);
 #else
-  my_column_based_fft(pot, workspace, +1);  // result is in workspace, not in Phi2
+  fft(pot, workspace, +1);  // result is in workspace, not in Phi2
   memcpy(pot, workspace, maxfftsize * sizeof(fft_real));
 #endif
 
@@ -653,9 +653,9 @@ void ngenic::ngenic_get_derivate_from_fourier_field(int axes1, int axes2, fft_co
   fft_real *workspace = (fft_real *)Mem.mymalloc("workspace", maxfftsize * sizeof(fft_real));
 
 #ifndef FFT_COLUMN_BASED
-  my_slab_based_fft(&fft_of_grid[0], &workspace[0], -1);
+  fft(&fft_of_grid[0], &workspace[0], -1);
 #else
-  my_column_based_fft(fft_of_grid, workspace, -1);  // result is in workspace
+  fft((fft_real *)fft_of_grid, workspace, -1);  // result is in workspace
   memcpy(fft_of_grid, workspace, maxfftsize * sizeof(fft_real));
 #endif
 
