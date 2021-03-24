@@ -26,6 +26,7 @@
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
 #include "../data/simparticles.h"
+#include "../data/simparticles.h"  // simparticles_handler
 #include "../fmm/fmm.h"
 #include "../fof/fof.h"
 #include "../gravity/ewald.h"
@@ -231,7 +232,14 @@ void sim::begrun1(const char *parameterFile)
      All.RestartFlag == RST_POWERSPEC)
     {
 #ifdef PERIODIC
-      PM.pm_init_periodic(&Sp, All.BoxSize);
+      Sp.Asmth[0] = ASMTH * All.BoxSize / PM.Ngrid[0];
+      Sp.Rcut[0]  = RCUT * Sp.Asmth[0];
+
+#ifdef PM_ONLY
+      PM.pm_init_periodic(new gadget::pm::simparticles_handler{Sp}, All.BoxSize, 0.0);
+#else
+      PM.pm_init_periodic(new gadget::pm::simparticles_handler{Sp}, All.BoxSize, Sp.Asmth[0]);
+#endif
 #ifdef PLACEHIGHRESREGION
       PM.pm_init_nonperiodic(&Sp);
 #endif

@@ -16,16 +16,18 @@
 #include <sys/stat.h>  // mkdir
 #include <algorithm>   // sort, fill
 #include <cmath>       // sin, exp
+#include <cstring>     // memcpy
 #include <numeric>     // accumulate
 #include <tuple>
 #include <vector>
 
 #include "../pm/pm_periodic.h"
-#include "gadget/constants.h"      // NTYPES
-#include "gadget/dtypes.h"         // MyFloat
-#include "gadget/macros.h"         // Terminate
-#include "gadget/mpi_utils.h"      // myMPI_Sendrecv
-#include "gadget/particle_data.h"  // particle_data
+#include "gadget/constants.h"         // NTYPES
+#include "gadget/dtypes.h"            // MyFloat
+#include "gadget/macros.h"            // Terminate
+#include "gadget/mpi_utils.h"         // myMPI_Sendrecv
+#include "gadget/particle_handler.h"  // particle_handler
+// #include "gadget/particle_data.h"  // particle_data
 
 extern template class std::vector<MyFloat>;
 extern template class std::vector<size_t>;
@@ -68,13 +70,11 @@ MyFloat pm_periodic::partbuf::Mass;
  *
  *  Some auxiliary variables for bookkeeping are also initialized.
  */
-void pm_periodic::pm_init_periodic(simparticles *Sp_ptr, double boxsize)
+void pm_periodic::pm_init_periodic(gadget::pm::particle_handler *Sp_ptr, double boxsize, double asmth)
 {
+  asmth2  = asmth * asmth;
   BoxSize = boxsize;
-  Sp      = Sp_ptr;
-
-  Sp->Asmth[0] = ASMTH * BoxSize / Ngrid[0];  // TODO: not here
-  Sp->Rcut[0]  = RCUT * Sp->Asmth[0];         // TODO: not here
+  Sp.reset(Sp_ptr);
 
   /* Set up the FFTW-3 plan files. */
   int ndimx[1] = {Ngrid[0]}; /* dimension of the 1D transforms */
@@ -161,8 +161,9 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   int level, recvTask;
   MPI_Status status;
 
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
+  const int NSource                    = Sp->size();
   const large_numpart_type num_on_grid = ((large_numpart_type)NSource) * 8;
   part.resize(num_on_grid);
   std::vector<large_numpart_type> part_sortindex(num_on_grid);
@@ -178,10 +179,8 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   /* determine the cells each particle accesses */
   for(int idx = 0; idx < NSource; idx++)
     {
-      int i = Sp->get_active_index(idx);
-
       int fact                         = pw_fold_factor(mode);
-      auto [slab_x, slab_y, slab_z]    = coordinates(P[i], fact);
+      auto [slab_x, slab_y, slab_z]    = grid_coordinates(Sp->get_position(idx), fact);
       large_numpart_type index_on_grid = ((large_numpart_type)idx) * 8;
 
       for(int xx = 0; xx < 2; xx++)
@@ -194,7 +193,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
 
               large_array_offset offset = FI(slab_xx, slab_yy, slab_zz);
 
-              part[index_on_grid].partindex   = (i << 3) + (xx << 2) + (yy << 1) + zz;
+              part[index_on_grid].partindex   = (idx << 3) + (xx << 2) + (yy << 1) + zz;
               part[index_on_grid].globalindex = offset;
               part_sortindex[index_on_grid]   = index_on_grid;
               index_on_grid++;
@@ -275,13 +274,12 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
     {
       int fact          = pw_fold_factor(mode);
       int pindex        = (part[i].partindex >> 3);
-      auto [dx, dy, dz] = cell_coordinates(P[pindex], fact);
+      auto [dx, dy, dz] = cell_coordinates(Sp->get_position(pindex), fact);
 
-      double weight = P[pindex].getMass();
+      double weight = Sp->get_mass(pindex);
 
       if(mode) /* only for power spectrum calculation */
-        if(typelist[P[pindex].getType()] == 0)
-          continue;
+        continue;
 
       localfield_data[part[i + 0].localindex] += weight * (1.0 - dx) * (1.0 - dy) * (1.0 - dz);
       localfield_data[part[i + 1].localindex] += weight * (1.0 - dx) * (1.0 - dy) * dz;
@@ -357,9 +355,10 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
  */
 void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim, const std::vector<part_slab_data> &part,
                                                                      std::vector<large_array_offset> &localfield_globalindex,
-                                                                     std::vector<fft_real> &localfield_data)
+                                                                     std::vector<fft_real> &localfield_data,
+                                                                     std::vector<std::array<double, 3>> &GravPM)
 {
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
 #ifdef EVALPOTENTIAL
 #ifdef GRAVITY_TALLBOX
@@ -425,18 +424,19 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
     }
 
   /* read out the force/potential values, which all have been assembled in localfield_data */
+  const int NSource = Sp->size();
   for(int idx = 0; idx < NSource; idx++)
     {
-      int i = Sp->get_active_index(idx);
+      // int i = Sp->get_active_index(idx);
 
-#if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
-      if(!Sp->TimeBinSynchronized[P[i].TimeBinGrav])
-        continue;
-#endif
+      // #if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
+      //       if(!Sp->TimeBinSynchronized[P[i].TimeBinGrav])
+      //         continue;
+      // #endif
 
       large_numpart_type j = idx * 8;
 
-      auto [dx, dy, dz] = cell_coordinates(P[i]);
+      auto [dx, dy, dz] = cell_coordinates(Sp->get_position(idx));
 
       double value = localfield_data[part[j + 0].localindex] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                      localfield_data[part[j + 1].localindex] * (1.0 - dx) * (1.0 - dy) * dz +
@@ -449,21 +449,17 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
 
       if(dim < 0)
         {
-#ifdef EVALPOTENTIAL
-#if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
-          P[i].PM_Potential += value * fac;
-#else
-          P[i].Potential += value * fac;
-#endif
-#endif
+          // #ifdef EVALPOTENTIAL
+          // #if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
+          //           P[i].PM_Potential += value * fac;
+          // #else
+          //           P[i].Potential += value * fac;
+          // #endif
+          // #endif
         }
       else
         {
-#if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
-          Sp->P[i].GravPM[dim] += value;
-#else
-          Sp->P[i].GravAccel[dim] += value;
-#endif
+          GravPM[idx][dim] += value;
         }
     }
 }
@@ -477,7 +473,7 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
 void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin)
 {
   std::vector<partbuf> partout;
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
   /* determine the slabs/columns each particles accesses */
 
@@ -487,16 +483,16 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
       for(int j = 0; j < NTask; j++)
         Sndpm_count[j] = 0;
 
+      const int NSource = Sp->size();
       for(int idx = 0; idx < NSource; idx++)
         {
-          int i = Sp->get_active_index(idx);
+          // int i = Sp->get_active_index(idx);
 
           if(mode) /* only for power spectrum calculation */
-            if(typelist[P[i].getType()] == 0)
-              continue;
+            continue;
 
           int fact = pw_fold_factor(mode);
-          auto [slab_x, slab_y, slab_z] = coordinates(P[i], fact);
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx), fact);
           int slab_xx = (slab_x + 1) % Ngrid[0];
 
           if(rep == 0)
@@ -515,16 +511,14 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
               int task1 = slab_to_task[slab_xx];
 
               size_t ind0 = Sndpm_offset[task0] + Sndpm_count[task0]++;
-              partout[ind0].Mass = P[i].getMass();
-              for(int j = 0; j < 3; j++)
-                partout[ind0].IntPos[j] = P[i].IntPos[j];
+              partout[ind0].Mass = Sp->get_mass(idx);
+              partout[ind0].IntPos = Sp->get_position(idx);
 
               if(task0 != task1)
                 {
                   size_t ind1 = Sndpm_offset[task1] + Sndpm_count[task1]++;
-                  partout[ind1].Mass = P[i].getMass();
-                  for(int j = 0; j < 3; j++)
-                    partout[ind1].IntPos[j] = P[i].IntPos[j];
+                  partout[ind1].Mass = Sp->get_mass(idx);
+                  partout[ind1].IntPos = Sp->get_position(idx);
                 }
             }
         }
@@ -576,8 +570,8 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
   for(size_t i = 0; i < partin.size(); i++)
     {
       int fact = pw_fold_factor(mode);
-      auto [slab_x, slab_y, slab_z] = coordinates(partin[i], fact);
-      auto [dx, dy, dz] = cell_coordinates(partin[i], fact);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(partin[i].IntPos, fact);
+      auto [dx, dy, dz] = cell_coordinates(partin[i].IntPos, fact);
 
       int slab_xx = (slab_x + 1) % Ngrid[0];
       int slab_yy = (slab_y + 1) % Ngrid[1];
@@ -612,7 +606,7 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
 void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin)
 {
   std::vector<partbuf> partout;
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
   /* determine the slabs/columns each particles accesses */
 
@@ -628,16 +622,16 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
       for(int j = 0; j < NTask; j++)
         Sndpm_count[j] = 0;
 
+      const int NSource = Sp->size();
       for(int idx = 0; idx < NSource; idx++)
         {
-          int i = Sp->get_active_index(idx);
+          // int i = Sp->get_active_index(idx);
 
           if(mode) /* only for power spectrum calculation */
-            if(typelist[P[i].getType()] == 0)
-              continue;
+            continue;
 
           int fact                      = pw_fold_factor(mode);
-          auto [slab_x, slab_y, slab_z] = coordinates(P[i], fact);
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx), fact);
 
           int slab_xx = slab_x + 1;
 
@@ -688,31 +682,27 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
             }
           else
             {
-              size_t ind0        = Sndpm_offset[task0] + Sndpm_count[task0]++;
-              partout[ind0].Mass = P[i].getMass();
-              for(int j = 0; j < 3; j++)
-                partout[ind0].IntPos[j] = P[i].IntPos[j];
+              size_t ind0          = Sndpm_offset[task0] + Sndpm_count[task0]++;
+              partout[ind0].Mass   = Sp->get_mass(idx);
+              partout[ind0].IntPos = Sp->get_position(idx);
 
               if(task1 != task0)
                 {
-                  size_t ind1        = Sndpm_offset[task1] + Sndpm_count[task1]++;
-                  partout[ind1].Mass = P[i].getMass();
-                  for(int j = 0; j < 3; j++)
-                    partout[ind1].IntPos[j] = P[i].IntPos[j];
+                  size_t ind1          = Sndpm_offset[task1] + Sndpm_count[task1]++;
+                  partout[ind1].Mass   = Sp->get_mass(idx);
+                  partout[ind1].IntPos = Sp->get_position(idx);
                 }
               if(task2 != task1 && task2 != task0)
                 {
-                  size_t ind2        = Sndpm_offset[task2] + Sndpm_count[task2]++;
-                  partout[ind2].Mass = P[i].getMass();
-                  for(int j = 0; j < 3; j++)
-                    partout[ind2].IntPos[j] = P[i].IntPos[j];
+                  size_t ind2          = Sndpm_offset[task2] + Sndpm_count[task2]++;
+                  partout[ind2].Mass   = Sp->get_mass(idx);
+                  partout[ind2].IntPos = Sp->get_position(idx);
                 }
               if(task3 != task0 && task3 != task1 && task3 != task2)
                 {
-                  size_t ind3        = Sndpm_offset[task3] + Sndpm_count[task3]++;
-                  partout[ind3].Mass = P[i].getMass();
-                  for(int j = 0; j < 3; j++)
-                    partout[ind3].IntPos[j] = P[i].IntPos[j];
+                  size_t ind3          = Sndpm_offset[task3] + Sndpm_count[task3]++;
+                  partout[ind3].Mass   = Sp->get_mass(idx);
+                  partout[ind3].IntPos = Sp->get_position(idx);
                 }
             }
         }
@@ -765,8 +755,8 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
   for(size_t i = 0; i < partin.size(); i++)
     {
       int fact                      = pw_fold_factor(mode);
-      auto [slab_x, slab_y, slab_z] = coordinates(partin[i], fact);
-      auto [dx, dy, dz]             = cell_coordinates(partin[i], fact);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(partin[i].IntPos, fact);
+      auto [dx, dy, dz]             = cell_coordinates(partin[i].IntPos, fact);
 
       int slab_xx = slab_x + 1;
       int slab_yy = slab_y + 1;
@@ -818,9 +808,12 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
 
 /* If dim<0, this function reads out the potential, otherwise Cartesian force components.
  */
-void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin)
+void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin,
+                                                                           std::vector<std::array<double, 3>> &GravPM
+
+)
 {
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
 #ifdef EVALPOTENTIAL
 #ifdef GRAVITY_TALLBOX
@@ -840,12 +833,12 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
   int exc = NTask * avg - columns;
   int tasklastsection = NTask - exc;
   int pivotcol = tasklastsection * avg;
-#endif
+#endif  // FFT_COLUMN_BASED
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      auto [slab_x, slab_y, slab_z] = coordinates(partin[i]);
-      auto [dx, dy, dz] = cell_coordinates(partin[i]);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(partin[i].IntPos);
+      auto [dx, dy, dz] = cell_coordinates(partin[i].IntPos);
       int slab_xx = (slab_x + 1) % Ngrid[0], slab_yy = (slab_y + 1) % Ngrid[1], slab_zz = (slab_z + 1) % Ngrid[2];
 
 #ifndef FFT_COLUMN_BASED
@@ -868,7 +861,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
                         grid[FI(slab_xx, slab_yy, slab_z)] * (dx) * (dy) * (1.0 - dz) +
                         grid[FI(slab_xx, slab_yy, slab_zz)] * (dx) * (dy) * (dz);
         }
-#else
+#else   // yes FFT_COLUMN_BASED
       int column0 = slab_x * Ngrid[1] + slab_y;
       int column1 = slab_x * Ngrid[1] + slab_yy;
       int column2 = slab_xx * Ngrid[1] + slab_y;
@@ -895,7 +888,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
         {
           flistin[i] += grid[FCxy(column3, slab_z)] * (dx) * (dy) * (1.0 - dz) + grid[FCxy(column3, slab_zz)] * (dx) * (dy) * (dz);
         }
-#endif
+#endif  // FFT_COLUMN_BASED
     }
 
   /* exchange the potential component data */
@@ -917,11 +910,12 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
   for(int j = 0; j < NTask; j++)
     Sndpm_count[j] = 0;
 
+  const int NSource = Sp->size();
   for(int idx = 0; idx < NSource; idx++)
     {
-      int i = Sp->get_active_index(idx);
+      // int i = Sp->get_active_index(idx);
 
-      auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
       int slab_xx = slab_x + 1;
 
       if(slab_xx >= Ngrid[0])
@@ -935,7 +929,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 
       if(task0 != task1)
         value += flistout[Sndpm_offset[task1] + Sndpm_count[task1]++];
-#else
+#else   // yes FFT_COLUMN_BASED
       int slab_yy = slab_y + 1;
 
       if(slab_yy >= Ngrid[1])
@@ -978,36 +972,34 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
 
       if(task3 != task0 && task3 != task1 && task3 != task2)
         value += flistout[Sndpm_offset[task3] + Sndpm_count[task3]++];
-#endif
+#endif  // FFT_COLUMN_BASED
 
-#if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
-      if(!Sp->TimeBinSynchronized[Sp->P[i].TimeBinGrav])
-        continue;
-#endif
+      // #if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
+      //       if(!Sp->TimeBinSynchronized[Sp->P[i].TimeBinGrav])
+      //         continue;
+      // #endif
 
       if(dim < 0)
         {
-#ifdef EVALPOTENTIAL
-#if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
-          Sp->P[i].PM_Potential += value * fac;
-#else
-          Sp->P[i].Potential += value * fac;
-#endif
-#endif
+          // #ifdef EVALPOTENTIAL
+          // #if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
+          //           Sp->P[i].PM_Potential += value * fac;
+          // #else
+          //           Sp->P[i].Potential += value * fac;
+          // #endif
+          // #endif
         }
       else
         {
-#if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
-          Sp->P[i].GravPM[dim] += value;
-#else
-          Sp->P[i].GravAccel[dim] += value;
-#endif
+          GravPM[idx][dim] += value;
         }
     }
 }
 
 #ifdef FFT_COLUMN_BASED
-void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_real *grid, int dim)
+void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_real *grid, int dim,
+
+                                                                           std::vector<std::array<double, 3>> &GravPM)
 {
   if(dim != 1)
     Terminate("bummer");
@@ -1019,7 +1011,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
 
   std::vector<partbuf> partin, partout;
 
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
   int columns = Ngrid[0] * Ngrid2;
   int avg = (columns - 1) / NTask + 1;
@@ -1033,11 +1025,12 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
       for(int j = 0; j < NTask; j++)
         send_count[j] = 0;
 
+      const int NSource = Sp->size();
       for(int idx = 0; idx < NSource; idx++)
         {
-          int i = Sp->get_active_index(idx);
+          // int i = Sp->get_active_index(idx);
 
-          auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
           int slab_xx = slab_x + 1;
 
           if(slab_xx >= Ngrid[0])
@@ -1088,28 +1081,22 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
           else
             {
               size_t ind0 = send_offset[task0] + send_count[task0]++;
-              for(int j = 0; j < 3; j++)
-                partout[ind0].IntPos[j] = P[i].IntPos[j];
+              partout[ind0].IntPos = Sp->get_position(idx);
 
               if(task1 != task0)
                 {
                   size_t ind1 = send_offset[task1] + send_count[task1]++;
-                  for(int j = 0; j < 3; j++)
-                    partout[ind1].IntPos[j] = P[i].IntPos[j];
+                  partout[ind1].IntPos = Sp->get_position(idx);
                 }
               if(task2 != task1 && task2 != task0)
                 {
                   size_t ind2 = send_offset[task2] + send_count[task2]++;
-
-                  for(int j = 0; j < 3; j++)
-                    partout[ind2].IntPos[j] = P[i].IntPos[j];
+                  partout[ind2].IntPos = Sp->get_position(idx);
                 }
               if(task3 != task0 && task3 != task1 && task3 != task2)
                 {
                   size_t ind3 = send_offset[task3] + send_count[task3]++;
-
-                  for(int j = 0; j < 3; j++)
-                    partout[ind3].IntPos[j] = P[i].IntPos[j];
+                  partout[ind3].IntPos = Sp->get_position(idx);
                 }
             }
         }
@@ -1158,8 +1145,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      auto [slab_x, slab_y, slab_z] = coordinates(partin[i]);
-      auto [dx, dy, dz] = cell_coordinates(partin[i]);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(partin[i].IntPos);
+      auto [dx, dy, dz] = cell_coordinates(partin[i].IntPos);
       int slab_xx = (slab_x + 1) % Ngrid[0], slab_yy = (slab_y + 1) % Ngrid[1], slab_zz = (slab_z + 1) % Ngrid[2];
 
       int column0 = slab_x * Ngrid2 + slab_z;
@@ -1208,11 +1195,12 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
     send_count[j] = 0;
 
   /* now assign to original points */
+  const int NSource = Sp->size();
   for(int idx = 0; idx < NSource; idx++)
     {
-      int i = Sp->get_active_index(idx);
+      // int i = Sp->get_active_index(idx);
 
-      auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
       int slab_xx = slab_x + 1;
 
       if(slab_xx >= Ngrid[0])
@@ -1261,20 +1249,19 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
       if(task3 != task0 && task3 != task1 && task3 != task2)
         value += flistout[send_offset[task3] + send_count[task3]++];
 
-#if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
-      if(!Sp->TimeBinSynchronized[Sp->P[i].TimeBinGrav])
-        continue;
-#endif
+      // #if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
+      //       if(!Sp->TimeBinSynchronized[Sp->P[i].TimeBinGrav])
+      //         continue;
+      // #endif
 
-#if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
-      Sp->P[i].GravPM[dim] += value;
-#else
-      Sp->P[i].GravAccel[dim] += value;
-#endif
+      GravPM[idx][dim] += value;
     }
 }
 
-void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim)
+void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim,
+                                                                           std::vector<std::array<double, 3>> &GravPM
+
+)
 {
   if(dim != 0)
     Terminate("bummer");
@@ -1287,7 +1274,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   std::vector<partbuf> partin, partout;
   // defined in the header
 
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
   int columns = Ngrid2 * Ngrid[1];
   int avg = (columns - 1) / NTask + 1;
@@ -1301,10 +1288,11 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
       for(int j = 0; j < NTask; j++)
         send_count[j] = 0;
 
+      const int NSource = Sp->size();
       for(int idx = 0; idx < NSource; idx++)
         {
-          int i = Sp->get_active_index(idx);
-          auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
+          // int i = Sp->get_active_index(idx);
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
 
           int slab_zz = slab_z + 1;
 
@@ -1356,28 +1344,22 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
           else
             {
               size_t ind0 = send_offset[task0] + send_count[task0]++;
-              for(int j = 0; j < 3; j++)
-                partout[ind0].IntPos[j] = P[i].IntPos[j];
+              partout[ind0].IntPos = Sp->get_position(idx);
 
               if(task1 != task0)
                 {
                   size_t ind1 = send_offset[task1] + send_count[task1]++;
-                  for(int j = 0; j < 3; j++)
-                    partout[ind1].IntPos[j] = P[i].IntPos[j];
+                  partout[ind1].IntPos = Sp->get_position(idx);
                 }
               if(task2 != task1 && task2 != task0)
                 {
                   size_t ind2 = send_offset[task2] + send_count[task2]++;
-
-                  for(int j = 0; j < 3; j++)
-                    partout[ind2].IntPos[j] = P[i].IntPos[j];
+                  partout[ind2].IntPos = Sp->get_position(idx);
                 }
               if(task3 != task0 && task3 != task1 && task3 != task2)
                 {
                   size_t ind3 = send_offset[task3] + send_count[task3]++;
-
-                  for(int j = 0; j < 3; j++)
-                    partout[ind3].IntPos[j] = P[i].IntPos[j];
+                  partout[ind3].IntPos = Sp->get_position(idx);
                 }
             }
         }
@@ -1426,8 +1408,8 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
 
   for(size_t i = 0; i < partin.size(); i++)
     {
-      auto [slab_x, slab_y, slab_z] = coordinates(partin[i]);
-      auto [dx, dy, dz] = cell_coordinates(partin[i]);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(partin[i].IntPos);
+      auto [dx, dy, dz] = cell_coordinates(partin[i].IntPos);
       int slab_xx = (slab_x + 1) % Ngrid[0], slab_yy = (slab_y + 1) % Ngrid[1], slab_zz = (slab_z + 1) % Ngrid[2];
 
       int column0 = slab_z * Ngrid[1] + slab_y;
@@ -1476,10 +1458,11 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
     send_count[j] = 0;
 
   /* now assign to original points */
+  const int NSource = Sp->size();
   for(int idx = 0; idx < NSource; idx++)
     {
-      int i = Sp->get_active_index(idx);
-      auto [slab_x, slab_y, slab_z] = coordinates(P[i]);
+      // int i = Sp->get_active_index(idx);
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
 
       int slab_zz = slab_z + 1;
 
@@ -1529,16 +1512,12 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
       if(task3 != task0 && task3 != task1 && task3 != task2)
         value += flistout[send_offset[task3] + send_count[task3]++];
 
-#if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
-      if(!Sp->TimeBinSynchronized[Sp->P[i].TimeBinGrav])
-        continue;
-#endif
+      // #if !defined(HIERARCHICAL_GRAVITY) && defined(TREEPM_NOTIMESPLIT)
+      //       if(!Sp->TimeBinSynchronized[Sp->P[i].TimeBinGrav])
+      //         continue;
+      // #endif
 
-#if defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
-      Sp->P[i].GravPM[dim] += value;
-#else
-      Sp->P[i].GravAccel[dim] += value;
-#endif
+      GravPM[idx][dim] += value;
     }
 }
 #endif
@@ -1559,19 +1538,21 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
  */
 void pm_periodic::pmforce_periodic(int mode, int *typelist)
 {
-#ifdef HIERARCHICAL_GRAVITY
-  NSource = Sp->TimeBinsGravity.NActiveParticles;
-#else
-  NSource = Sp->NumPart;
-#endif
+  std::vector<std::array<double, 3>> GravPM(Sp->size(), {0, 0, 0});
 
-#ifndef TREEPM_NOTIMESPLIT
-  if(NSource != Sp->NumPart)
-    Terminate("unexpected NSource != Sp->NumPart");
-#endif
+  // #ifdef HIERARCHICAL_GRAVITY
+  //   NSource = Sp->TimeBinsGravity.NActiveParticles;
+  // #else
+  //   NSource = Sp->size();
+  // #endif
+  //
+  // #ifndef TREEPM_NOTIMESPLIT
+  //   if(NSource != Sp->size())
+  //     Terminate("unexpected NSource != Sp->NumPart");
+  // #endif
 
 #ifndef NUMPART_PER_TASK_LARGE
-  if((((long long)Sp->NumPart) << 3) >= (((long long)1) << 31))
+  if((((long long)Sp->size()) << 3) >= (((long long)1) << 31))
     Terminate("We are dealing with a too large particle number per MPI rank - enabling NUMPART_PER_TASK_LARGE might help.");
 #endif
 
@@ -1580,15 +1561,15 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   std::vector<large_array_offset> localfield_globalindex;
   std::vector<fft_real> localfield_data;
   pmforce_zoom_optimized_prepare_density(mode, typelist, part, localfield_globalindex, localfield_data);
-#else
+#else  // PM_ZOOM_OPTIMIZED
   std::vector<partbuf> partin;
 
 #ifdef FFT_COLUMN_BASED
   pmforce_uniform_optimized_columns_prepare_density(mode, typelist, partin);
 #else
   pmforce_uniform_optimized_slabs_prepare_density(mode, typelist, partin);
-#endif
-#endif
+#endif  // FFT_COLUMN_BASED
+#endif  // PM_ZOOM_OPTIMIZED
 
   /* note: after density, we still keep the field 'partin' from the density assignment,
    * as we can use this later on to return potential and z-force
@@ -1614,17 +1595,17 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
 #ifndef FFT_COLUMN_BASED
   fft(rhogrid.data(), workspace.data(), -1);
-#else
+#else   // FFT_COLUMN_BASED
   fft(workspace.data(), rhogrid.data(), -1);
-#endif
+#endif  // FFT_COLUMN_BASED
 
   /* Now rhogrid holds the potential/forces */
 
 #ifdef EVALPOTENTIAL
 #ifdef PM_ZOOM_OPTIMIZED
-  pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part, localfield_globalindex, localfield_data);
+  pmforce_zoom_optimized_readout_forces_or_potential(rhogrid.data(), -1, part, localfield_globalindex, localfield_data, GravPM);
 #else
-  pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1, partin);
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(rhogrid.data(), -1, partin, GravPM);
 #endif
 #endif
 
@@ -1637,9 +1618,9 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
    */
 #ifdef GRAVITY_TALLBOX
   double fac = 1.0 / (((double)Ngrid[0]) * Ngrid[1] * Ngrid[2]); /* to get potential  */
-#else
+#else                                                            // GRAVITY_TALLBOX
   double fac = 4 * M_PI * (LONG_X * LONG_Y * LONG_Z) / pow(BoxSize, 3); /* to get potential  */
-#endif
+#endif                                                           // GRAVITY_TALLBOX
 
   const double d = BoxSize / Ngrid[0];
   fac *= 1 / (2 * d); /* for finite differencing */
@@ -1666,10 +1647,10 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         }
 
 #ifdef PM_ZOOM_OPTIMIZED
-  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
-#else
-  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
-#endif
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data, GravPM);
+#else   // PM_ZOOM_OPTIMIZED
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin, GravPM);
+#endif  // PM_ZOOM_OPTIMIZED
 
   /* y-direction */
   for(int y = 0; y < Ngrid[1]; y++)
@@ -1691,10 +1672,10 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
         }
 
 #ifdef PM_ZOOM_OPTIMIZED
-  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part, localfield_globalindex, localfield_data);
-#else
-  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1, partin);
-#endif
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 1, part, localfield_globalindex, localfield_data, GravPM);
+#else   // PM_ZOOM_OPTIMIZED
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 1, partin, GravPM);
+#endif  // PM_ZOOM_OPTIMIZED
 
   /* x-direction */
   transposeA(rhogrid.data(), forcegrid.data()); /* compute the transpose of the potential field for finite differencing */
@@ -1721,12 +1702,12 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   transposeB(forcegrid.data(), rhogrid.data()); /* reverse the transpose from above */
 
 #ifdef PM_ZOOM_OPTIMIZED
-  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
-#else
-  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0, partin);
-#endif
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data, GravPM);
+#else   // PM_ZOOM_OPTIMIZED
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 0, partin, GravPM);
+#endif  // PM_ZOOM_OPTIMIZED
 
-#else
+#else  // yes FFT_COLUMN_BASED
 
   /* z-direction */
   for(large_array_offset i = 0; i < ncol_XY; i++)
@@ -1755,10 +1736,10 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
     }
 
 #ifdef PM_ZOOM_OPTIMIZED
-  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data);
-#else
-  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin);
-#endif
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 2, part, localfield_globalindex, localfield_data, GravPM);
+#else   // PM_ZOOM_OPTIMIZED
+  pmforce_uniform_optimized_readout_forces_or_potential_xy(forcegrid.data(), 2, partin, GravPM);
+#endif  // PM_ZOOM_OPTIMIZED
 
   /* y-direction */
   swap23(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field, forcegrid the transposed field
@@ -1769,7 +1750,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
 
     for(large_array_offset i = 0; i < ncol_XZ; i++)
       {
-        memcpy(column.data(), &forcegrid[Ngrid[1] * i], Ngrid[1] * sizeof(fft_real));
+        std::memcpy(column.data(), &forcegrid[Ngrid[1] * i], Ngrid[1] * sizeof(fft_real));
 
         fft_real *const forcep = &forcegrid[Ngrid[1] * i];
 
@@ -1801,11 +1782,11 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
   {
     std::vector<fft_real> scratch(fftsize);
     swap23back(forcegrid.data(), scratch.data());
-    pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part, localfield_globalindex, localfield_data);
+    pmforce_zoom_optimized_readout_forces_or_potential(scratch.data(), 1, part, localfield_globalindex, localfield_data, GravPM);
   }
-#else
-  pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid.data(), 1);
-#endif
+#else   // PM_ZOOM_OPTIMIZED
+  pmforce_uniform_optimized_readout_forces_or_potential_xz(forcegrid.data(), 1, GravPM);
+#endif  // PM_ZOOM_OPTIMIZED
 
   /* x-direction */
   swap13(rhogrid.data(), forcegrid.data());  // rhogrid contains potential field
@@ -1838,12 +1819,16 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist)
     /* now need to read out from forcegrid in a non-standard way */
 #ifdef PM_ZOOM_OPTIMIZED
   swap13back(rhogrid.data(), forcegrid.data());
-  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data);
-#else
-  pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid.data(), 0);
-#endif
+  pmforce_zoom_optimized_readout_forces_or_potential(forcegrid.data(), 0, part, localfield_globalindex, localfield_data, GravPM);
+#else   // PM_ZOOM_OPTIMIZED
+  pmforce_uniform_optimized_readout_forces_or_potential_zy(rhogrid.data(), 0, GravPM);
+#endif  // PM_ZOOM_OPTIMIZED
 
-#endif
+#endif  // FFT_COLUMN_BASED
+
+  // write GravPM to particles
+  for(int i = 0; i < GravPM.size(); ++i)
+    Sp->set_acceleration(i, GravPM[i]);
 }
 
 #ifdef GRAVITY_TALLBOX
@@ -1915,7 +1900,7 @@ void pm_periodic::pmforce_setup_tallbox_kernel(void)
   fft(kernel.get(), workspc.data(), 1); /* result is in workspace, not in kernel */
 #ifndef FFT_COLUMN_BASED
 #else
-  memcpy(kernel.get(), workspc.data(), maxfftsize * sizeof(fft_real));
+  std::memcpy(kernel.get(), workspc.data(), maxfftsize * sizeof(fft_real));
 #endif
 }
 
@@ -2025,8 +2010,10 @@ void pm_periodic::calculate_power_spectra(int num, char *OutputDir)
   /* determine global and local particle numbers */
   for(int n = 0; n < NTYPES; n++)
     n_type[n] = 0;
-  for(int n = 0; n < Sp->NumPart; n++)
-    n_type[Sp->P[n].getType()]++;
+  const int NSource = Sp->size();
+  for(int n = 0; n < NSource; n++)
+    //   n_type[Sp->P[n].getType()]++;
+    n_type[0]++;
 
   sumup_large_ints(NTYPES, n_type, ntot_type_all, Communicator);
 
@@ -2044,7 +2031,7 @@ void pm_periodic::calculate_power_spectra(int num, char *OutputDir)
     }
 
   Sp->TimeBinsGravity.NActiveParticles = 0;
-  for(int i = 0; i < Sp->NumPart; i++)
+  for(int i = 0; i < NSource; i++)
     Sp->TimeBinsGravity.ActiveParticleList[Sp->TimeBinsGravity.NActiveParticles++] = i;
 #endif
 
@@ -2109,7 +2096,7 @@ void pm_periodic::pmforce_do_powerspec(int *typeflag)
 
 void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
 {
-  particle_data *P = Sp->P;
+  // particle_data *P = Sp->P;
 
   long long CountModes[BINS_PS];
   double SumPowerUncorrected[BINS_PS]; /* without binning correction (as for shot noise) */
@@ -2120,13 +2107,15 @@ void pm_periodic::pmforce_measure_powerspec(int flag, int *typeflag)
   double Kbin[BINS_PS];
 
   double mass = 0, mass2 = 0, count = 0;
-  for(int i = 0; i < Sp->NumPart; i++)
-    if(typeflag[P[i].getType()])
-      {
-        mass += Sp->P[i].getMass();
-        mass2 += Sp->P[i].getMass() * Sp->P[i].getMass();
-        count += 1.0;
-      }
+  const int NSource = Sp->size();
+  for(int i = 0; i < NSource; i++)
+    // if(typeflag[P[i].getType()])
+    {
+      double m = Sp->get_mass(i);
+      mass += m;
+      mass2 += m * m;
+      count += 1.0;
+    }
 
   MPI_Allreduce(MPI_IN_PLACE, &mass, 1, MPI_DOUBLE, MPI_SUM, Communicator);
   MPI_Allreduce(MPI_IN_PLACE, &mass2, 1, MPI_DOUBLE, MPI_SUM, Communicator);
@@ -2381,11 +2370,6 @@ void pm_periodic::compute_potential_kspace()
 
 double pm_periodic::green_function(std::array<int, 3> mode) const
 {
-#ifdef PM_ONLY
-  const double asmth2 = 0.0;
-#else
-  const double asmth2 = Sp->Asmth[0] * Sp->Asmth[0];
-#endif
   const double dhalf = 0.5 * BoxSize / Ngrid[0];
   std::array<double, 3> k;
   double k2{0.0};

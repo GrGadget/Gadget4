@@ -21,6 +21,7 @@
 #include "gadget/macros.h"             // Terminate
 #include "gadget/mpi_utils.h"          // sumup_large_ints
 #include "gadget/particle_data.h"      // particle_data
+#include "gadget/particle_handler.h"   // particle_handler
 #include "gadget/setcomm.h"            // setcomm
 #include "gadget/sph_particle_data.h"  // sph_particle_data
 #include "gadget/timebindata.h"        // TimeBinData
@@ -377,4 +378,31 @@ class simparticles : public intposconvert, public setcomm
 #endif
 };
 
+namespace gadget::pm
+{
+/* Specialization of particle_handler for Gadget's type of particle */
+class simparticles_handler : public particle_handler
+{
+  simparticles &Sp;
+
+ public:
+  simparticles_handler(simparticles &ref_Sp) : Sp{ref_Sp} {}
+
+  size_t size() const override { return Sp.NumPart; }
+
+  std::array<long long int, 3> get_position(int idx) const override
+  {
+    int i = Sp.get_active_index(idx);
+    return {Sp.P[i].IntPos[0], Sp.P[i].IntPos[1], Sp.P[i].IntPos[2]};
+  }
+  double get_mass(int i) const override { return Sp.P[i].getMass(); }
+  void set_acceleration(int idx, std::array<double, 3> A) const override
+  {
+    int i             = Sp.get_active_index(idx);
+    Sp.P[i].GravPM[0] = A[0];
+    Sp.P[i].GravPM[1] = A[1];
+    Sp.P[i].GravPM[2] = A[2];
+  }
+};
+}  // namespace gadget::pm
 #endif

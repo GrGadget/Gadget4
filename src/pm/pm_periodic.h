@@ -19,10 +19,11 @@
 #include <vector>
 extern template class std::vector<size_t>;
 
-#include "../data/simparticles.h"  // simparticles
-#include "gadget/constants.h"      // MAXLEN_PATH_EXTRA
-#include "gadget/dtypes.h"         // MyIntPosType
-#include "gadget/pm_mpi_fft.h"     // pm_mpi_fft
+// #include "../data/simparticles.h"  // simparticles
+#include "gadget/constants.h"         // MAXLEN_PATH_EXTRA
+#include "gadget/dtypes.h"            // MyIntPosType
+#include "gadget/particle_handler.h"  // particle_handler
+#include "gadget/pm_mpi_fft.h"        // pm_mpi_fft
 #include "gadgetconfig.h"
 
 class pm_periodic :
@@ -34,6 +35,7 @@ class pm_periodic :
 #endif
 {
   const MyIntPosType INTCELL;
+  double asmth2;
 
  public:
   pm_periodic(MPI_Comm comm, std::array<int, 3> ngrid)
@@ -56,7 +58,7 @@ class pm_periodic :
   {
   }
 
-  void pm_init_periodic(simparticles *Sp_ptr, double boxsize);
+  void pm_init_periodic(gadget::pm::particle_handler *Sp_ptr, double boxsize, double asmth);
   void pmforce_periodic(int mode, int *typelist);
   void calculate_power_spectra(int num, char *OutputDir);
 
@@ -75,9 +77,8 @@ class pm_periodic :
                                            with a single index */
   std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;
   double BoxSize{};
-  simparticles *Sp;
+  std::unique_ptr<gadget::pm::particle_handler> Sp;
   char power_spec_fname[MAXLEN_PATH_EXTRA];
-  int NSource;
 
   /*! \var maxfftsize
    *  \brief maximum size of the local fft grid among all tasks
@@ -127,25 +128,25 @@ class pm_periodic :
   }
   double green_function(std::array<int, 3> mode) const;
 
-  template <typename part_t>
-  auto coordinates(const part_t &P, int fold_fact = 1 /*for power
+  // template <typename part_t>
+  auto grid_coordinates(std::array<long long int,3> IntPos, int fold_fact = 1 /*for power
   spectrum computations only*/)const
   {
     std::array<int, 3> slab;
     for(int i = 0; i < 3; ++i)
-      slab[i] = (P.IntPos[i] * fold_fact) / INTCELL;
+      slab[i] = (IntPos[i] * fold_fact) / INTCELL;
     return slab;
   }
 
-  template <typename part_t>
-  auto cell_coordinates(const part_t &P, int fold_fact = 1 /*for power spectrum
-    computations only*/) const
+  // template <typename part_t>
+  auto cell_coordinates(std::array<long long int, 3> IntPos, int fold_fact = 1 /*for power spectrum
+     computations only*/) const
   {
     std::array<double, 3> dx;
     for(int i = 0; i < 3; ++i)
       {
-        MyIntPosType rmd = (P.IntPos[i] * fold_fact) % INTCELL;
-        dx[i]            = rmd * (1.0 / INTCELL);
+        long long int rmd = (IntPos[i] * fold_fact) % INTCELL;
+        dx[i]             = rmd * (1.0 / INTCELL);
       }
     return dx;
   }
@@ -181,7 +182,8 @@ class pm_periodic :
                                               std::vector<fft_real> &localfield_data);
   void pmforce_zoom_optimized_readout_forces_or_potential(fft_real *grid, int dim, const std::vector<part_slab_data> &part,
                                                           std::vector<large_array_offset> &localfield_globalindex,
-                                                          std::vector<fft_real> &localfield_data);
+                                                          std::vector<fft_real> &localfield_data,
+                                                          std::vector<std::array<double, 3>> &GravPM);
 #else
 
   struct partbuf
@@ -191,7 +193,7 @@ class pm_periodic :
 #else
     static MyFloat Mass;
 #endif
-    MyIntPosType IntPos[3];
+    std::array<long long int, 3> IntPos;
   };
 
 #ifndef FFT_COLUMN_BASED
@@ -199,8 +201,9 @@ class pm_periodic :
 #else
   void pmforce_uniform_optimized_columns_prepare_density(int mode, int *typelist, std::vector<partbuf> &partin);
 #endif
-  void pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin);
-  void pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_real *grid, int dim);
-  void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim);
+  void pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_real *grid, int dim, const std::vector<partbuf> &partin,
+                                                                std::vector<std::array<double, 3>> &GravPM);
+  void pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_real *grid, int dim, std::vector<std::array<double, 3>> &GravPM);
+  void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim, std::vector<std::array<double, 3>> &GravPM);
 #endif
 };
