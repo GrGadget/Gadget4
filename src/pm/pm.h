@@ -16,7 +16,7 @@
 #include <array>
 
 #include "../pm/pm_nonperiodic.h"
-#include "../pm/pm_periodic.h"
+#include "gadget/pm_periodic.h"
 #include "gadget/setcomm.h"
 
 #ifdef PERIODIC

@@ -21,13 +21,12 @@
 #include <tuple>
 #include <vector>
 
-#include "../pm/pm_periodic.h"
 #include "gadget/constants.h"         // NTYPES
 #include "gadget/dtypes.h"            // MyFloat
 #include "gadget/macros.h"            // Terminate
 #include "gadget/mpi_utils.h"         // myMPI_Sendrecv
 #include "gadget/particle_handler.h"  // particle_handler
-// #include "gadget/particle_data.h"  // particle_data
+#include "gadget/pm_periodic.h"
 
 extern template class std::vector<MyFloat>;
 extern template class std::vector<size_t>;

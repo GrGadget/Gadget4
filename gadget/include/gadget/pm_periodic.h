@@ -19,7 +19,6 @@
 #include <vector>
 extern template class std::vector<size_t>;
 
-// #include "../data/simparticles.h"  // simparticles
 #include "gadget/constants.h"         // MAXLEN_PATH_EXTRA
 #include "gadget/dtypes.h"            // MyIntPosType
 #include "gadget/particle_handler.h"  // particle_handler

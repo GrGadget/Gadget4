@@ -1,4 +1,5 @@
 gadget_headers = files([
+    'pm_periodic.h',
     'particle_handler.h',
     'linear_growth.h',
     'pinning.h',
