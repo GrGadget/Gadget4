@@ -426,7 +426,9 @@ void gravtest::gravity_forcetest(int timebin)
 
   double t0 = Logs.second();
 
+#ifdef ALLOW_DIRECT_SUMMATION
   commpattern.execute(nloc, TargetList, MODE_DEFAULT);
+#endif
 
   double t1   = Logs.second();
   double maxt = Logs.timediff(t0, t1);
