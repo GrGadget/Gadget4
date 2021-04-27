@@ -7,7 +7,8 @@ git_version = custom_target('git-info',
     build_by_default: true,
     input : version_template,
     output: 'version.h',
-    command : [bash,gitinfo_generator,meson.source_root(),'@OUTDIR@','@INPUT@'])
+    command : [bash,gitinfo_generator,meson.source_root(),'@OUTDIR@','@INPUT@'],
+    build_always_stale: true)
 
 config_header = custom_target('config',
     build_by_default: true,
