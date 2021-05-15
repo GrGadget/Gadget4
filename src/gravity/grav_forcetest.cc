@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <filesystem>
+#include <fstream>
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
@@ -536,13 +538,22 @@ void gravtest::gravity_forcetest(int timebin)
 
               if(!(Logs.FdForceTest = fopen(buf, "a")))
                 Terminate("error in opening file '%s'\n", buf);
-
+              
+              std::filesystem::path outname{All.OutputDir};
+              outname/="forcetest.bin";
+              std::ofstream os(outname,std::ios::binary | std::ios::app);
+              os << nloc;
+              
               for(int idx = 0; idx < nloc; idx++)
                 {
                   int i = TargetList[idx];
 
                   double pos[3];
                   Sp->intpos_to_pos(Sp->P[i].IntPos, pos);
+                  
+                  os << P[i].ID.get() 
+                     << pos[0] << pos[1] << pos[2] 
+                     << P[i].GravPM[0] << P[i].GravPM[1] << P[i].GravPM[2];
 
 #if defined(PMGRID) && defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
 
