@@ -18,6 +18,7 @@ hdf5 = dependency('hdf5',language: 'cpp')
 gsl = dependency('gsl')
 hwloc = dependency('hwloc')
 healpix = dependency('chealpix')
+boost = dependency('boost', modules: ['mpi','serialization','unit_test_framework'])
 
 pkg=import('pkgconfig')
 
@@ -36,7 +37,8 @@ subdir('half')
 subdir('gadget')
 executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
-    dependencies: [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half,healpix],
+    dependencies:
+    [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half,healpix,boost],
     install: true)
 
 if (format.found())
