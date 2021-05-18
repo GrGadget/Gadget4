@@ -45,6 +45,8 @@
 #include "gadget/parameters.h"
 #include "gadget/setcomm.h"
 
+#include <string>
+
 #define GRID (HRPMGRID)
 
 #if defined(PMGRID) && defined(PERIODIC)
@@ -209,6 +211,7 @@ class sim : public test_io_bandwidth
   void gravity_comoving_factors(int timebin);
   void gravity_pm(int timebin);
   void gravity_set_oldacc(int timebin);
+  void save_forces_to_file(std::string);
 
   void hydro_force(int step_indicator);
   void compute_grav_accelerations(int timebin);

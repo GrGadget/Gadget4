@@ -18,11 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
-
-#include <boost/archive/binary_oarchive.hpp>
 
 #include "../data/allvars.h"
 #include "../data/mymalloc.h"
@@ -529,10 +526,6 @@ void gravtest::gravity_forcetest(int timebin)
 
   int *nloc_tab = (int *)Mem.mymalloc("nloc_tab", D->NTask * sizeof(int));
   MPI_Allgather(&nloc, 1, MPI_INT, nloc_tab, 1, MPI_INT, D->Communicator);
-  
-  std::filesystem::path outname{All.OutputDir};
-  outname/="forcetest.bin";
-  std::filesystem::remove(outname);
 
   for(int nthis = 0; nthis < D->NTask; nthis++)
     {
@@ -545,22 +538,13 @@ void gravtest::gravity_forcetest(int timebin)
 
               if(!(Logs.FdForceTest = fopen(buf, "a")))
                 Terminate("error in opening file '%s'\n", buf);
-              
-              std::ofstream os(outname,std::ios::binary | std::ios::app);
-              boost::archive::binary_oarchive oa(os);
-              oa << nloc;
-              std::cout << "nloc = " << nloc << '\n';
-              
+
               for(int idx = 0; idx < nloc; idx++)
                 {
                   int i = TargetList[idx];
 
                   double pos[3];
                   Sp->intpos_to_pos(Sp->P[i].IntPos, pos);
-                  
-                  oa << P[i].ID.get() 
-                     << pos[0] << pos[1] << pos[2] 
-                     << P[i].GravPM[0] << P[i].GravPM[1] << P[i].GravPM[2];
 
 #if defined(PMGRID) && defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
 

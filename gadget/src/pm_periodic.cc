@@ -2394,8 +2394,8 @@ double pm_periodic::green_function(std::array<int, 3> mode) const
             ff *= fx / std::sin(fx);
           }
       deconv = ff * ff * ff * ff;
-      //deconv = ff * ff;  // CIC is 2nd order
-      smth *= deconv;    /* deconvolution */
+      // deconv = ff * ff;  // CIC is 2nd order
+      smth *= deconv; /* deconvolution */
     }
 
 #ifdef GRAVITY_TALLBOX
