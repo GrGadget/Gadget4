@@ -24,6 +24,7 @@
 #include "../logs/logs.h"
 #include "../main/simulation.h"
 #include "../system/system.h"
+#include "gadget/utils.h" // subdivide_evenly
 #include "gadget/dtypes.h"
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"

@@ -330,16 +330,13 @@ void sim::begrun2(void)
   All.FlushLast = Logs.CPUThisRun;
 #endif
 
-#ifdef FORCETEST
-  gravity_long_range_force();
-  save_forces_to_file("forcetest.bin");
-#endif
-
 #if defined(FORCETEST) && defined(FORCETEST_TESTFORCELAW)
   gravity_forcetest_testforcelaw();
+  save_forces_to_file("forcetest.bin");
 #endif
 }
 
+#ifdef FORCETEST
 void sim::save_forces_to_file(std::string fname)
 {
   mpi_printf("%s\n", __PRETTY_FUNCTION__);
@@ -357,18 +354,23 @@ void sim::save_forces_to_file(std::string fname)
           oa << Sp.NumPart;
           std::cout << "NumPart = " << Sp.NumPart << '\n';
           for(int i = 0; i < Sp.NumPart; ++i)
-            {
+            if(Sp.P[i].SelectedFlag){
               double pos[3];
               Sp.intpos_to_pos(Sp.P[i].IntPos, pos);
 
-              oa << Sp.P[i].ID.get() << pos[0] << pos[1] << pos[2] << Sp.P[i].GravPM[0] << Sp.P[i].GravPM[1] << Sp.P[i].GravPM[2];
+              oa << Sp.P[i].ID.get() << pos[0] << pos[1] << pos[2] <<
+              Sp.P[i].GravPM[0] << Sp.P[i].GravPM[1] << Sp.P[i].GravPM[2] 
+              << Sp.P[i].GravAccelDirect[0]
+              << Sp.P[i].GravAccelDirect[1]
+              << Sp.P[i].GravAccelDirect[2];
             }
         }
       MPI_Barrier(Communicator);
     }
 }
+#endif
 
-/*! \brief Computes conversion factors between internal code units and the
+/* \brief Computes conversion factors between internal code units and the
  *  cgs-system.
  *
  *  In addition constants like the gravitation constant are set.

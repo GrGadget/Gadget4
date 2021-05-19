@@ -219,7 +219,8 @@ void sim::gravity(int timebin)
       GravTree.treeallocate(Sp.NumPart, &Sp, &Domain);
 
 #ifdef HIERARCHICAL_GRAVITY
-      GravTree.treebuild(Sp.TimeBinsGravity.NActiveParticles, Sp.TimeBinsGravity.ActiveParticleList);
+      GravTree.treebuild(Sp.TimeBinsGravity.NActiveParticles,
+      Sp.TimeBinsGravity.ActiveParticleList.data());
 #else
     GravTree.treebuild(Sp.NumPart, NULL);
 #endif
