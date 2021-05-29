@@ -29,6 +29,12 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+#include <boost/archive/binary_oarchive.hpp>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+
 /*! \brief This routine computes the gravitational accelerations for all active particles.
  *
  * If the particle mesh is used and the current time step
@@ -124,7 +130,8 @@ void sim::compute_grav_accelerations(int timebin)
           GravTree.treeallocate(Sp.NumPart, &Sp, &Domain);
           GravTest.gravity_forcetest(timebin);
           GravTree.treefree();
-
+          save_forces_to_file();
+          
           if(FORCETEST >= 2.0) /* this is for a special test where we repeat the calculation */
             {
               for(int i = 0; i < (int)(FORCETEST)-1; i++)
@@ -154,6 +161,35 @@ void sim::compute_grav_accelerations(int timebin)
   if(All.TimeLimitCPU == 0)
     endrun();
 }
+#ifdef FORCETEST
+void sim::save_forces_to_file()
+{
+  mpi_printf("%s\n", __PRETTY_FUNCTION__);
+  // std::filesystem::path outname{All.OutputDir};
+  // outname /= fname;
+  // if(ThisTask == 0)
+  //   std::filesystem::remove(outname);
+
+  for(int i = 0; i < Sp.NumPart; ++i)
+    if(Sp.P[i].SelectedFlag){
+      std::array<double,3> pos,acc;
+      Sp.intpos_to_pos(Sp.P[i].IntPos, pos.data());
+    
+    
+    for(int k =0 ;k<3;++k) acc[k] = Sp.P[i].GravPM[k] + Sp.P[i].GravAccel[k];
+    treepm_forces.append(Sp.P[i].ID.get(),pos,acc);
+    
+    for(int k =0 ;k<3;++k) acc[k] = Sp.P[i].GravAccelDirect[k];
+    summation_forces.append(Sp.P[i].ID.get(),pos,acc);
+    
+    for(int k =0 ;k<3;++k) acc[k] = Sp.P[i].GravPM[k];
+    pm_forces.append(Sp.P[i].ID.get(),pos,acc);
+    }
+    treepm_forces.flush();
+    summation_forces.flush();
+    pm_forces.flush();
+}
+#endif
 
 /*! \brief main driver routine of gravity tree/fmm force calculation
  *

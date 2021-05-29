@@ -39,6 +39,7 @@
 #include "../pm/pm.h"
 #include "../sph/sph.h"
 #include "gadget/constants.h"
+#include "gadget/debugger.hpp"
 #include "gadget/dtypes.h"
 #include "gadget/macros.h"
 #include "gadget/mpi_utils.h"
@@ -164,6 +165,13 @@ class sim : public test_io_bandwidth
   void rearrange_write(partset &Tp, int num, int conenr);
 
  private:
+  
+  #ifdef FORCETEST
+  gadget::debugger_t treepm_forces{Communicator,"treepm_forces.bin"};
+  gadget::debugger_t pm_forces{Communicator,"pm_forces.bin"};
+  gadget::debugger_t summation_forces{Communicator,"summation_forces.bin"};
+  #endif
+ 
   void sincronize_particles();
 #ifdef PERIODIC
   void check_omega(void);
@@ -211,7 +219,7 @@ class sim : public test_io_bandwidth
   void gravity_comoving_factors(int timebin);
   void gravity_pm(int timebin);
   void gravity_set_oldacc(int timebin);
-  void save_forces_to_file(std::string);
+  void save_forces_to_file();
 
   void hydro_force(int step_indicator);
   void compute_grav_accelerations(int timebin);

@@ -48,11 +48,6 @@
 #include "gadget/timebindata.h"
 #include "version.h"
 
-#include <boost/archive/binary_oarchive.hpp>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <string>
 
 /*!
  *  This file contains various functions to initialize a simulation run. In
@@ -332,43 +327,9 @@ void sim::begrun2(void)
 
 #if defined(FORCETEST) && defined(FORCETEST_TESTFORCELAW)
   gravity_forcetest_testforcelaw();
-  save_forces_to_file("forcetest.bin");
 #endif
 }
 
-#ifdef FORCETEST
-void sim::save_forces_to_file(std::string fname)
-{
-  mpi_printf("%s\n", __PRETTY_FUNCTION__);
-  std::filesystem::path outname{All.OutputDir};
-  outname /= fname;
-  if(ThisTask == 0)
-    std::filesystem::remove(outname);
-
-  for(int t = 0; t < NTask; ++t)
-    {
-      if(t == ThisTask)
-        {
-          std::ofstream os(outname, std::ios::binary | std::ios::app);
-          boost::archive::binary_oarchive oa(os);
-          oa << Sp.NumPart;
-          std::cout << "NumPart = " << Sp.NumPart << '\n';
-          for(int i = 0; i < Sp.NumPart; ++i)
-            if(Sp.P[i].SelectedFlag){
-              double pos[3];
-              Sp.intpos_to_pos(Sp.P[i].IntPos, pos);
-
-              oa << Sp.P[i].ID.get() << pos[0] << pos[1] << pos[2] <<
-              Sp.P[i].GravPM[0] << Sp.P[i].GravPM[1] << Sp.P[i].GravPM[2] 
-              << Sp.P[i].GravAccelDirect[0]
-              << Sp.P[i].GravAccelDirect[1]
-              << Sp.P[i].GravAccelDirect[2];
-            }
-        }
-      MPI_Barrier(Communicator);
-    }
-}
-#endif
 
 /* \brief Computes conversion factors between internal code units and the
  *  cgs-system.
