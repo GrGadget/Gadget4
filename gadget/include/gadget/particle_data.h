@@ -114,9 +114,7 @@ struct particle_data
   MyFloat GravAccelHPM[3];
 #endif
 #endif
-#ifdef FORCETEST_FIXEDPARTICLESET
   bool SelectedFlag;
-#endif
 #endif
 
 #if defined(EVALPOTENTIAL) || defined(OUTPUT_POTENTIAL)
