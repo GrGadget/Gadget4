@@ -16,15 +16,13 @@
 #include <climits>
 #include <cmath>
 
-#if !defined(IDS_48BIT)
-#define ID_MSB ((MyIDType)(~((MyIDType)(~((MyIDType)0)) >> ((MyIDType)1))))
-#define ID_MSK ((MyIDType)(((MyIDType)(~((MyIDType)0)) >> ((MyIDType)1))))
+namespace gadget{
+
+typedef unsigned long long MyIDType;
+
+//constexpr MyIDType HALONR_MAX
 #define HALONR_MAX ((MyIDType)(((MyIDType)(~((MyIDType)0)) >> ((MyIDType)1))))
-#else
-#define ID_MSB ((unsigned short)(~((unsigned short)(~((unsigned short)0)) >> ((unsigned short)1))))
-#define ID_MSK ((unsigned short)(((unsigned short)(~((unsigned short)0)) >> ((unsigned short)1))))
-#define HALONR_MAX ((MyIDType)(((MyIDType)(~((MyIDType)0)) >> ((MyIDType)17))))
-#endif
+//#endif
 
 /* used to store a subhalo len in an approximate (quite accurate) way in just two bytes */
 struct approxlen
@@ -79,53 +77,33 @@ struct compactrank_t
 class MyIDStorage
 {
  private:
-#if !defined(IDS_48BIT)
   MyIDType id;
-#else
-  unsigned short id[3];
-#endif
 
  public:
+  constexpr static MyIDType ID_MSK = (~ MyIDType{0}) >> 1 ; // 0111...111
+  constexpr static MyIDType ID_MSB = ~ ID_MSK; // 10000...0000, most significant bit on
+  
   inline MyIDType get(void) const
   {
-#if !defined(IDS_48BIT)
     return id & ID_MSK;
-#else
-    return (((MyIDType)(id[0] & ID_MSK)) << 32) + (((MyIDType)id[1]) << 16) + id[2];
-#endif
   }
 
   inline void set(MyIDType ID)
   {
-#if !defined(IDS_48BIT)
     id = ID;
-#else
-    id[2] = (unsigned short)ID;
-    id[1] = (unsigned short)(ID >> 16);
-    id[0] = (unsigned short)(ID >> 32);
-#endif
   }
 
   inline void mark_as_formerly_most_bound(void)
   {
     /* we set the most significant bit */
-#if !defined(IDS_48BIT)
     id |= ID_MSB;
-#else
-    id[0] |= ID_MSB;
-#endif
   }
 
   inline bool is_previously_most_bound(void)
   {
     /* we set the most significant bit */
-#if defined(IDS_48BIT)
-    if(id[0] & ID_MSB)
-      return true;
-#else
     if(id & ID_MSB)
       return true;
-#endif
     return false;
   }
 };
@@ -147,5 +125,7 @@ inline bool operator>(const MyHaloNrType &left, const MyHaloNrType &right) { ret
 inline bool operator!=(const MyHaloNrType &left, const MyHaloNrType &right) { return left.get() != right.get(); }
 
 inline bool operator==(const MyHaloNrType &left, const MyHaloNrType &right) { return left.get() == right.get(); }
+
+}
 
 #endif /* IDSTORAGE_H */

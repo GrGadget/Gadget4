@@ -823,27 +823,6 @@ case.
 
 -------
 
-**IDS_32BIT**
-
-If this is set, the code uses 32-bit particle IDs, hence at most 2^32
-particles may be used.  This is the default setting.
-
--------
-
-**IDS_48BIT**
-
-If this is set, the code uses 48-bit particle IDs, allowing some
-smaller fields to be packed into this variable before a long-word
-boundary is reached.  At most 2^48 particles can be used.
-
--------
-
-**IDS_64BIT**
-
-If this is set, the code uses 64-bit particle IDs.
-
--------
-
 **USE_SINGLEPRECISION_INTERNALLY**
 
 If this is activated, internal computations are carried out in single

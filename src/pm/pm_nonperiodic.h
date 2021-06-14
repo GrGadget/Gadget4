@@ -27,6 +27,8 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
+namespace gadget{
+
 class pm_nonperiodic :
 #ifdef FFT_COLUMN_BASED
     public mpi_fft_columns
@@ -183,4 +185,5 @@ class pm_nonperiodic :
   //#endif
 };
 
+}
 #endif

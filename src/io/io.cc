@@ -18,9 +18,11 @@
 #include "gadget/hdf5_util.h"  // my_H5Fcreate;
 #include "gadget/macros.h"     // Terminate
 #include "gadget/mpi_utils.h"  // TAG_HEADER
+#include "gadget/idstorage.h"  // MyIDType
 
 #define HALF_ROUND_STYLE 1
 #include <half/half.hpp>
+namespace gadget{
 using half_float::half;
 
 /* local functions */
@@ -1798,13 +1800,7 @@ hid_t IO_Def::get_hdf5_outputtype_of_block(int blocknr)
 #endif
         break;
       case FILE_MY_ID_TYPE:
-#if defined(IDS_32BIT)
-        hdf5_datatype = H5T_NATIVE_UINT32;
-#elif defined(IDS_48BIT)
-        hdf5_datatype = Int48_memtype;
-#else
         hdf5_datatype = H5T_NATIVE_UINT64;
-#endif
         break;
       case FILE_MY_INTPOS_TYPE:
 #if defined(POSITIONS_IN_32BIT)
@@ -1845,11 +1841,7 @@ hid_t IO_Def::get_hdf5_memorytype_of_block(int blocknr)
         hdf5_datatype = H5T_NATIVE_INT64;
         break;
       case MEM_MY_ID_TYPE:
-#ifdef IDS_32BIT
-        hdf5_datatype = H5T_NATIVE_UINT32;
-#else
         hdf5_datatype = H5T_NATIVE_UINT64;
-#endif
         break;
       case MEM_MY_INTPOS_TYPE:
 #ifdef POSITIONS_IN_32BIT
@@ -2477,4 +2469,5 @@ void IO_Def::alloc_and_read_ntype_in_files(const char *fname, int num_files)
       for(int type = 0; type < N_DataGroups; type++)
         ntype_in_files[filenr * N_DataGroups + type] = npart[type];
     }
+}
 }

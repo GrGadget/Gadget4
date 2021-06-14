@@ -32,8 +32,10 @@
  * it is desirable to get a compile time error
  */
 
+namespace gadget{
+
 #ifdef POSITIONS_IN_32BIT
-typedef std::uint32_t MyIntPosType;
+typedef ::std::uint32_t MyIntPosType;
 typedef std::int32_t MySignedIntPosType;
 #define BITS_FOR_POSITIONS 32
 #ifdef EXPLICIT_VECTORIZATION
@@ -43,7 +45,7 @@ typedef vectorclass::Vec4i Vec4MySignedIntPosType;
 #endif
 
 #ifdef POSITIONS_IN_64BIT
-typedef std::uint64_t MyIntPosType;
+typedef ::std::uint64_t MyIntPosType;
 typedef std::int64_t MySignedIntPosType;
 #define BITS_FOR_POSITIONS 64
 #ifdef EXPLICIT_VECTORIZATION
@@ -61,15 +63,6 @@ typedef int128_t MySignedIntPosType;
 #endif
 #endif
 
-#if !defined(IDS_32BIT) && !defined(IDS_48BIT) && !defined(IDS_64BIT)
-#define IDS_32BIT
-#endif
-
-#ifdef IDS_32BIT
-typedef unsigned int MyIDType;
-#else
-typedef unsigned long long MyIDType;
-#endif
 
 #ifdef FOF_ALLOW_HUGE_GROUPLENGTH
 typedef long long MyLenType;
@@ -326,5 +319,5 @@ struct thread_data
 #define DBY_EXTRA 0
 #define DBZ_EXTRA 0
 #endif
-
+}
 #endif
