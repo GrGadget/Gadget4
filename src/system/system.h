@@ -15,6 +15,8 @@
 #include <gsl/gsl_rng.h>
 #include <stdio.h>
 
+#include "gadget/mpi_utils.h"  // TAG_HEADER
+namespace gadget{
 extern gsl_rng *random_generator; /**< the random number generator used */
 
 void myflush(FILE *fstream);
@@ -25,5 +27,5 @@ void permutate_chunks_in_list(int ncount, int *list);
 
 void init_rng(int thistask);
 double get_random_number(void);
-
+}
 #endif

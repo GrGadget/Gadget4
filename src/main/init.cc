@@ -38,6 +38,7 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
 /*! \brief Prepares the loaded initial conditions for the run
  *
  *  It is only called if RestartFlag != RST_RESUME. Various counters and variables are initialized.
@@ -796,3 +797,4 @@ double sim::get_desired_softening_from_mass(double mass)
   return All.ForceSoftening[All.SofteningClassOfPartType[1]] * pow(mass / All.AvgType1Mass, 1.0 / 3);
 }
 #endif
+}

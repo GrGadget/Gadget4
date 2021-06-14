@@ -29,6 +29,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/utils.h"  // subdivide_evenly
 
+namespace gadget{
 /*!
  *  This file contains the computation of the Ewald correction table, and the corresponding lookup functions.
  *
@@ -1872,4 +1873,5 @@ symtensor7<double> ewald::ewald_D7(double x, double y, double z)
         }
 
   return D7;
+}
 }

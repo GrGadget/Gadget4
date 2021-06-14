@@ -17,6 +17,8 @@
 #include "../gravtree/gravtree.h"
 #include "gadget/symtensors.h"
 
+namespace gadget{
+
 class fmm : public gravtree<simparticles>
 {
  public:
@@ -150,5 +152,6 @@ class fmm : public gravtree<simparticles>
   void fmm_determine_nodes_with_local_mass(int no, int sib);
 };
 
+}
 #endif
 #endif

@@ -16,6 +16,7 @@
 
 #include "../mpi_utils/shared_mem_handler.h"
 
+namespace gadget{
 typedef gravtree<simparticles> gtree;
 typedef ngbtree ntree;
 
@@ -554,4 +555,5 @@ void shmem::deal_with_gravity_node_request(char *message, int length, int source
   Mem.myfree(exportbuf_nodes);
   Mem.myfree(exportbuf_points);
   Mem.myfree(node_info_recv);
+}
 }

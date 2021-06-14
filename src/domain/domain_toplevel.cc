@@ -22,6 +22,8 @@
 #include "gadget/macros.h"     // Terminate
 #include "gadget/mpi_utils.h"  // allreduce_sum
 
+namespace gadget{
+
 template <typename partset>
 void domain<partset>::domain_do_local_refine(int n, int *list)
 {
@@ -280,10 +282,16 @@ void domain<partset>::domain_determineTopTree(void)
                 Logs.timediff(t0, t1));
 }
 
+}
 #include "../data/simparticles.h"
-template class domain<simparticles>;
 
+namespace gadget{
+template class domain<simparticles>;
+}
 #ifdef LIGHTCONE_PARTICLES
 #include "../data/lcparticles.h"
+namespace gadget{
 template class domain<lcparticles>;
+}
 #endif
+

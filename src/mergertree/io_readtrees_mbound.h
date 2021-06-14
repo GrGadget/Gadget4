@@ -30,6 +30,7 @@
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
 class readtrees_mbound_io : public IO_Def
 {
  private:
@@ -72,7 +73,7 @@ class readtrees_mbound_io : public IO_Def
 
   typedef mergertree::treehalo_ids_type treehalo_ids_type;
 };
-
+}
 #endif
 
 #endif /* HALOTREES_IO_H */

@@ -13,6 +13,7 @@
 #define SETCOMM_H
 #include <mpi.h>
 
+namespace gadget{
 class setcomm
 {
  public:
@@ -58,5 +59,5 @@ class setcomm
  public:
   void determine_compute_nodes(void);
 };
-
+}
 #endif

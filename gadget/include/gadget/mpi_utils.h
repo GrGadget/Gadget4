@@ -103,6 +103,8 @@
 #define TAG_FETCH_SPH_HYDRO 3000
 #define TAG_FETCH_SPH_TREETIMESTEP 4000
 
+namespace gadget{
+
 void my_mpi_types_init(void);
 
 int myMPI_Sendrecv(void *sendbuf, size_t sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvbuf, size_t recvcount,
@@ -269,5 +271,5 @@ void allreduce_sum(T *glob, int N, MPI_Comm Communicator)
                        blocksize[recvTask] * sizeof(T), MPI_BYTE, recvTask, TAG_DENS_A, Communicator, MPI_STATUS_IGNORE);
     }
 }
-
+}
 #endif

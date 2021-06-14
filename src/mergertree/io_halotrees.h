@@ -30,6 +30,7 @@
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
+namespace gaget{
 class halotrees_io : public IO_Def
 {
  private:
@@ -70,7 +71,7 @@ class halotrees_io : public IO_Def
   };
   io_header header;
 };
-
+}
 #endif
 
 #endif /* HALOTREES_IO_H */

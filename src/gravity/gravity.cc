@@ -42,6 +42,7 @@
  * computed by long_range_force(). Then the shortrange tree forces
  * are computed by gravity(). The force tree is rebuild every time step.
  */
+namespace gadget{
 void sim::compute_grav_accelerations(int timebin)
 {
   sumup_large_ints(1, &Sp.TimeBinsGravity.NActiveParticles, &Sp.TimeBinsGravity.GlobalNActiveParticles, Communicator);
@@ -502,3 +503,4 @@ void sim::gravity_long_range_force(void)
   Sp.find_long_range_step_constraint();
 }
 #endif
+}

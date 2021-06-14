@@ -32,7 +32,7 @@ struct part_data
 
 class debugger_t 
 {
-    std::vector< part_data > data;
+    ::std::vector< part_data > data;
 
     boost::mpi::communicator com;
     std::string fname;

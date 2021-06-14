@@ -15,9 +15,12 @@
 #include <cstring>  // strcpy inside timer.h
 
 #include "gadget/constants.h"  // NTYPES
-#include "gadget/dtypes.h"     // MyIDType
+#include "gadget/idstorage.h"     // MyIDType
 #include "gadget/macros.h"     // Terminate;
 #include "gadget/setcomm.h"    // class setcomm;
+#include "../data/simparticles.h"
+
+namespace gadget{
 
 #define CPU_STRING_LEN 120
 
@@ -77,7 +80,7 @@ class logs : public setcomm
   void write_cpu_log(void);
   void output_log_messages(void);
   void compute_statistics(void);
-  void print_particle_info_from_ID(MyIDType ID);
+  void print_particle_info_from_ID(gadget::MyIDType ID);
   void print_particle_info(int i);
   void log_debug_md5(const char *msg);
   void calc_memory_checksum(const char *msg, void *base, size_t bytes);
@@ -168,7 +171,6 @@ class logs : public setcomm
   }
 };
 
-#include "../data/simparticles.h"
 
 #define TIMER_START_INTERNAL(counter)                                                      \
   {                                                                                        \
@@ -259,5 +261,5 @@ class logs : public setcomm
 #define TIMER_STORE memcpy(Logs.CPU_Step_Stored, Logs.CPU_Step, sizeof(Logs.CPU_Step));
 
 extern logs Logs;
-
+}
 #endif

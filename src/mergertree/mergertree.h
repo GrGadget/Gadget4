@@ -20,6 +20,7 @@
 #include "../fof/fof.h"
 #include "../subfind/subfind.h"
 
+namespace gadget{
 #define NUM_MOST_BOUND_PARTICLES_USED_FOR_TRACKING 16  // may not be larger than 255 due to storage limits
 
 class mergertree : public setcomm
@@ -564,6 +565,6 @@ class mergertree : public setcomm
 
   void halotrees_select_interior_min_newtreeid(int mode, tlink *treehalos, long long totnsubs);
 };
-
+}
 #endif
 #endif

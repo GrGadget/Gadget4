@@ -23,6 +23,7 @@
 
 #include "gadget/io_streamcount.h"
 
+namespace gadget{
 class test_io_bandwidth : public io_streamcount, public virtual setcomm
 {
  public:
@@ -64,5 +65,5 @@ class test_io_bandwidth : public io_streamcount, public virtual setcomm
   void byten(void *x, size_t n, int modus);
   void byten_doit(void *x, size_t n, int modus);
 };
-
+}
 #endif

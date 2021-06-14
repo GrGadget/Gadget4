@@ -34,6 +34,8 @@
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
+
 void fmm::fmm_force_passdown(int no, unsigned char no_shmrank, taylor_data taylor_current)
 {
   if(no >= MaxPart && no < MaxPart + MaxNodes) /* an internal node  */
@@ -2027,4 +2029,5 @@ void fmm::gravity_fmm(int timebin)
   TIMER_STOP(CPU_LOGS);
 }
 
+}
 #endif

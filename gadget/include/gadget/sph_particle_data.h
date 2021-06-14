@@ -18,6 +18,8 @@
 #include "gadget/dtypes.h"     // MyFloat
 #include "gadget/macros.h"     // Terminate
 
+namespace gadget{
+
 /* in this structure, all SPH variables are put that are needed for passive
  * particles in the hydro force calculation. Only this part will be sent
  * to other nodes if needed
@@ -153,5 +155,5 @@ struct sph_particle_data : public sph_particle_data_hydrocore
   void set_viscosity_coefficient(double dt);
 #endif
 };
-
+}
 #endif

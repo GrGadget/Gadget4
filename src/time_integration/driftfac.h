@@ -24,6 +24,8 @@
 #include "gadget/dtypes.h"
 #include "gadgetconfig.h"
 
+namespace gadget{
+
 class driftfac
 {
  public:
@@ -83,5 +85,5 @@ class driftfac
 };
 
 extern driftfac Driftfac;
-
+}
 #endif

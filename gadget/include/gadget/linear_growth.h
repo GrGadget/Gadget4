@@ -3,6 +3,8 @@
 #include <gsl/gsl_integration.h>  // gsl_integration_workspace
 #include <cmath>                  // sqrt, pow
 
+namespace gadget{
+
 class linear_growth
 {
   double Omega0, OmegaLambda;
@@ -30,3 +32,5 @@ class linear_growth
     return hubble_a * result;
   }
 };
+
+}

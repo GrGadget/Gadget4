@@ -17,6 +17,8 @@ extern template class std::vector<int>;
 
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
+
 #define PCHAR(a) ((char *)a)
 
 /* This method prepares an Alltoallv computation.
@@ -265,4 +267,6 @@ void my_int_MPI_Alltoallv(void *sendb, int *sendcounts, int *sdispls, void *recv
             }
         }
     }
+}
+
 }

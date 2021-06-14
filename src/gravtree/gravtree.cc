@@ -32,6 +32,8 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
+
 /*!
  *  This file contains the code for the gravitational force computation by
  *  means of the tree algorithm. To this end, a tree force is computed for all
@@ -211,7 +213,11 @@ void gravtree<partset>::gravity_exchange_forces(void)
   Mem.myfree(send_offset);
   Mem.myfree(send_count);
 }
+}
 
 /* make sure that we instantiate the template */
+
 #include "../data/simparticles.h"
+namespace gadget{
 template class gravtree<simparticles>;
+}

@@ -18,6 +18,8 @@
 
 #define HALF_ROUND_STYLE 1
 #include <half/half.hpp>
+
+namespace gadget{ 
 using half_float::half;
 
 // TODO: remove global variables
@@ -661,4 +663,5 @@ void write_string_attribute(hid_t handle, const char *attr_name, const char *buf
 
   my_H5Aclose(hdf5_attribute, attr_name);
   my_H5Sclose(hdf5_dataspace, H5S_SCALAR);
+}
 }

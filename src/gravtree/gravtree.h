@@ -48,6 +48,8 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/symtensors.h"  // vector
 
+namespace gadget{
+
 /** The tree node data structure. Nodes points to the actual memory
  allocated for the internal nodes, but is shifted such that
  Nodes[Sp.MaxPart] gives the first allocated node. Note that node
@@ -685,4 +687,5 @@ class gravtree : public tree<gravnode, partset, gravpoint_data, foreign_gravpoin
 #endif
 };
 
+}
 #endif

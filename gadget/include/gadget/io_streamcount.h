@@ -19,6 +19,8 @@
 #include "gadget/macros.h"  // Terminate
 #include "gadgetconfig.h"
 
+namespace gadget{
+
 class io_streamcount
 {
  public:
@@ -99,5 +101,5 @@ class io_streamcount
 
   long long get_io_byte_count(void) { return byte_count; }
 };
-
+}
 #endif

@@ -29,6 +29,7 @@
 #include "gadget/timebindata.h"
 #include "gadgetconfig.h"
 
+namespace gadget{
 class mmparticles : public setcomm
 {
  public:
@@ -58,7 +59,7 @@ class mmparticles : public setcomm
       Terminate("NumPart=%d > MaxPart=%d", NumPart, MaxPart);
   }
 };
-
+}
 #endif
 
 #endif

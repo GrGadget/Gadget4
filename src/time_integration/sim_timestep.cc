@@ -35,6 +35,7 @@
  *  ends the previous timestep and the half-step kick for the new timestep are combined into one operation.
  */
 
+namespace gadget{
 void sim::find_hydro_timesteps(void)
 {
 #ifndef FORCE_EQUAL_TIMESTEPS
@@ -504,4 +505,5 @@ void simparticles::timebin_cleanup_list_of_active_particles(void)
           TimeBinsHydro.timebin_remove_particle(idx, P[i].getTimeBinHydro());
         }
     }
+}
 }

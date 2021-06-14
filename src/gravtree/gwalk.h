@@ -14,6 +14,8 @@
 
 #include "../mpi_utils/shared_mem_handler.h"
 
+namespace gadget{
+
 class gwalk : public gravtree<simparticles>
 {
  public:
@@ -116,4 +118,5 @@ class gwalk : public gravtree<simparticles>
   inline void evaluate_particle_particle_interaction(const pinfo &pdat, const int no, const char jtype, int no_task);
 };
 
+}
 #endif

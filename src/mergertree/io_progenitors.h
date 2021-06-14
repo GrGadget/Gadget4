@@ -29,7 +29,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
-
+namespace gadget{
 class progenitors_io : public IO_Def
 {
  private:
@@ -129,7 +129,7 @@ class progenitors_io : public IO_Def
       }
   }
 };
-
+}
 #endif
 
 #endif /* DESCENDANT_IO_H */

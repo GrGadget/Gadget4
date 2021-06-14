@@ -29,6 +29,7 @@
 #define MAXLEN_PARAM_VALUE 200 /**< maximum length of the value of a parameter in the parameter file */
 #define MAX_PARAMETERS 300     /**< maximum number of parameters in the parameter file */
 
+namespace gadget{
 class parameters : public setcomm
 {
  public:
@@ -50,5 +51,5 @@ class parameters : public setcomm
   char ParametersChangeable[MAX_PARAMETERS];
   int ParameterSequence[MAX_PARAMETERS];
 };
-
+}
 #endif /* PARAMETERS_H */

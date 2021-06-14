@@ -27,6 +27,8 @@
 #define LABEL_LEN 4
 #define DATASETNAME_LEN 256
 
+namespace gadget {
+
 enum arrays
 {
   A_NONE,
@@ -273,5 +275,7 @@ class IO_Def : public io_streamcount, public setcomm
 
 #define FLAG_ZELDOVICH_ICS 1
 #define FLAG_SECOND_ORDER_ICS 2
+
+}
 
 #endif

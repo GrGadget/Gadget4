@@ -16,6 +16,7 @@
 
 #include "gadget/timebindata.h"
 
+namespace gadget{ 
 void TimeBinData::timebins_init(const char *name, const int MaxPart)
 {
   NActiveParticles = 0;
@@ -150,4 +151,5 @@ void TimeBinData::timebin_add_particles_of_timebin_to_list_of_active_particles(i
       ActiveParticleList[NActiveParticles] = i;
       NActiveParticles++;
     }
+}
 }

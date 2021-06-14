@@ -18,6 +18,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/macros.h"
 
+namespace gadget{
 struct lightcone_massmap_data
 {
   MyFloat Ascale;
@@ -47,6 +48,6 @@ struct lightcone_massmap_data
 #endif
   }
 };
-
+}
 #endif
 #endif

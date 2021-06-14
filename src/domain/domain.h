@@ -20,6 +20,8 @@
 #include "gadget/peano.h"    // peanokey
 #include "gadget/setcomm.h"  // class setcomm;
 
+namespace gadget{
+
 enum domain_options
 {
   STANDARD,
@@ -283,4 +285,5 @@ class domain : public setcomm
   }
 };
 
+}
 #endif

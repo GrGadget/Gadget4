@@ -29,6 +29,8 @@
 #include "gadget/dtypes.h"
 #include "gadget/symtensors.h"
 
+namespace gadget{
+
 /*!
  *
  *  This file contains the definitions of the Ewald correction lookup table code.
@@ -126,4 +128,5 @@ class ewald : public intposconvert, public io_streamcount, public setcomm
 
 extern ewald Ewald;
 
+}
 #endif

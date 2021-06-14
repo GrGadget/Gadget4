@@ -21,6 +21,8 @@
 #include "gadget/macros.h"     // Terminate
 #include "gadget/mpi_utils.h"  // allreduce_sum
 
+namespace gadget{
+
 /** This function uses the cumulative cost function (which weights work-load and memory-load equally) to subdivide
  *  the list of top-level leaf nodes into pieces that are (approximately) equal in size.
  */
@@ -725,10 +727,14 @@ void domain<lcparticles>::domain_init_sum_cost(void)
 
 #endif
 
+}
 #include "../data/simparticles.h"
+namespace gadget{
 template class domain<simparticles>;
-
+}
 #ifdef LIGHTCONE_PARTICLES
 #include "../data/lcparticles.h"
+namespace gadget{
 template class domain<lcparticles>;
+}
 #endif

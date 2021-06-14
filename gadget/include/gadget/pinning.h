@@ -21,6 +21,7 @@
 
 #include <hwloc.h>
 
+namespace gadget{
 class pinning
 {
  private:
@@ -42,5 +43,5 @@ class pinning
   void pin_to_core_set(setcomm *sc);
   void report_pinning(setcomm *sc);
 };
-
+}
 #endif

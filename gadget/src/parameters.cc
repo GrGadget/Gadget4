@@ -20,6 +20,7 @@
 #include "gadget/constants.h"  // MAXLEN_PATH_EXTRA
 #include "gadget/macros.h"     // Terminate
 
+namespace gadget{
 void parameters::add_param(const char *name, void *buf, int type, int flag)
 {
   if(NParameters > MAX_PARAMETERS)
@@ -224,4 +225,5 @@ void parameters::write_used_parameters(const char *dirname, const char *fname)
 
       fclose(fdout);
     }
+}
 }

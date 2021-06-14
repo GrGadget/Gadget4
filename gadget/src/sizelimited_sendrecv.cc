@@ -16,6 +16,7 @@
 #include "gadget/constants.h"  // MPI_MESSAGE_SIZELIMIT_IN_BYTES
 #include "gadget/mpi_utils.h"
 
+namespace gadget{ 
 int myMPI_Sendrecv(void *sendb, size_t sendcount, MPI_Datatype sendtype, int dest, int sendtag, void *recvb, size_t recvcount,
                    MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status)
 {
@@ -66,4 +67,5 @@ int myMPI_Sendrecv(void *sendb, size_t sendcount, MPI_Datatype sendtype, int des
     }
 
   return 0;
+}
 }

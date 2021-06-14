@@ -20,6 +20,10 @@
 #include "../main/simulation.h"  // class sim
 #include "../system/system.h"
 
+#include "gadget/mpi_utils.h"  // TAG_HEADER
+
+namespace gadget{
+
 gsl_rng *random_generator; /*!< the random number generator used */
 
 void init_rng(int thistask)
@@ -263,4 +267,5 @@ void sim::mpi_report_comittable_memory(void)
     }
 
   fflush(stdout);
+}
 }

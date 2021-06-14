@@ -32,6 +32,8 @@
 #include "gadget/peano.h"
 #include "gadget/timebindata.h"
 
+namespace gadget {
+
 /*! This file contains the code for the gravitational force computation by
  *  means of the tree algorithm. To this end, a tree force is computed for all
  *  active local particles, and particles are exported to other processors if
@@ -930,6 +932,10 @@ void gwalk::gravity_tree(int timebin)
   TIMER_STOP(CPU_LOGS);
 }
 
+}
+
 /* make sure that we instantiate the template */
 #include "../data/simparticles.h"
+namespace gadget{
 template class gravtree<simparticles>;
+}

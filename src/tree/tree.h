@@ -29,6 +29,7 @@
 #include "../domain/domain.h"                 // template class domain;
 #include "../mpi_utils/shared_mem_handler.h"  // shmem Shmem; global variable
 
+namespace gadget{
 #if MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 32
 typedef std::uint32_t node_bit_field;
 #elif MAX_NUMBER_OF_RANKS_WITH_SHARED_MEMORY <= 64
@@ -377,5 +378,5 @@ class tree
     return (int *)((char *)TreeSharedMemBaseAddr[shmrank] + TreeNextnode_offsets[shmrank]);
   }
 };
-
+} // namespace gadget
 #endif

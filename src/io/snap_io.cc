@@ -31,6 +31,7 @@
  * For init_field arguments read the documentation of init_field.
  * Don't forget to add the new IO_FLAG to io_private.h
  */
+namespace gadget{
 void snap_io::init_basic(simparticles *Sp_ptr)
 {
   Sp = Sp_ptr;
@@ -958,4 +959,5 @@ void snap_io::get_datagroup_name(int type, char *buf)
     sprintf(buf, "/TreeTable");
   else
     Terminate("wrong group");
+}
 }

@@ -26,6 +26,7 @@
 #include "../gravtree/gravtree.h"
 #include "gadget/dtypes.h"
 
+namespace gadget{
 #define TESTGRID 384
 
 #ifdef LONG_X_BITS
@@ -71,5 +72,5 @@ class gravtest
 
   void gravity_forcetest(int timebin);
 };
-
+}
 #endif /* GRAV_FORCETEST_H */

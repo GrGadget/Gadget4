@@ -14,6 +14,7 @@
 #include "gadget/macros.h"
 #include "gadget/pinning.h"
 
+namespace gadget{ 
 void pinning::get_core_set(void)
 {
   cpuset = hwloc_bitmap_alloc();
@@ -176,4 +177,5 @@ void pinning::report_pinning(setcomm *sc)
       fflush(stdout);
       MPI_Barrier(sc->Communicator);
     }
+}
 }

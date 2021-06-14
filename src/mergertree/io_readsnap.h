@@ -30,6 +30,8 @@
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
+
 class readsnap_io : public IO_Def
 {
  private:
@@ -109,6 +111,6 @@ class readsnap_io : public IO_Def
 #endif
 };
 
+}
 #endif
-
 #endif /* READSNAP_IO_H */

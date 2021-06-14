@@ -14,6 +14,8 @@
 #include "gadget/dtypes.h"  // MyIntPosType
 #include "gadget/mpi_utils.h"
 
+namespace gadget {
+
 MPI_Datatype MPI_MyIntPosType;
 
 MPI_Op MPI_MIN_MyIntPosType;
@@ -80,4 +82,6 @@ void my_mpi_types_init(void)
   MPI_Op_create(max_MPI_MyIntPosType, 1, &MPI_MAX_MyIntPosType);
   MPI_Op_create(min_MPI_MySignedIntPosType, 1, &MPI_MIN_MySignedIntPosType);
   MPI_Op_create(max_MPI_MySignedIntPosType, 1, &MPI_MAX_MySignedIntPosType);
+}
+
 }

@@ -22,6 +22,8 @@
 #include "gadget/dtypes.h"     // MyReal, MyIntPosType
 #include "gadget/macros.h"     // Terminate
 
+namespace gadget{
+
 #define MSB ((MyIntPosType)(~((MyIntPosType)(~((MyIntPosType)0)) >> ((MyIntPosType)1))))
 
 #if defined(LONG_X_BITS)
@@ -482,5 +484,5 @@ class intposconvert
 #endif
   }
 };
-
+}
 #endif

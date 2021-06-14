@@ -16,6 +16,7 @@ extern template class std::vector<long long>;
 
 #include "gadget/mpi_utils.h"
 
+namespace gadget{ 
 void minimum_large_ints(int n, long long *src, long long *res, MPI_Comm comm)
 {
   if(src == res)
@@ -40,4 +41,5 @@ void sumup_longs(int n, long long *src, long long *res, MPI_Comm comm)
     MPI_Allreduce(MPI_IN_PLACE, res, n, MPI_LONG_LONG, MPI_SUM, comm);
   else
     MPI_Allreduce(src, res, n, MPI_LONG_LONG, MPI_SUM, comm);
+}
 }

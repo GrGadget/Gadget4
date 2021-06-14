@@ -30,6 +30,8 @@
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
+
 class descendant_io : public IO_Def
 {
  private:
@@ -130,6 +132,6 @@ class descendant_io : public IO_Def
   }
 };
 
+}
 #endif
-
 #endif /* DESCENDANT_IO_H */

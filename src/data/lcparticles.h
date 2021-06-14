@@ -27,6 +27,7 @@
 #include "gadget/setcomm.h"                  // setcomm
 #include "gadget/sph_particle_data.h"        // sph_particle_data
 
+namespace gadget{
 class lcparticles : public intposconvert, public setcomm
 {
  public:
@@ -214,7 +215,7 @@ class lcparticles : public intposconvert, public setcomm
 #endif
 #endif
 };
-
+}
 #endif
 
 #endif

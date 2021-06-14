@@ -38,6 +38,7 @@
 /* This function checks whether there is a spatial overlap between the (rectangular) enclosing box
  * of the particles contained in a node, and the search region.
  */
+namespace gadget{
 inline int sph::sph_density_evaluate_particle_node_opening_criterion(pinfo &pdat, ngbnode *nop)
 {
   if(nop->level <= LEVEL_ALWAYS_OPEN)  // always open the root node (note: full node length does not fit in the integer type)
@@ -1071,4 +1072,5 @@ inline void sph::clear_density_result(sph_particle_data *SphP)
 #ifdef TIMEDEP_ART_VISC
   SphP->decayVel = 0;
 #endif
+}
 }

@@ -16,6 +16,8 @@
 #include "../mpi_utils/shared_mem_handler.h"
 #include "../ngbtree/ngbtree.h"
 
+namespace gadget {
+
 #define MAX_NGBS 500000
 
 class sph : public ngbtree
@@ -131,4 +133,5 @@ class sph : public ngbtree
 #endif
 };
 
+}
 #endif

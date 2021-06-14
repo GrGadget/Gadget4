@@ -14,6 +14,7 @@
 
 #include "gadget/symtensor_indices.h"
 
+namespace gadget{
 void symtensor_test(void);
 
 template <typename T1, typename T2>
@@ -2185,5 +2186,5 @@ inline void setup_D7(enum setup_options opt, symtensor7<T> &D7, vector<T> &dxyz,
 #undef Y
 #undef Z
 }
-
+}
 #endif

@@ -24,6 +24,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/macros.h"  // Terminate
 
+namespace gadget{
 void driftfac::init_drift_table(void)
 {
 #define WORKSIZE 100000
@@ -266,4 +267,5 @@ integertime driftfac::get_gravkick_factor_inverse(double fac)
   integertime time0 = (a1 - logTimeBegin) / All.Timebase_interval;
 
   return time0;
+}
 }

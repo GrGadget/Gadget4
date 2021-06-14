@@ -18,6 +18,7 @@ extern template class std::vector<double>;
 
 #include "gadget/mpi_utils.h"
 
+namespace gadget{ 
 void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Communicator)
 {
   int ntask, thistask, ptask;
@@ -140,4 +141,5 @@ void allreduce_sparse_double_sum(double *loc, double *glob, int N, MPI_Comm Comm
     byteoffset[task] = byteoffset[task - 1] + bytecounts[task - 1];
 
   MPI_Allgatherv(loc_data.data(), bytecounts[thistask], MPI_BYTE, glob, bytecounts.data(), byteoffset.data(), MPI_BYTE, Communicator);
+}
 }

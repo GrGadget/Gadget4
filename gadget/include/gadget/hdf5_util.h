@@ -18,6 +18,8 @@
 
 #define COMPRESSION_CHUNKSIZE 1000
 
+namespace gadget{
+
 extern hid_t Halfprec_memtype;
 extern hid_t Int48_memtype;
 extern hid_t Int128_memtype;
@@ -66,4 +68,5 @@ void read_scalar_attribute(hid_t handle, const char *attr_name, void *buf, hid_t
 int read_scalar_attribute(hid_t handle, const char *attr_name, const char *alternative_name, void *buf, hid_t mem_type_id);
 void read_vector_attribute(hid_t handle, const char *attr_name, void *buf, hid_t mem_type_id, int length);
 
+}
 #endif

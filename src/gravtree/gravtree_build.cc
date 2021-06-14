@@ -32,6 +32,8 @@
 #include "gadget/peano.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
+
 /*!
  *  This file contains the construction of the tree used for calculating the gravitational force.
  *  The type tree implemented is a geometrical oct-tree, starting from a cube encompassing
@@ -620,12 +622,19 @@ void gravtree<partset>::set_softenings(void)
                            a node */
 }
 
+} // namespace gadget
+
 /* make sure that we instantiate the template */
 #include "../data/simparticles.h"
+namespace gadget{
 template class gravtree<simparticles>;
+}
 
 /* make sure that we instantiate the template */
 #if defined(LIGHTCONE) && (defined(LIGHTCONE_PARTICLES_GROUPS) || defined(LIGHTCONE_IMAGE_COMP_HSML_VELDISP))
 #include "../data/lcparticles.h"
+namespace gadget{
 template class gravtree<lcparticles>;
+}
 #endif
+

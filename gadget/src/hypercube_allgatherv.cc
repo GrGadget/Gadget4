@@ -15,6 +15,7 @@
 
 #include <gadget/mpi_utils.h>
 
+namespace gadget{
 #ifdef MPI_HYPERCUBE_ALLGATHERV
 
 #define TAG 100
@@ -50,3 +51,4 @@ int MPI_hypercube_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype
 }
 
 #endif
+}

@@ -17,6 +17,8 @@
 #include "../time_integration/driftfac.h"  // extern driftfac Driftfac;
 #include "gadget/macros.h"                 // Terminate
 
+namespace gadget {
+
 void global_data_all_processes::set_cosmo_factors_for_current_time(void)
 {
   if(ComovingIntegrationOn)
@@ -281,4 +283,6 @@ void global_data_all_processes::some_parameter_checks(void)
       if(SofteningClassOfPartType[i] >= NSOFTCLASSES || SofteningClassOfPartType[i] < 0)
         Terminate("SofteningClassOfPartType%d  invalid (NSOFTCLASSES=%d)\n", i, NSOFTCLASSES);
     }
+}
+
 }

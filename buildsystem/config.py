@@ -73,6 +73,7 @@ def out3(options, fname):
 #include \"gadget/dtypes.h\"
 #include \"gadget/macros.h\"
 #include \"src/io/io.h\"
+namespace gadget {
 hid_t my_H5Acreate(hid_t loc_id, const char *attr_name, hid_t type_id, hid_t space_id, hid_t acpl_id);
 hid_t my_H5Screate(H5S_class_t type);
 herr_t my_H5Aclose(hid_t attr_id, const char *attr_name);
@@ -108,7 +109,7 @@ H5Tset_size(atype, 1);\n
 
     f.write("my_H5Tclose(atype);\n")
     f.write("}\n")
-    f.write("\n")
+    f.write("}\n")
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

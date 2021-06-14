@@ -20,6 +20,8 @@
 #include "gadget/macros.h"     // Terminate
 #include "gadget/mpi_utils.h"  // sumup_longs
 
+namespace gadget{
+
 /*! \file domain_exchange.c
  *  \brief exchanges particle data according to the new domain decomposition
  */
@@ -867,10 +869,14 @@ void domain<partset>::particle_exchange_based_on_PS(MPI_Comm Communicator)
     }
 }
 
+}
 #include "../data/simparticles.h"
+namespace gadget{
 template class domain<simparticles>;
-
+}
 #ifdef LIGHTCONE_PARTICLES
 #include "../data/lcparticles.h"
+namespace gadget{
 template class domain<lcparticles>;
+}
 #endif

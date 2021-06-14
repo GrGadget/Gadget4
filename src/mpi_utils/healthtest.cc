@@ -25,6 +25,7 @@
 #include "gadget/dtypes.h"
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
 #define TEST_PACKET_SIZE_IN_MB 5
 #define WORK_LOOP_COUNTER 50000000
 #define WORK_NUMBER_OF_IPROBE_TESTS 1000000
@@ -290,4 +291,5 @@ void sim::measure_iprobe_performance(const char *tag)
       "sec\n",
       tag, tavg, 100.0 * variation, min_time.t, min_time.rank, name_minnode, max_time.t, max_time.rank, name_maxnode,
       Logs.timediff(ta, tb));
+}
 }

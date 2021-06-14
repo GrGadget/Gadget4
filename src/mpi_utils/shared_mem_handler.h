@@ -18,6 +18,7 @@
 
 #define MAX_TREE_INFOS 10
 
+namespace gadget{
 class shmem
 {
   char *TableData;
@@ -131,5 +132,5 @@ class shmem
 };
 
 extern shmem Shmem;
-
+}
 #endif

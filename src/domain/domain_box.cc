@@ -16,6 +16,8 @@
 #include "../domain/domain.h"
 #include "gadget/dtypes.h"  // MyIntPosType
 
+namespace gadget{
+
 /*! \file domain_box.cc
  *  \brief finds extension of particle set and/or wraps them back into the fundamental periodic box
  */
@@ -306,3 +308,5 @@ template class domain<simparticles>;
 #include "../data/lcparticles.h"
 template class domain<lcparticles>;
 #endif
+
+}

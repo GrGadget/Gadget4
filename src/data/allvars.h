@@ -21,6 +21,8 @@
 #include "gadget/constants.h"   // MAXLEN_PATH
 #include "gadget/parameters.h"  // class parameters;
 
+namespace gadget {
+
 /** Data which is the SAME for all tasks (mostly code parameters read
  * from the parameter file).  Holding this data in a structure is
  * convenient for writing/reading the restart file, and it allows the
@@ -357,4 +359,5 @@ struct global_data_all_processes : public parameters
 
 extern global_data_all_processes All;
 
+}
 #endif

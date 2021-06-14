@@ -30,6 +30,7 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
 /*
  * It counts the number of particles in each timebin and updates the
  * linked lists containing the particles of each time bin. Afterwards the
@@ -457,4 +458,5 @@ void simparticles::make_list_of_active_particles(void)
   TimeBinsHydro.GlobalNActiveParticles   = out[1];
 
   TIMER_STOP(CPU_DRIFTS);
+}
 }

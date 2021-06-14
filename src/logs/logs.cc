@@ -26,6 +26,8 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
+
 /*! \brief Open files for logging.
  *
  *   This function opens various log-files that report on the status and
@@ -699,4 +701,6 @@ void logs::compute_global_quantities_of_system(void)
 
   // give everyone the result, maybe the want to do something with it
   MPI_Bcast(&SysState, sizeof(state_of_system), MPI_BYTE, 0, Communicator);
+}
+
 }

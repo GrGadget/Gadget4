@@ -17,6 +17,7 @@
 #include "../tree/tree.h"
 #include "gadget/mpi_utils.h"  // TAG_DENS_A
 
+namespace gadget{
 /*! This file contains the construction of the tree used for calculating the gravitational force
  *  and the neighbor tree for SPH.
  *  The type of tree implemented is a geometrical oct-tree, starting from a cube encompassing
@@ -1377,7 +1378,7 @@ void tree<node, partset, point_data, foreign_point_data>::tree_get_node_and_task
   no   = D->TopNodes[no].Leaf;
   task = D->TaskOfLeaf[no];
 }
-
+} // namespace gadget
 /*
     FIXME TODO
     'class tree' is a template, this cc file would not generate any code
@@ -1386,18 +1387,24 @@ void tree<node, partset, point_data, foreign_point_data>::tree_get_node_and_task
     Maybe this file should be moved to an implementation header.
 */
 #include "../ngbtree/ngbtree.h"
+namespace gadget{
 template class tree<ngbnode, simparticles, ngbpoint_data, foreign_sphpoint_data>;
-
+}
 #include "../gravtree/gravtree.h"
+namespace gadget{
 template class tree<gravnode, simparticles, gravpoint_data, foreign_gravpoint_data>;
-
+}
 #ifdef FOF
 #include "../fof/foftree.h"
+namespace gadget{
 template class tree<fofnode, simparticles, fofpoint_data, foreign_fofpoint_data>;
+}
 #if defined(LIGHTCONE) && (defined(LIGHTCONE_PARTICLES_GROUPS) || defined(LIGHTCONE_IMAGE_COMP_HSML_VELDISP))
 /* make sure that we instantiate the template */
 #include "../data/lcparticles.h"
+namespace gadget{
 template class tree<fofnode, lcparticles, fofpoint_data, foreign_fofpoint_data>;
 template class tree<gravnode, lcparticles, gravpoint_data, foreign_gravpoint_data>;
+}
 #endif
 #endif

@@ -19,6 +19,8 @@
 #include "gadget/macros.h"     // Terminate
 #include "gadget/mpi_utils.h"  // TAG_N
 
+
+namespace gadget {
 /** \file mymalloc.cc
  *
  *  \brief Manager for dynamic memory allocation
@@ -622,4 +624,5 @@ void memory::check_maxmemsize_setting(int maxmemsize)
 
   if(errflag_tot)
     Terminate("At least one node has insufficient memory");
+}
 }

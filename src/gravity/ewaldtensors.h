@@ -16,6 +16,7 @@
 
 // derivative tensors for Ewald correction - they have few independent elements due to cubic symmetry
 
+namespace gadget{
 template <typename T>
 class ewaldtensor0
 {
@@ -646,5 +647,5 @@ inline symtensor5<T> operator*(const ewaldtensor10<T> &S, const symtensor5<T> &D
 
   return res;
 }
-
+}
 #endif

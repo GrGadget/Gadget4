@@ -27,6 +27,8 @@
 extern template class std::vector<size_t>;
 extern template class std::vector<int>;
 
+namespace gadget{
+
 /* We only use the one-dimensional FFTW3 routines, because the MPI versions of FFTW3
  * allocated memory for themselves during the transforms (which we want to strictly avoid),
  * and because we want to allow transforms that are so big that more than 2GB may be
@@ -1120,4 +1122,6 @@ void mpi_fft_columns::transpose(fft_real *data, int Ndims[3], /* global dimensio
     }
   if(just_count_flag)
     MPI_Alltoall(count_send, sizeof(size_t), MPI_BYTE, count_recv, sizeof(size_t), MPI_BYTE, Communicator);
+}
+
 }

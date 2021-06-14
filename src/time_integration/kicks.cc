@@ -36,6 +36,7 @@
  * If we are on a PM step the kick due to the particle mesh's long range gravity
  * is applied first. Afterwards the short range kick due to the tree force is added.
  */
+namespace gadget{
 void sim::find_timesteps_and_do_gravity_step_first_half(void)
 {
   TIMER_START(CPU_DRIFTS);
@@ -581,4 +582,5 @@ void sim::hydro_force(int step_indicator)
     Mem.myfree(Old);
 
   Mem.myfree(targetlist);
+}
 }

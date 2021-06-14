@@ -31,6 +31,7 @@
 #include "gadget/peano.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
 void ngbtree::report_log_message(void)
 {
   double numnodes = NumNodes, tot_numnodes;
@@ -753,4 +754,5 @@ void ngbtree::update_maxhsml(void)
   Mem.myfree(nodelist);
 
   TIMER_STOP(CPU_NGBTREEUPDATEMAXHSML);
+}
 }

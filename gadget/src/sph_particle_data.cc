@@ -16,6 +16,7 @@
 /*! This file contains the function for the time-dependent artificial viscosity
  */
 
+namespace gadget{ 
 #ifdef IMPROVED_VELOCITY_GRADIENTS
 void sph_particle_data::set_velocity_gradients(void)
 {
@@ -163,5 +164,5 @@ void sph_particle_data::set_viscosity_coefficient(double dt)
   if(Alpha < All.AlphaMin)
     Alpha = All.AlphaMin;
 }
-
 #endif
+}

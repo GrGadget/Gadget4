@@ -18,6 +18,7 @@
 
 extern template class std::vector<int>;
 
+namespace gadget{
 struct TimeBinData
 {
  public:
@@ -47,5 +48,5 @@ struct TimeBinData
   void timebin_make_list_of_active_particles_up_to_timebin(int timebin);
   void timebin_add_particles_of_timebin_to_list_of_active_particles(int timebin);
 };
-
+}
 #endif /* TIMESTEP */

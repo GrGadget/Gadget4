@@ -26,6 +26,8 @@
 /** This structure holds all the information that is
  * stored for each particle of the simulation.
  */
+namespace gadget { 
+ 
 struct particle_data
 {
   // we do this ugly trick of using memcpy for our own copy constructor and assignment operator
@@ -52,7 +54,7 @@ struct particle_data
   MyFloat GravPM[3]; /**< particle acceleration due to long-range PM gravity force */
 #endif
 
-  std::atomic<integertime> Ti_Current; /**< current time on integer timeline */
+  ::std::atomic<integertime> Ti_Current; /**< current time on integer timeline */
   float OldAcc;                        /**< magnitude of old gravitational force. Used in relative opening criterion */
   int GravCost;                        /**< weight factors used for balancing the work-load */
 
@@ -82,7 +84,7 @@ struct particle_data
 #endif
  public:
 #ifndef LEAN
-  std::atomic_flag access;
+  ::std::atomic_flag access;
 #endif
 
 #ifdef REARRANGE_OPTION
@@ -276,4 +278,5 @@ struct idstoredata
   MyIDType* ID;
 };
 
+}
 #endif

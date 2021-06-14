@@ -35,6 +35,7 @@
  *  (via artificial viscosity) is computed.
  */
 
+namespace gadget{
 inline int sph::sph_hydro_evaluate_particle_node_opening_criterion(pinfo &pdat, ngbnode *nop)
 {
   if(nop->level <= LEVEL_ALWAYS_OPEN)  // always open the root node (note: full node length does not fit in the integer type)
@@ -989,4 +990,5 @@ inline void sph::clear_hydro_result(sph_particle_data *SphP)
 
   SphP->DtEntropy    = 0;
   SphP->MaxSignalVel = 0;
+}
 }

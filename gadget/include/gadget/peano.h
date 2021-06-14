@@ -14,6 +14,8 @@
 
 #include "gadget/dtypes.h"  // definition of MyIntPosType
 
+namespace gadget{
+
 class peanokey
 {
  public:
@@ -32,5 +34,7 @@ peanokey peano_hilbert_key(MyIntPosType x, MyIntPosType y, MyIntPosType z, int b
 void peano_hilbert_key_inverse(peanokey key, int bits, MyIntPosType *x, MyIntPosType *y, MyIntPosType *z);
 
 unsigned char peano_incremental_key(unsigned char pix, unsigned char *rotation);
+
+}
 
 #endif

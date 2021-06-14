@@ -17,6 +17,11 @@
 #include "gadget/setcomm.h"
 #include "gadgetconfig.h"
 
+extern template class std::vector<size_t>;
+extern template class std::vector<int>;
+
+namespace gadget{
+
 #ifdef DOUBLEPRECISION_FFTW
 typedef double fft_real;
 typedef fftw_complex fft_complex;
@@ -34,8 +39,6 @@ typedef fftwf_complex fft_complex;
 #endif
 #endif
 
-extern template class std::vector<size_t>;
-extern template class std::vector<int>;
 
 struct fft_plan_slabs
 {
@@ -134,5 +137,7 @@ class mpi_fft_columns : public setcomm, public fft_plan_columns
   mpi_fft_columns(MPI_Comm comm, std::array<int, 3> n);
   void fft(fft_real *data, fft_real *workspace, int forward);
 };
+
+}
 
 #endif

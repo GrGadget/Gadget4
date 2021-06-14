@@ -19,6 +19,8 @@
 #include "gadget/dtypes.h"     // restart_options
 #include "gadget/setcomm.h"
 
+namespace gadget {
+
 #define CACHELINESIZE 64
 
 #define MAXBLOCKS 5000
@@ -139,5 +141,5 @@ class memory : public setcomm
 };
 
 extern memory Mem;
-
+}
 #endif

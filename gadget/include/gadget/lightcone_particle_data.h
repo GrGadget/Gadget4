@@ -22,6 +22,8 @@
 #include "gadget/macros.h"
 #include "gadget/symtensors.h"
 
+namespace gadget{
+
 struct lightcone_particle_data
 {
   MyIntPosType IntPos[3];
@@ -133,4 +135,7 @@ struct lightcone_particle_data
 };
 
 #endif
+
+}
+
 #endif

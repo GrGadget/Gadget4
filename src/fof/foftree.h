@@ -15,6 +15,7 @@
 #include "../data/simparticles.h"
 #include "../tree/tree.h"
 
+namespace gadget{
 struct fofpoint_data
 {
   MyIntPosType IntPos[3];
@@ -83,5 +84,5 @@ class foftree : public tree<fofnode, partset, fofpoint_data, foreign_fofpoint_da
 
   int treefind_fof_check_single_node_for_full_linking(int no);
 };
-
+}
 #endif

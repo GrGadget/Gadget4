@@ -34,6 +34,7 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
 void restart::write(sim *Sim_ptr)
 {
   Sim = Sim_ptr;
@@ -648,3 +649,4 @@ void restart::byten_doit(void *x, size_t n, int modus)
  * if modus==0 it writes a restart file.
  */
 void restart::in(int *x, int modus) { byten(x, sizeof(int), modus); }
+}

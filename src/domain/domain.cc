@@ -32,6 +32,8 @@
 #include "../system/system.h"  // myflush
 #include "gadget/macros.h"     // Terminate
 
+namespace gadget{
+
 /*! This is the main routine for the domain decomposition.  It acts as a
  *  driver routine that allocates various temporary buffers, maps the
  *  particles back onto the periodic box if needed, and then does the
@@ -529,3 +531,5 @@ template class domain<simparticles>;
 #include "../data/lcparticles.h"
 template class domain<lcparticles>;
 #endif
+
+}

@@ -30,6 +30,7 @@
 #include "gadget/hdf5_util.h"
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
 class treelinks_io : public IO_Def
 {
  private:
@@ -69,7 +70,7 @@ class treelinks_io : public IO_Def
 
  private:
 };
-
+}
 #endif
 
 #endif /* TREELINKS_IO_H */

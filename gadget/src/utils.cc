@@ -2,6 +2,7 @@
 #include <climits>          // INT_MAX
 #include "gadget/macros.h"  // Terminate
 
+namespace gadget{ 
 void subdivide_evenly(int N, int pieces, int index_bin, int *first, int *count)
 {
   int nbase      = N / pieces;
@@ -65,4 +66,5 @@ int my_fls(unsigned int x)
       r -= 1;
     }
   return r;
+}
 }

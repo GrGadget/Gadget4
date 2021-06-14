@@ -19,7 +19,7 @@
 
 /** The ngb-tree data structure
  */
-
+namespace gadget{
 struct ngbpoint_data
 {
   MyIntPosType IntPos[3];
@@ -158,5 +158,5 @@ class ngbtree : public tree<ngbnode, simparticles, ngbpoint_data, foreign_sphpoi
   void finish_vounds_update(int nchanged, int *nodelist);
   void finish_maxhsml_update(int nchanged, int *nodelist);
 };
-
+}
 #endif

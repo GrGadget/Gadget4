@@ -17,6 +17,7 @@
 
 #include "gadget/setcomm.h"
 
+namespace gadget{ 
 void setcomm::initcomm(MPI_Comm Comm)
 {
   Communicator = Comm;
@@ -129,4 +130,5 @@ void setcomm::determine_compute_nodes(void)
   MaxTasksPerNode = max_count;
 
   free(list_of_nodes);
+}
 }

@@ -32,6 +32,7 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
 inline int sph::sph_treetimestep_evaluate_particle_node_opening_criterion(pinfo &pdat, ngbnode *nop)
 {
   if(nop->level <= LEVEL_ALWAYS_OPEN)  // always open the root node (note: full node length does not fit in the integer type)
@@ -467,4 +468,5 @@ void sph::tree_based_timesteps(void)
 
       TIMER_STOP(CPU_LOGS);
     }
+}
 }

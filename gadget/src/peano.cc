@@ -13,6 +13,8 @@
 
 #include "gadget/peano.h"
 
+namespace gadget {
+
 namespace
 {
 struct peano_hilbert_data
@@ -253,4 +255,6 @@ bool operator>=(const peanokey &a, const peanokey &b)
     return false;
   else
     return true;
+}
+
 }

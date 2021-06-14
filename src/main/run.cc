@@ -47,6 +47,7 @@
  * decomposition is performed, the gravitational forces are computed and
  * initial hydro forces are calculated.
  */
+namespace gadget{
 void sim::run(void)
 {
 #if defined(NGENIC_TEST) && defined(PERIODIC) && defined(PMGRID)
@@ -808,4 +809,5 @@ void sim::sincronize_particles()
       if(Sp.P[i].Ti_Current != All.Ti_Current)
         Sp.drift_particle(&Sp.P[i], &Sp.SphP[i], All.Ti_Current);
     }
+}
 }

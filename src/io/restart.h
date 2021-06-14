@@ -20,6 +20,7 @@
 #include "../main/simulation.h"
 #include "gadget/io_streamcount.h"
 
+namespace gadget{
 class sim;
 
 class restart : public io_streamcount, public setcomm
@@ -71,5 +72,5 @@ class restart : public io_streamcount, public setcomm
   void byten(void *x, size_t n, int modus);
   void byten_doit(void *x, size_t n, int modus);
 };
-
+}
 #endif /* RESTART_H */

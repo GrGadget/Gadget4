@@ -34,6 +34,7 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
 void test_io_bandwidth::measure_io_bandwidth(void)
 {
   /* create directory for test data */
@@ -227,4 +228,5 @@ void test_io_bandwidth::byten_doit(void *x, size_t n, int modus)
     my_fread(x, n, 1, fd);
   else
     my_fwrite(x, n, 1, fd);
+}
 }

@@ -19,6 +19,8 @@
 #include "../io/io.h"                  // class IO_Def;
 #include "../mergertree/mergertree.h"  // class mergertree
 
+namespace gadget{
+
 class snap_io : public IO_Def
 {
  public:
@@ -378,5 +380,5 @@ class snap_io : public IO_Def
   }
 #endif
 };
-
+}
 #endif /* SNAP_READ_WRITE_H */

@@ -19,6 +19,7 @@
 #include "../data/mymalloc.h"  // extern Mem;
 #include "gadget/macros.h"     // Terminate
 
+namespace gadget{
 //#define CHECK_LOCAL_RANK
 
 template <typename It, typename Comp>
@@ -557,5 +558,5 @@ inline double mycxxsort_parallel(T *begin, T *end, Comp comp, MPI_Comm comm)
   double tb = Logs.second();
   return Logs.timediff(ta, tb);
 }
-
+}
 #endif

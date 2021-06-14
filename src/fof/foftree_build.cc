@@ -31,6 +31,8 @@
 #include "gadget/peano.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
+
 template <typename partset>
 void foftree<partset>::report_log_message(void)
 {
@@ -234,13 +236,18 @@ void foftree<partset>::update_node_recursive(int no, int sib, int mode)
       nop->range_max[k] = range_max[k];
     }
 }
+} // namespace gadget
 
 /* make sure that we instantiate the template */
 #include "../data/simparticles.h"
+namespace gadget{
 template class foftree<simparticles>;
+}
 
 #if defined(LIGHTCONE) && (defined(LIGHTCONE_PARTICLES_GROUPS) || defined(LIGHTCONE_IMAGE_COMP_HSML_VELDISP))
 /* make sure that we instantiate the template */
 #include "../data/lcparticles.h"
+namespace gadget{
 template class foftree<lcparticles>;
+}
 #endif
