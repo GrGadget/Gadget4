@@ -45,8 +45,11 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/parameters.h"
 #include "gadget/setcomm.h"
+#include "gadget/addons/latfield_handler.hpp"
 
 #include <string>
+
+namespace gadget{
 
 #define GRID (HRPMGRID)
 
@@ -83,12 +86,17 @@ class sim : public test_io_bandwidth
       : setcomm(comm),
         test_io_bandwidth(comm)
 #ifdef PMGRID
+#ifndef GEVOLUTION_PM
 #ifdef PERIODIC
         ,
         PM(comm, {GRIDX, GRIDY, GRIDZ})
 #else
         ,
         PM(comm, HRPMGRID)
+#endif
+#else
+        ,
+        PM(comm,GRIDX)
 #endif
 #endif
   {
@@ -109,6 +117,7 @@ class sim : public test_io_bandwidth
 #endif
 
   sph NgbTree; /* get an instance of a neighbour search tree */
+
 
 #ifdef PMGRID
   pm PM;
@@ -242,4 +251,5 @@ class sim : public test_io_bandwidth
   void print_particle_info(int i);
 };
 
+}
 #endif

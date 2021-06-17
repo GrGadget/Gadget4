@@ -16,6 +16,8 @@
 #include "gadget/macros.h"  // Terminate
 #define EXTRA_SPACE 16384
 
+namespace gadget{
+
 struct data_in_generic
 {
   int Firstnode;
@@ -761,5 +763,5 @@ void generic_comm<T_in, T_out, T_tree, T_domain, T_partset>::generic_get_numnode
 
   *firstnode = &NodeInfoGet[DataGet[target].Firstnode];
 }
-
+}
 #endif

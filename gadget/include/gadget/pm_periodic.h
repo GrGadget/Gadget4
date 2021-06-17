@@ -25,6 +25,8 @@ extern template class std::vector<size_t>;
 #include "gadget/pm_mpi_fft.h"        // pm_mpi_fft
 #include "gadgetconfig.h"
 
+namespace gadget{
+
 class pm_periodic :
 
 #ifdef FFT_COLUMN_BASED
@@ -56,8 +58,9 @@ class pm_periodic :
         INTCELL{std::numeric_limits<MyIntPosType>::max() / Ngrid[0] + 1}
   {
   }
-
-  void pm_init_periodic(gadget::pm::particle_handler *Sp_ptr, double boxsize, double asmth);
+    
+  int size()const{return Ngrid[0];}  
+  void pm_init_periodic(particle_handler *Sp_ptr, double boxsize, double asmth);
   void pmforce_periodic(int mode, int *typelist);
   void calculate_power_spectra(int num, char *OutputDir);
 
@@ -76,7 +79,7 @@ class pm_periodic :
                                            with a single index */
   std::vector<size_t> Sndpm_count, Sndpm_offset, Rcvpm_count, Rcvpm_offset;
   double BoxSize{};
-  std::unique_ptr<gadget::pm::particle_handler> Sp;
+  std::unique_ptr<gadget::particle_handler> Sp;
   char power_spec_fname[MAXLEN_PATH_EXTRA];
 
   /*! \var maxfftsize
@@ -128,7 +131,7 @@ class pm_periodic :
   double green_function(std::array<int, 3> mode) const;
 
   // template <typename part_t>
-  auto grid_coordinates(std::array<long long int,3> IntPos, int fold_fact = 1 /*for power
+  auto grid_coordinates(std::array<MyIntPosType,3> IntPos, int fold_fact = 1 /*for power
   spectrum computations only*/)const
   {
     std::array<int, 3> slab;
@@ -138,7 +141,7 @@ class pm_periodic :
   }
 
   // template <typename part_t>
-  auto cell_coordinates(std::array<long long int, 3> IntPos, int fold_fact = 1 /*for power spectrum
+  auto cell_coordinates(std::array<MyIntPosType, 3> IntPos, int fold_fact = 1 /*for power spectrum
      computations only*/) const
   {
     std::array<double, 3> dx;
@@ -192,7 +195,7 @@ class pm_periodic :
 #else
     static MyFloat Mass;
 #endif
-    std::array<long long int, 3> IntPos;
+    std::array<MyIntPosType, 3> IntPos;
   };
 
 #ifndef FFT_COLUMN_BASED
@@ -206,3 +209,5 @@ class pm_periodic :
   void pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_real *grid, int dim, std::vector<std::array<double, 3>> &GravPM);
 #endif
 };
+
+}

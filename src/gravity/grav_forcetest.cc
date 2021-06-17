@@ -38,6 +38,8 @@
 #include "gadget/mpi_utils.h"
 #include "gadget/timebindata.h"
 
+namespace gadget{
+
 /*  This function computes the gravitational forces for all active particles.
  *  A new tree is constructed, if the number of force computations since
  *  it's last construction exceeds some fraction of the total
@@ -724,5 +726,5 @@ void sim::gravity_forcetest_testforcelaw(void)
   endrun();
 }
 #endif
-
+}
 #endif
