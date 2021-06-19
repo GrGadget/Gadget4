@@ -55,6 +55,7 @@
  *  are initialized to their proper values.
  */
 
+namespace gadget{
 void sim::hello(void)
 {
   mpi_printf(
@@ -233,14 +234,26 @@ void sim::begrun1(const char *parameterFile)
      All.RestartFlag == RST_POWERSPEC)
     {
 #ifdef PERIODIC
-      Sp.Asmth[0] = ASMTH * All.BoxSize / PM.Ngrid[0];
+      Sp.Asmth[0] = ASMTH * All.BoxSize / PM.size();
       Sp.Rcut[0]  = RCUT * Sp.Asmth[0];
 
 #ifdef PM_ONLY
-      PM.pm_init_periodic(new gadget::pm::simparticles_handler{Sp}, All.BoxSize, 0.0);
+      const double Asmth{0.0};
 #else
-      PM.pm_init_periodic(new gadget::pm::simparticles_handler{Sp}, All.BoxSize, Sp.Asmth[0]);
+      const double Asmth{Sp.Asmth[0]};
 #endif
+
+#ifdef GEVOLUTION_PM
+      PM.pm_init_periodic(
+        new simparticles_handler{Sp},
+        All.BoxSize,
+        All.G,
+        All.MassTable[1],
+        Asmth);
+#else
+      PM.pm_init_periodic(new simparticles_handler{Sp},All.BoxSize,Asmth);
+#endif
+
 #ifdef PLACEHIGHRESREGION
       PM.pm_init_nonperiodic(&Sp);
 #endif
@@ -268,6 +281,12 @@ void sim::begrun1(const char *parameterFile)
  */
 void sim::begrun2(void)
 {
+
+#ifdef GEVOLUTION_PM
+    // at the time of begrun1 the snapshot has not been read
+    PM.set_mass(All.MassTable[1]);
+#endif
+
   char contfname[MAXLEN_PATH_EXTRA];
   sprintf(contfname, "%scont", All.OutputDir);
   unlink(contfname);
@@ -416,4 +435,5 @@ void sim::endrun(void)
 
   MPI_Finalize();
   exit(0);
+}
 }

@@ -11,6 +11,7 @@
 
 #include "gadgetconfig.h"
 
+#include <boost/mpi/environment.hpp>
 #include <gsl/gsl_math.h>
 #include <math.h>
 #include <mpi.h>
@@ -19,6 +20,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <bitset>
+#include <LATfield2.hpp>
 #include <half/half.hpp>
 #include "../cooling_sfr/cooling.h"
 #include "../data/allvars.h"
@@ -36,14 +39,18 @@
 #include "gadget/dtypes.h"
 #include "gadget/pinning.h"
 
-/* create instances of global objects */
-
+namespace gadget{
 global_data_all_processes All;
 driftfac Driftfac;
 ewald Ewald; /* get an instance of the Ewald correction tables */
 logs Logs;
 memory Mem; /* our instance of the memory object */
 shmem Shmem;
+}
+
+using namespace gadget;
+/* create instances of global objects */
+
 
 /*!
  *  This function initializes the MPI communication packages, and sets
@@ -62,7 +69,8 @@ int main(int argc, char **argv)
   Pin.get_core_set();
 #endif
   /* initialize MPI, this may already impose some pinning */
-  MPI_Init(&argc, &argv);
+  // MPI_Init(&argc, &argv);
+  boost::mpi::environment env;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &Shmem.World_ThisTask);
   MPI_Comm_size(MPI_COMM_WORLD, &Shmem.World_NTask);
@@ -92,8 +100,19 @@ int main(int argc, char **argv)
   MPI_Allreduce(&Shmem.World_ThisTask, &Shmem.Island_Smallest_WorldTask, 1, MPI_INT, MPI_MIN, Shmem.SharedMemComm);
 
   if(Shmem.World_ThisTask == 0)
+  {
     printf("Shared memory islands host a minimum of %d and a maximum of %d MPI ranks.\n", min_ntask, max_ntask);
-
+    printf("sizeof ID = %d\n",sizeof(MyIDType));
+    std::cout << "ID_MSB = " 
+        << std::bitset< sizeof(MyIDType) * 8 >(MyIDStorage::ID_MSB) << " = "
+        << (MyIDStorage::ID_MSB) << '\n';
+    std::cout << "ID_MSK = " 
+        << std::bitset< sizeof(MyIDType) * 8 >(MyIDStorage::ID_MSK) << " = "
+        << (MyIDStorage::ID_MSK) << '\n';
+    std::cout << "HALONR_MAX = " 
+        << std::bitset< sizeof(MyIDType) * 8 >(HALONR_MAX) << " = "
+        << (HALONR_MAX) << '\n';
+  }
   Shmem.GhostRank = 0;
 
   if(max_ntask < Shmem.World_NTask)
@@ -126,6 +145,7 @@ int main(int argc, char **argv)
         }
     }
 
+  
   /* we can now split the communicator into the processing ones, and the ones reserved for communication */
   MPI_Comm_split(MPI_COMM_WORLD, Shmem.GhostRank, Shmem.World_ThisTask, &Shmem.SimulationComm);
 

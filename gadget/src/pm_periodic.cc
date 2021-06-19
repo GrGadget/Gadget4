@@ -28,9 +28,10 @@
 #include "gadget/particle_handler.h"  // particle_handler
 #include "gadget/pm_periodic.h"
 
-extern template class std::vector<MyFloat>;
+extern template class std::vector<gadget::MyFloat>;
 extern template class std::vector<size_t>;
 
+namespace gadget{
 /*!
  * These routines support two different strategies for doing the particle data exchange to assemble the density field
  * and to read out the forces and potentials:
@@ -69,7 +70,7 @@ MyFloat pm_periodic::partbuf::Mass;
  *
  *  Some auxiliary variables for bookkeeping are also initialized.
  */
-void pm_periodic::pm_init_periodic(gadget::pm::particle_handler *Sp_ptr, double boxsize, double asmth)
+void pm_periodic::pm_init_periodic(particle_handler *Sp_ptr, double boxsize, double asmth)
 {
   asmth2  = asmth * asmth;
   BoxSize = boxsize;
@@ -179,7 +180,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
   for(int idx = 0; idx < NSource; idx++)
     {
       int fact                         = pw_fold_factor(mode);
-      auto [slab_x, slab_y, slab_z]    = grid_coordinates(Sp->get_position(idx), fact);
+      auto [slab_x, slab_y, slab_z]    = grid_coordinates(Sp->get_IntPosition(idx), fact);
       large_numpart_type index_on_grid = ((large_numpart_type)idx) * 8;
 
       for(int xx = 0; xx < 2; xx++)
@@ -273,7 +274,7 @@ void pm_periodic::pmforce_zoom_optimized_prepare_density(int mode, int *typelist
     {
       int fact          = pw_fold_factor(mode);
       int pindex        = (part[i].partindex >> 3);
-      auto [dx, dy, dz] = cell_coordinates(Sp->get_position(pindex), fact);
+      auto [dx, dy, dz] = cell_coordinates(Sp->get_IntPosition(pindex), fact);
 
       double weight = Sp->get_mass(pindex);
 
@@ -435,7 +436,7 @@ void pm_periodic::pmforce_zoom_optimized_readout_forces_or_potential(fft_real *g
 
       large_numpart_type j = idx * 8;
 
-      auto [dx, dy, dz] = cell_coordinates(Sp->get_position(idx));
+      auto [dx, dy, dz] = cell_coordinates(Sp->get_IntPosition(idx));
 
       double value = localfield_data[part[j + 0].localindex] * (1.0 - dx) * (1.0 - dy) * (1.0 - dz) +
                      localfield_data[part[j + 1].localindex] * (1.0 - dx) * (1.0 - dy) * dz +
@@ -491,7 +492,7 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
             continue;
 
           int fact = pw_fold_factor(mode);
-          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx), fact);
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_IntPosition(idx), fact);
           int slab_xx = (slab_x + 1) % Ngrid[0];
 
           if(rep == 0)
@@ -511,13 +512,13 @@ void pm_periodic::pmforce_uniform_optimized_slabs_prepare_density(int mode, int 
 
               size_t ind0 = Sndpm_offset[task0] + Sndpm_count[task0]++;
               partout[ind0].Mass = Sp->get_mass(idx);
-              partout[ind0].IntPos = Sp->get_position(idx);
+              partout[ind0].IntPos = Sp->get_IntPosition(idx);
 
               if(task0 != task1)
                 {
                   size_t ind1 = Sndpm_offset[task1] + Sndpm_count[task1]++;
                   partout[ind1].Mass = Sp->get_mass(idx);
-                  partout[ind1].IntPos = Sp->get_position(idx);
+                  partout[ind1].IntPos = Sp->get_IntPosition(idx);
                 }
             }
         }
@@ -630,7 +631,7 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
             continue;
 
           int fact                      = pw_fold_factor(mode);
-          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx), fact);
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_IntPosition(idx), fact);
 
           int slab_xx = slab_x + 1;
 
@@ -683,25 +684,25 @@ void pm_periodic::pmforce_uniform_optimized_columns_prepare_density(int mode, in
             {
               size_t ind0          = Sndpm_offset[task0] + Sndpm_count[task0]++;
               partout[ind0].Mass   = Sp->get_mass(idx);
-              partout[ind0].IntPos = Sp->get_position(idx);
+              partout[ind0].IntPos = Sp->get_IntPosition(idx);
 
               if(task1 != task0)
                 {
                   size_t ind1          = Sndpm_offset[task1] + Sndpm_count[task1]++;
                   partout[ind1].Mass   = Sp->get_mass(idx);
-                  partout[ind1].IntPos = Sp->get_position(idx);
+                  partout[ind1].IntPos = Sp->get_IntPosition(idx);
                 }
               if(task2 != task1 && task2 != task0)
                 {
                   size_t ind2          = Sndpm_offset[task2] + Sndpm_count[task2]++;
                   partout[ind2].Mass   = Sp->get_mass(idx);
-                  partout[ind2].IntPos = Sp->get_position(idx);
+                  partout[ind2].IntPos = Sp->get_IntPosition(idx);
                 }
               if(task3 != task0 && task3 != task1 && task3 != task2)
                 {
                   size_t ind3          = Sndpm_offset[task3] + Sndpm_count[task3]++;
                   partout[ind3].Mass   = Sp->get_mass(idx);
-                  partout[ind3].IntPos = Sp->get_position(idx);
+                  partout[ind3].IntPos = Sp->get_IntPosition(idx);
                 }
             }
         }
@@ -914,7 +915,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xy(fft_r
     {
       // int i = Sp->get_active_index(idx);
 
-      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_IntPosition(idx));
       int slab_xx = slab_x + 1;
 
       if(slab_xx >= Ngrid[0])
@@ -1029,7 +1030,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
         {
           // int i = Sp->get_active_index(idx);
 
-          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_IntPosition(idx));
           int slab_xx = slab_x + 1;
 
           if(slab_xx >= Ngrid[0])
@@ -1080,22 +1081,22 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
           else
             {
               size_t ind0 = send_offset[task0] + send_count[task0]++;
-              partout[ind0].IntPos = Sp->get_position(idx);
+              partout[ind0].IntPos = Sp->get_IntPosition(idx);
 
               if(task1 != task0)
                 {
                   size_t ind1 = send_offset[task1] + send_count[task1]++;
-                  partout[ind1].IntPos = Sp->get_position(idx);
+                  partout[ind1].IntPos = Sp->get_IntPosition(idx);
                 }
               if(task2 != task1 && task2 != task0)
                 {
                   size_t ind2 = send_offset[task2] + send_count[task2]++;
-                  partout[ind2].IntPos = Sp->get_position(idx);
+                  partout[ind2].IntPos = Sp->get_IntPosition(idx);
                 }
               if(task3 != task0 && task3 != task1 && task3 != task2)
                 {
                   size_t ind3 = send_offset[task3] + send_count[task3]++;
-                  partout[ind3].IntPos = Sp->get_position(idx);
+                  partout[ind3].IntPos = Sp->get_IntPosition(idx);
                 }
             }
         }
@@ -1199,7 +1200,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_xz(fft_r
     {
       // int i = Sp->get_active_index(idx);
 
-      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_IntPosition(idx));
       int slab_xx = slab_x + 1;
 
       if(slab_xx >= Ngrid[0])
@@ -1291,7 +1292,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
       for(int idx = 0; idx < NSource; idx++)
         {
           // int i = Sp->get_active_index(idx);
-          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
+          auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_IntPosition(idx));
 
           int slab_zz = slab_z + 1;
 
@@ -1343,22 +1344,22 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
           else
             {
               size_t ind0 = send_offset[task0] + send_count[task0]++;
-              partout[ind0].IntPos = Sp->get_position(idx);
+              partout[ind0].IntPos = Sp->get_IntPosition(idx);
 
               if(task1 != task0)
                 {
                   size_t ind1 = send_offset[task1] + send_count[task1]++;
-                  partout[ind1].IntPos = Sp->get_position(idx);
+                  partout[ind1].IntPos = Sp->get_IntPosition(idx);
                 }
               if(task2 != task1 && task2 != task0)
                 {
                   size_t ind2 = send_offset[task2] + send_count[task2]++;
-                  partout[ind2].IntPos = Sp->get_position(idx);
+                  partout[ind2].IntPos = Sp->get_IntPosition(idx);
                 }
               if(task3 != task0 && task3 != task1 && task3 != task2)
                 {
                   size_t ind3 = send_offset[task3] + send_count[task3]++;
-                  partout[ind3].IntPos = Sp->get_position(idx);
+                  partout[ind3].IntPos = Sp->get_IntPosition(idx);
                 }
             }
         }
@@ -1461,7 +1462,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
   for(int idx = 0; idx < NSource; idx++)
     {
       // int i = Sp->get_active_index(idx);
-      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_position(idx));
+      auto [slab_x, slab_y, slab_z] = grid_coordinates(Sp->get_IntPosition(idx));
 
       int slab_zz = slab_z + 1;
 
@@ -2404,3 +2405,6 @@ double pm_periodic::green_function(std::array<int, 3> mode) const
   return smth;
 #endif
 }
+
+
+} // namespace gadget

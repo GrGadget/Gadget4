@@ -5,6 +5,8 @@ project('OpenGadget4','c','cpp', version: '4.0.0',
 if get_option('buildtype')=='release'
     add_global_arguments('-Ofast',language: 'cpp')
     add_global_arguments('-DNDEBUG',language: 'cpp')
+else
+    add_global_arguments('-g3',language: 'cpp')
 endif
 
 cpp=meson.get_compiler('cpp')
@@ -19,6 +21,8 @@ gsl = dependency('gsl')
 hwloc = dependency('hwloc')
 healpix = dependency('chealpix')
 boost = dependency('boost', modules: ['mpi','serialization','unit_test_framework'])
+latfield = dependency('latfield')
+gevolution = dependency('gevolution')
 
 pkg=import('pkgconfig')
 
@@ -38,7 +42,8 @@ subdir('gadget')
 executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
     dependencies:
-    [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half,healpix,boost],
+    [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half,healpix,boost,
+    latfield,gevolution],
     install: true)
 
 if (format.found())

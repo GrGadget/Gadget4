@@ -26,6 +26,8 @@
 #include "gadget/sph_particle_data.h"  // sph_particle_data
 #include "gadget/timebindata.h"        // TimeBinData
 
+namespace gadget {
+
 #ifdef LIGHTCONE
 class lightcone;
 #endif
@@ -44,7 +46,7 @@ class simparticles : public intposconvert, public setcomm
   long long TotNumPart; /**<  total particle numbers (global value) */
   long long TotNumGas;  /**<  total gas particle number (global value) */
 
-  typedef particle_data pdata;
+  typedef gadget::particle_data pdata;
 
   /*! This structure holds all the information that is
    * stored for each particle of the simulation.
@@ -378,31 +380,48 @@ class simparticles : public intposconvert, public setcomm
 #endif
 };
 
-namespace gadget::pm
-{
 /* Specialization of particle_handler for Gadget's type of particle */
 class simparticles_handler : public particle_handler
 {
   simparticles &Sp;
-
+  constexpr static MyReal FacIntToCoord 
+    = MyReal{1.0}/::std::numeric_limits<MyIntPosType>::max();
  public:
   simparticles_handler(simparticles &ref_Sp) : Sp{ref_Sp} {}
 
   size_t size() const override { return Sp.NumPart; }
 
-  std::array<long long int, 3> get_position(int idx) const override
+  std::array<MyIntPosType, 3> get_IntPosition(int i) const override
   {
-    int i = Sp.get_active_index(idx);
+    // int i = Sp.get_active_index(idx);
     return {Sp.P[i].IntPos[0], Sp.P[i].IntPos[1], Sp.P[i].IntPos[2]};
   }
+   
   double get_mass(int i) const override { return Sp.P[i].getMass(); }
-  void set_acceleration(int idx, std::array<double, 3> A) const override
+  void set_acceleration(int i, std::array<MyFloat, 3> A) const override
   {
-    int i             = Sp.get_active_index(idx);
+    //int i             = Sp.get_active_index(idx);
     Sp.P[i].GravPM[0] = A[0];
     Sp.P[i].GravPM[1] = A[1];
-    Sp.P[i].GravPM[2] = A[2];
+    Sp.P[i].GravPM[2] = A[2]; // in gadget units
+  }
+  
+  MyIDType get_id(int i)  const override
+  {
+    return Sp.P[i].ID.get();
+  }
+  std::array<MyFloat, 3> get_position(int i) const override
+  {
+    auto IntPos = get_IntPosition(i);
+    return { 
+        IntPos[0]*FacIntToCoord, 
+        IntPos[1]*FacIntToCoord,
+        IntPos[2]*FacIntToCoord  };// in units of the boxsize
+  }
+  std::array<MyFloat, 3> get_velocity(int i) const  override 
+  {
+    return {Sp.P[i].Vel[0],Sp.P[i].Vel[1],Sp.P[i].Vel[2]};//in gadget units
   }
 };
-}  // namespace gadget::pm
+} // namespace gadget
 #endif
