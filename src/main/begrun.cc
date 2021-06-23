@@ -247,7 +247,6 @@ void sim::begrun1(const char *parameterFile)
       PM.pm_init_periodic(
         new simparticles_handler{Sp},
         All.BoxSize,
-        All.G,
         All.MassTable[1],
         Asmth);
 #else

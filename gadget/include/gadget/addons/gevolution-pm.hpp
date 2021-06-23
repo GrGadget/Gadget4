@@ -10,6 +10,7 @@
 #include <memory>
 #include <array>
 #include <vector>
+#include <sstream>
 #include <gadget/addons/latfield_handler.hpp>
 #include "gadget/particle_handler.h"  // particle_handler
 
@@ -81,7 +82,7 @@ class newtonian_pm
     std::unique_ptr< gevolution::newtonian_pm > pm;
     std::unique_ptr< gevolution::Particles_gevolution> pcls_cdm;
     int _size;
-    MyFloat boxsize, G_cavendish, Mass;
+    MyFloat boxsize, Mass;
     static constexpr MyFloat PI = std::acos(-1.0);
     std::vector<particle_t> P_buffer;
     
@@ -113,12 +114,10 @@ class newtonian_pm
     void pm_init_periodic(
         particle_handler *Sp_ptr, 
         double in_boxsize /* */,
-        double G /* Gravitational constant  */,
         double M /* particle mass */, 
         double asmth)
     {
         boxsize = in_boxsize;
-        G_cavendish = G;
         Mass = M;
         Sp.reset(Sp_ptr);
         
@@ -156,8 +155,7 @@ class newtonian_pm
             p.ID = Sp->get_id(i);
             p.Vel= Sp->get_velocity(i); // TODO: unit conversion
             
-            p.Pos= Sp->get_position(i);
-            for(auto & x : p.Pos) x /= boxsize;
+            p.Pos= Sp->get_position(i); // in units of the boxsize
             
             Sp_index[p.ID] = i;
             from_twin[p.ID] = false;
@@ -249,15 +247,14 @@ class newtonian_pm
         //     << "\n\n" << std::endl;
         
         const MyFloat conversion_factor 
-            = 4 * PI * G_cavendish * Mass / boxsize / boxsize;
-        std::cout 
-            << "rank = " << latfield.this_rank() 
-            << " conversion factor = " <<  conversion_factor
-            << " PI = " << PI
-            << " G = " << G_cavendish
-            << " M = " << Mass
-            << " L = " << boxsize
-            << "\n\n" << std::endl;
+            = 4 * PI * Mass / boxsize / boxsize;
+        // std::cout 
+        //     << "rank = " << latfield.this_rank() 
+        //     << " conversion factor = " <<  conversion_factor
+        //     << " PI = " << PI
+        //     << " M = " << Mass
+        //     << " L = " << boxsize
+        //     << "\n\n" << std::endl;
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
@@ -265,8 +262,32 @@ class newtonian_pm
             for(auto & ax : p.Acc)
                 ax *= conversion_factor;
             
+            
             Sp->set_acceleration(i,p.Acc);
         }
+        // if(latfield.this_rank()==0)
+        // {
+        //     auto put_array = [](const std::array<MyFloat,3>& a)
+        //     {
+        //         std::stringstream s;
+        //         s << "(" << a[0] << ", " << a[1] << ", " << a[2] << ")";
+        //         return s.str();
+        //     };
+        //     
+        //     std::cout << 
+        //         "\n================\n"
+        //         "Rank 0 reporting\n"
+        //         "\n================\n";
+        //     for(auto p : P_buffer)
+        //     {
+        //         std::cout 
+        //         << " ID = " << p.ID
+        //         << " pos = " << put_array(p.Pos)
+        //         << " acc = " << put_array(p.Acc)
+        //         << "\n";
+        //     }
+        //     std::cout << std::endl;
+        // }
     }
     
     void compute_forces()
