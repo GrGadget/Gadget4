@@ -82,6 +82,7 @@ class newtonian_pm
     std::unique_ptr< gevolution::Particles_gevolution> pcls_cdm;
     int _size;
     MyFloat _boxsize, Mass;
+    int _sample_p_correction;
     double Asmth2; // smoothing scale (in gadget length units) squared
     static constexpr MyFloat pi = boost::math::constants::pi<MyFloat>();
     std::vector<particle_t> P_buffer;
@@ -306,8 +307,10 @@ class newtonian_pm
         particle_handler *Sp_ptr, 
         double in_boxsize /* */,
         double M /* particle mass */,
-        double asmth)
+        double asmth,
+        int p /* sampling correction order */)
     {
+        _sample_p_correction = p;
         _boxsize = in_boxsize;
         Mass = M;
         Sp.reset(Sp_ptr);
@@ -329,6 +332,15 @@ class newtonian_pm
                 &(gev_pm->lattice()),
                 box.data());
         }
+    }
+    
+    int sampling_correction_order()const
+    /*
+        order of the correction to sampling in k-space.
+        eg. p = 2 for CIC
+    */
+    {
+        return _sample_p_correction;
     }
     
     int signed_mode(int k)const
@@ -381,18 +393,18 @@ class newtonian_pm
                 
                 gev_pm->solve_poisson_eq();
                 
-                // twice CIC correction,
-                // gev_pm->apply_filter_kspace( 
-                //     [this](std::array<int,3> mode)
-                //     {
-                //         double factor{1.0};
-                //         for(int i=0;i<3;++i)
-                //         if(mode[i]){
-                //             double phase = signed_mode(mode[i]) * pi / size();
-                //             factor *= phase / std::sin(phase);
-                //         }
-                //         return factor*factor*factor*factor;
-                //     });
+                // sampling spline correction order p (p=2 CIC)
+                gev_pm->apply_filter_kspace( 
+                    [this](std::array<int,3> mode)
+                    {
+                        double factor{1.0};
+                        for(int i=0;i<3;++i)
+                        if(mode[i]){
+                            double phase = signed_mode(mode[i]) * pi / size();
+                            factor *= phase / std::sin(phase);
+                        }
+                        return std::pow(factor,sampling_correction_order());
+                    });
                 
                 // smoothing the field at the Asmth scale
                 gev_pm->apply_filter_kspace( 
