@@ -347,6 +347,8 @@ struct global_data_all_processes : public parameters
   double Mass_StaticHQHalo;
 #endif
 
+  int SamplingCorrection{0};
+
   void set_cosmo_factors_for_current_time(void);
   void register_parameters(void);
   void read_outputlist(char *fname);

@@ -249,7 +249,7 @@ void sim::begrun1(const char *parameterFile)
         All.BoxSize,
         All.MassTable[1],
         /* smoothing length = */ Asmth,
-        /* sampling correction order = */ 4 );
+        /* sampling correction order = */ All.SamplingCorrection );
 #else
       PM.pm_init_periodic(new simparticles_handler{Sp},All.BoxSize,Asmth);
 #endif
