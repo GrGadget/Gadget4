@@ -6,6 +6,8 @@
 #include <boost/mpi/communicator.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/array.hpp>
+#include <boost/math/constants/constants.hpp>
+#include <boost/container_hash/hash.hpp>
 
 #include <memory>
 #include <array>
@@ -13,9 +15,6 @@
 #include <sstream>
 #include <gadget/addons/latfield_handler.hpp>
 #include "gadget/particle_handler.h"  // particle_handler
-
-// how to initialize particles?
-// how to update particles at every time step?
 
 namespace gadget::gevolution_api
 {
@@ -79,15 +78,205 @@ class newtonian_pm
     // processes participate in the construction of the Particle Mesh, that's
     // unavoidable because every process has its own fraction of the particles
     // of the simulation.
-    std::unique_ptr< gevolution::newtonian_pm > pm;
+    std::unique_ptr< gevolution::newtonian_pm > gev_pm;
     std::unique_ptr< gevolution::Particles_gevolution> pcls_cdm;
     int _size;
-    MyFloat boxsize, Mass;
-    static constexpr MyFloat PI = std::acos(-1.0);
+    MyFloat _boxsize, Mass;
+    double Asmth; // smoothing scale
+    static constexpr MyFloat pi = boost::math::constants::pi<MyFloat>();
     std::vector<particle_t> P_buffer;
     
-    public:
     
+    class gadget_domain_t
+    /*
+        helper class
+        it handles in a RAII way the three step process of PM computations by
+        the partecipating mpi ranks:
+        1. ctor: exchange particle data to adjust for the domain decomposition
+        in gadget and gevolution.
+        2. whatever the active mpi ranks do with the particles in their domain.
+        3. dtor: exchange particle data back
+        
+        only valid for active processes!
+    */
+    {
+        newtonian_pm& pm;
+        std::unordered_map<MyIDType,int> origin; 
+        
+        public:
+        gadget_domain_t(newtonian_pm& ref):
+            pm{ref}
+        {
+            // send to correct process based on position
+            std::vector< std::vector<particle_t> > P_sendrecv(pm.latfield.com_pm.size());
+            
+            for(const auto & p : pm.P_buffer)
+            {
+                // LATfield two-step way to determine a particle's process
+                int proc_rank[2];
+                pm.pcls_cdm->getPartProcess( gevolution::particle(p), proc_rank) ;
+                const int destination = pm.latfield.grid2world(proc_rank[0],proc_rank[1]);
+                P_sendrecv[destination].emplace_back(p);
+            }
+            pm.P_buffer.clear();
+            
+            boost::mpi::all_to_all(pm.latfield.com_pm,P_sendrecv,P_sendrecv);
+            
+            for(auto i=0U;i<P_sendrecv.size();++i)
+            {
+                auto & v = P_sendrecv[i];
+                for(const auto & p : v)
+                {
+                    origin[p.ID] = i;
+                    pm.P_buffer.emplace_back(p);
+                }
+                v.clear();
+            }
+        }
+        ~gadget_domain_t()
+        {
+            std::vector< std::vector<particle_t> > P_sendrecv(pm.latfield.com_pm.size());
+            pm.P_buffer.clear();
+            // C++ magic: we use the updateVel() method from LATfield to iterate
+            // over particles. Clearly this method has a misleading name.
+            pm.pcls_cdm->updateVel
+            (
+                [this,&P_sendrecv]
+                (const gevolution::particle & gev_part, LATfield2::Site)
+                {
+                   particle_t p{gev_part};
+                   const int destination = origin[p.ID];
+                   P_sendrecv[destination].emplace_back( std::move(p));
+                   return 0.0;
+                }
+            );
+            // send back to correct process
+            boost::mpi::all_to_all(pm.latfield.com_pm,P_sendrecv,P_sendrecv);
+            
+            // update P_buffer from pcls_cdm
+            for(auto i=0U;i<P_sendrecv.size();++i)
+            {
+                const auto & v = P_sendrecv[i];
+                for(const auto & p : v)
+                    pm.P_buffer.emplace_back(p);
+            }
+        }
+    };
+    
+    class latfield_domain_t
+    /*
+        helper class
+        it handles in a RAII way the three step process of PM computation:
+        1. ctor: exchange particle data between process that partecipate and
+        don't
+        2. whatever the active mpi ranks do.
+        3. dtor: exchange particle data back
+    */
+    {
+        newtonian_pm& pm;
+            
+        // tag particles that come from non-active processes
+        std::unordered_map<MyIDType,bool> from_twin; 
+        
+        public:
+        latfield_domain_t(newtonian_pm& ref):
+            pm{ref}
+        // exchange particles forward to active processes
+        {
+            for(const auto& p: pm.P_buffer)
+            {
+                from_twin[p.ID] = false;
+            }
+            
+            if(pm.latfield.active())
+            {
+                if(pm.latfield.has_twin())
+                {
+                    std::vector<particle_t> P_recv;
+                    pm.latfield.com_world.recv(
+                        /* source = */ pm.latfield.twin_rank(),
+                        /* tag = */ 0,
+                        /* value = */ P_recv );    
+                    std::copy(P_recv.begin(),P_recv.end(),std::back_inserter(pm.P_buffer));
+                    
+                    for(const auto & p : P_recv)
+                        from_twin[p.ID] = true;
+                }else
+                {
+                   // std::cout << "rank = " << latfield.this_rank() << " has no twin"
+                   // << std::endl;
+                }
+            }
+            else
+            {
+                pm.latfield.com_world.send(
+                    /* dest = */ pm.latfield.twin_rank(),
+                    /* tag = */ 0,
+                    /* value = */ pm.P_buffer );    
+                pm.P_buffer.clear();
+            }
+        }
+        
+        ~latfield_domain_t()
+        // exchange particles backwards from active processes
+        {
+            std::sort(pm.P_buffer.begin(),pm.P_buffer.end(),
+                [this](const particle_t& a, const particle_t& b)
+                {
+                    return from_twin[a.ID] < from_twin[b.ID];
+                });
+            std::vector<particle_t> P_send;
+            while(not pm.P_buffer.empty())
+            {
+                if(from_twin[pm.P_buffer.back().ID])
+                {
+                    P_send.push_back( pm.P_buffer.back() );
+                    pm.P_buffer.pop_back();
+                }else
+                    break;
+            }
+            if(pm.latfield.active())
+            {
+                if(pm.latfield.has_twin())
+                {
+                    pm.latfield.com_world.send(
+                        /* source = */ pm.latfield.twin_rank(),
+                        /* tag = */ 1,
+                        /* value = */ P_send );    
+                }else
+                {
+                   // has no twin
+                }
+            }
+            else
+            {
+                std::vector<particle_t> P_recv;
+                pm.latfield.com_world.recv(
+                    /* dest = */ pm.latfield.twin_rank(),
+                    /* tag = */ 1,
+                    /* value = */ P_recv );    
+                std::copy(P_recv.begin(),P_recv.end(),std::back_inserter(pm.P_buffer));
+            }
+            
+        }
+    };
+    
+    std::size_t hash_ids()
+    {
+        std::size_t seed{1};
+        std::sort(P_buffer.begin(),P_buffer.end(),
+            [](const particle_t& a, const particle_t & b)
+            {
+                return a.ID < b.ID;
+            });
+        for(const auto& p: P_buffer)
+        {
+            boost::hash_combine(seed,p.ID);
+        }
+        return seed;
+    }
+    
+    public:
     void set_mass(MyFloat M)
     {
         Mass = M;
@@ -99,12 +288,14 @@ class newtonian_pm
     {
         if(latfield.active())
         {
-            pm.reset(new gevolution::newtonian_pm{Ngrid} );    
+            gev_pm.reset(new gevolution::newtonian_pm{Ngrid} );    
             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
         }
     }
     
     int size()const{return _size;}
+    MyFloat k_fundamental() const{return 2*pi/boxsize();}
+    MyFloat boxsize() const {return _boxsize;}
     
     void calculate_power_spectra(int num, char *OutputDir)
     {
@@ -114,12 +305,13 @@ class newtonian_pm
     void pm_init_periodic(
         particle_handler *Sp_ptr, 
         double in_boxsize /* */,
-        double M /* particle mass */, 
+        double M /* particle mass */,
         double asmth)
     {
-        boxsize = in_boxsize;
+        _boxsize = in_boxsize;
         Mass = M;
         Sp.reset(Sp_ptr);
+        Asmth = asmth;
         
         if(latfield.active())
             // executed by active processes only
@@ -134,127 +326,98 @@ class newtonian_pm
             pcls_cdm->initialize(
                 pinfo,
                 gevolution::particle_dataType{},
-                &(pm->lattice()),
+                &(gev_pm->lattice()),
                 box.data());
         }
     }
     
-    void pmforce_periodic(int, int*)
+    int signed_mode(int k)const
     {
-        // exchange particles forward to active processes
-        P_buffer.resize(Sp->size());
-        
-        // tag particles that come from non-active processes
-        std::unordered_map<MyIDType,bool> from_twin; 
+        return k >= size() / 2 ? k - size() : k;
+    }
+    
+    void pmforce_periodic(int,int*)
+    {
         // tag particles index in the handler
         std::unordered_map<MyIDType,int> Sp_index; 
         
+        // load particles into buffer
+        P_buffer.resize(Sp->size());
         for(auto i=0U;i<P_buffer.size();++i)
         {
             auto & p = P_buffer[i];
             p.ID = Sp->get_id(i);
             p.Vel= Sp->get_velocity(i); // TODO: unit conversion
-            
             p.Pos= Sp->get_position(i); // in units of the boxsize
             
             Sp_index[p.ID] = i;
-            from_twin[p.ID] = false;
         }
+        #ifndef NDEBUG
+        std::size_t start_hash = hash_ids();
+        #endif
         
-        //std::cout 
-        //    << "rank = " << latfield.this_rank() 
-        //    << " buff size = " <<  P_buffer.size() 
-        //    << "\n\n" << std::endl;
-        
-        if(latfield.active())
         {
-            if(latfield.has_twin())
-            {
-                std::vector<particle_t> P_recv;
-                latfield.com_world.recv(
-                    /* source = */ latfield.twin_rank(),
-                    /* tag = */ 0,
-                    /* value = */ P_recv );    
-                std::copy(P_recv.begin(),P_recv.end(),std::back_inserter(P_buffer));
-                // std::cout 
-                //     << "rank = " << latfield.this_rank() 
-                //     << ", twin rank = "
-                //     << latfield.twin_rank() << std::endl;
-                
-                for(const auto & p : P_recv)
-                    from_twin[p.ID] = true;
-            }else
-            {
-               // std::cout << "rank = " << latfield.this_rank() << " has no twin"
-               // << std::endl;
-            }
-        }
-        else
-        {
-            latfield.com_world.send(
-                /* dest = */ latfield.twin_rank(),
-                /* tag = */ 0,
-                /* value = */ P_buffer );    
-            P_buffer.clear();
-        }
-        
-        if(latfield.active())
-            compute_forces();
-        
-        // exchange particles backwards from active processes
-        {
-            std::sort(P_buffer.begin(),P_buffer.end(),
-                [&from_twin](const particle_t& a, const particle_t& b)
-                {
-                    return from_twin[a.ID] < from_twin[b.ID];
-                });
-            std::vector<particle_t> P_send;
-            while(not P_buffer.empty())
-            {
-                if(from_twin[P_buffer.back().ID])
-                {
-                    P_send.push_back( P_buffer.back() );
-                    P_buffer.pop_back();
-                }else
-                    break;
-            }
+            // send particles to active processes
+            // on destruction particles will be sent back
+            latfield_domain_t D_lat{*this}; 
+            
             if(latfield.active())
             {
-                if(latfield.has_twin())
-                {
-                    latfield.com_world.send(
-                        /* source = */ latfield.twin_rank(),
-                        /* tag = */ 1,
-                        /* value = */ P_send );    
-                }else
-                {
-                   // has no twin
-                }
-            }
-            else
-            {
-                std::vector<particle_t> P_recv;
-                latfield.com_world.recv(
-                    /* dest = */ latfield.twin_rank(),
-                    /* tag = */ 1,
-                    /* value = */ P_recv );    
-                std::copy(P_recv.begin(),P_recv.end(),std::back_inserter(P_buffer));
+                // send particles from gadget's domain to latfield's 
+                // on destruction particles will be sent back
+                gadget_domain_t D_gad{*this}; 
+                
+                // update pcls_cdm from P_buffer
+                pcls_cdm->clear(); // remove existing particles, we start fresh
+                bool success = true;
+                for(const auto &p : P_buffer)
+                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
+                assert(success);
+                
+                gev_pm->sample(*pcls_cdm);
+                
+                gev_pm->update_kspace();
+                // k-space begin
+                
+                gev_pm->solve_poisson_eq();
+                
+                // twice CIC correction,
+                // gev_pm->apply_filter_kspace( 
+                //     [this](std::array<int,3> mode)
+                //     {
+                //         double factor{1.0};
+                //         for(int i=0;i<3;++i)
+                //         if(mode[i]){
+                //             double phase = signed_mode(mode[i]) * pi / size();
+                //             factor *= phase / std::sin(phase);
+                //         }
+                //         return factor*factor*factor*factor;
+                //     });
+                
+                // smoothing the field at the Asmth scale
+                // gev_pm->apply_filter_kspace( 
+                //     [this](std::array<int,3> mode)
+                //     {
+                //         double k2{0.0};
+                //         for(int i=0;i<3;++i)
+                //         {
+                //             double ki = signed_mode(mode[i]) * k_fundamental();
+                //             k2 += ki*ki;
+                //         }
+                //         return std::exp( - Asmth * k2);
+                //     });
+                
+                // k-space end
+                gev_pm->update_rspace();
+                
+                gev_pm->compute_forces(*pcls_cdm,/* fourpiG = */ 1.0 ); 
+                
             }
         }
-        // std::cout 
-        //     << "rank = " << latfield.this_rank() 
-        //     << " final buff size = " <<  P_buffer.size() 
-        //     << "\n\n" << std::endl;
         
+        // set the accelerations
         const MyFloat conversion_factor 
-            = 4 * PI * Mass / boxsize / boxsize;
-        // std::cout 
-        //     << "rank = " << latfield.this_rank() 
-        //     << " conversion factor = " <<  conversion_factor
-        //     << " PI = " << PI
-        //     << " M = " << Mass
-        //     << " L = " << boxsize
-        //     << "\n\n" << std::endl;
+            = 4 * pi * Mass / boxsize() / boxsize();
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
@@ -262,114 +425,17 @@ class newtonian_pm
             for(auto & ax : p.Acc)
                 ax *= conversion_factor;
             
-            
             Sp->set_acceleration(i,p.Acc);
         }
-        // if(latfield.this_rank()==0)
-        // {
-        //     auto put_array = [](const std::array<MyFloat,3>& a)
-        //     {
-        //         std::stringstream s;
-        //         s << "(" << a[0] << ", " << a[1] << ", " << a[2] << ")";
-        //         return s.str();
-        //     };
-        //     
-        //     std::cout << 
-        //         "\n================\n"
-        //         "Rank 0 reporting\n"
-        //         "\n================\n";
-        //     for(auto p : P_buffer)
-        //     {
-        //         std::cout 
-        //         << " ID = " << p.ID
-        //         << " pos = " << put_array(p.Pos)
-        //         << " acc = " << put_array(p.Acc)
-        //         << "\n";
-        //     }
-        //     std::cout << std::endl;
-        // }
+        #ifndef NDEBUG
+        std::size_t end_hash = hash_ids();
+        assert(start_hash == end_hash);
+        #endif
     }
     
     void compute_forces()
         // only executed by active processes
     {
-        // send to correct process based on position
-        std::vector< std::vector<particle_t> > P_sendrecv(latfield.com_pm.size());
-        
-        for(const auto & p : P_buffer)
-        {
-            // LATfield two-step way to determine a particle's process
-            int proc_rank[2];
-            pcls_cdm->getPartProcess( gevolution::particle(p), proc_rank) ;
-            const int destination = latfield.grid2world(proc_rank[0],proc_rank[1]);
-            P_sendrecv[destination].emplace_back(p);
-        }
-        const size_t init_size = P_buffer.size(); // sanity check
-        P_buffer.clear();
-        
-        boost::mpi::all_to_all(latfield.com_pm,P_sendrecv,P_sendrecv);
-        std::unordered_map<MyIDType,int> origin; 
-        
-        for(auto i=0U;i<P_sendrecv.size();++i)
-        {
-            auto & v = P_sendrecv[i];
-            for(const auto & p : v)
-            {
-                origin[p.ID] = i;
-                P_buffer.emplace_back(p);
-            }
-            v.clear();
-        }
-        
-        // update pcls_cdm from P_buffer
-        pcls_cdm->clear(); // remove existing particles, we start fresh
-        bool success = true;
-        for(const auto &p : P_buffer)
-            success &= pcls_cdm->addParticle_global(gevolution::particle(p));
-        assert(success);
-        
-        
-        // construct the Energy-Momentum Tensor
-        pm->sample(*pcls_cdm);
-        
-        // TODO: take into account the smoothing
-        pm->compute_potential(); 
-        
-        pm->compute_forces(*pcls_cdm,/* fourpiG = */ 1.0 ); 
-        
-        // update P_buffer from pcls_cdm
-        P_buffer.clear();
-        // C++ magic: we use the updateVel() method from LATfield to iterate
-        // over particles. Clearly this method has a misleading name.
-        pcls_cdm->updateVel
-        (
-            [this]
-            (const gevolution::particle & gev_part, LATfield2::Site)
-            {
-               P_buffer.emplace_back(gev_part);
-               return 0.0;
-            }
-        );
-        
-        // send back to correct process
-        for(const auto & p : P_buffer)
-        {
-            const int destination = origin[p.ID]; // original process
-            P_sendrecv[destination].emplace_back(p);
-        }
-        P_buffer.clear();
-        boost::mpi::all_to_all(latfield.com_pm,P_sendrecv,P_sendrecv);
-        
-        for(auto i=0U;i<P_sendrecv.size();++i)
-        {
-            const auto & v = P_sendrecv[i];
-            for(const auto & p : v)
-                P_buffer.emplace_back(p);
-        }
-        
-        if(init_size != P_buffer.size())
-        // sanity check
-            assert( init_size == P_buffer.size() );
     }
 };
 
