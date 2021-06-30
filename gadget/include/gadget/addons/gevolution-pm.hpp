@@ -82,7 +82,7 @@ class newtonian_pm
     std::unique_ptr< gevolution::Particles_gevolution> pcls_cdm;
     int _size;
     MyFloat _boxsize, Mass;
-    double Asmth; // smoothing scale
+    double Asmth2; // smoothing scale (in gadget length units) squared
     static constexpr MyFloat pi = boost::math::constants::pi<MyFloat>();
     std::vector<particle_t> P_buffer;
     
@@ -311,7 +311,7 @@ class newtonian_pm
         _boxsize = in_boxsize;
         Mass = M;
         Sp.reset(Sp_ptr);
-        Asmth = asmth;
+        Asmth2 = asmth*asmth;
         
         if(latfield.active())
             // executed by active processes only
@@ -395,17 +395,17 @@ class newtonian_pm
                 //     });
                 
                 // smoothing the field at the Asmth scale
-                // gev_pm->apply_filter_kspace( 
-                //     [this](std::array<int,3> mode)
-                //     {
-                //         double k2{0.0};
-                //         for(int i=0;i<3;++i)
-                //         {
-                //             double ki = signed_mode(mode[i]) * k_fundamental();
-                //             k2 += ki*ki;
-                //         }
-                //         return std::exp( - Asmth * k2);
-                //     });
+                gev_pm->apply_filter_kspace( 
+                    [this](std::array<int,3> mode)
+                    {
+                        double k2{0.0};
+                        for(int i=0;i<3;++i)
+                        {
+                            double ki = signed_mode(mode[i]) * k_fundamental();
+                            k2 += ki*ki;
+                        }
+                        return std::exp( - Asmth2 * k2);
+                    });
                 
                 // k-space end
                 gev_pm->update_rspace();
