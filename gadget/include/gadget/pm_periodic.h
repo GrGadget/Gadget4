@@ -123,7 +123,7 @@ class pm_periodic :
       }
     return fact;
   }
-  double k_fundamental(int dim) const noexcept
+  double k_fundamental(int dim=0) const noexcept
   {
     double d = BoxSize;  // double d = Ngrid[dim] * BoxSize / PMGRID;
     return 2.0 * M_PI / d;
