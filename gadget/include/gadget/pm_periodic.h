@@ -17,6 +17,7 @@
 #include <memory>  // unique_ptr
 #include <tuple>
 #include <vector>
+#include <sstream>
 extern template class std::vector<size_t>;
 
 #include "gadget/constants.h"         // MAXLEN_PATH_EXTRA
@@ -35,10 +36,18 @@ class pm_periodic :
     public mpi_fft_slabs
 #endif
 {
+  std::stringstream my_log;
   const MyIntPosType INTCELL;
   double asmth2;
 
  public:
+  std::string get_log()
+  {
+    std::string log_mes = my_log.str();
+    my_log.str("");
+    return log_mes;
+  }
+ 
   pm_periodic(MPI_Comm comm, std::array<int, 3> ngrid)
       :
 #ifdef FFT_COLUMN_BASED

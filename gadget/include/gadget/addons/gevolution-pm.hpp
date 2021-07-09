@@ -72,6 +72,7 @@ class newtonian_pm
 {
     latfield_handler latfield;
     std::unique_ptr< particle_handler> Sp;
+    std::stringstream my_log;
     
     // this pointer contains meaningful data only if the currect process is
     // "latfield.active()", ie. if it holds Particle Mesh data. Notice that all
@@ -278,6 +279,12 @@ class newtonian_pm
     }
     
     public:
+    std::string get_log()
+    {
+        std::string log_mes = my_log.str();
+        my_log.str("");
+        return log_mes;
+    }
     void set_mass(MyFloat M)
     {
         Mass = M;
@@ -350,6 +357,7 @@ class newtonian_pm
     
     void pmforce_periodic(int,int*)
     {
+        my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
         // tag particles index in the handler
         std::unordered_map<MyIDType,int> Sp_index; 
         

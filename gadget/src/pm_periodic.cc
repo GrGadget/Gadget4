@@ -1538,6 +1538,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
  */
 void pm_periodic::pmforce_periodic(int mode, int *typelist)
 {
+  my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
   std::vector<std::array<double, 3>> GravPM(Sp->size(), {0, 0, 0});
 
   // #ifdef HIERARCHICAL_GRAVITY

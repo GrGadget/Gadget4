@@ -435,6 +435,8 @@ void sim::gravity_pm(int timebin)
         double tstart = MPI_Wtime();
         mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)\n", Sp.Rcut[0]);
         PM.pmforce_periodic(LOW_MESH, NULL);
+        mpi_printf("%s\n", PM.get_log().c_str());
+        
         double tend = MPI_Wtime();
         mpi_printf("PM-PERIODIC: done.  (took %g seconds)\n", tend - tstart);
       }
@@ -482,6 +484,7 @@ void sim::gravity_long_range_force(void)
     double tstart = MPI_Wtime();
     mpi_printf("PM-PERIODIC: Starting periodic PM calculation. (Rcut=%g)\n", Sp.Rcut[0]);
     PM.pmforce_periodic(0, NULL);
+    mpi_printf("%s\n", PM.get_log().c_str());
     double tend = MPI_Wtime();
     mpi_printf("PM-PERIODIC: done.  (took %g seconds)\n", tend - tstart);
   }
