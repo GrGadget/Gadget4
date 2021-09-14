@@ -247,7 +247,6 @@ void sim::begrun1(const char *parameterFile)
       PM.pm_init_periodic(
         new simparticles_handler{Sp},
         All.BoxSize,
-        All.MassTable[1],
         /* smoothing length = */ Asmth,
         /* sampling correction order = */ All.SamplingCorrection );
 #else
@@ -284,7 +283,7 @@ void sim::begrun2(void)
 
 #ifdef GEVOLUTION_PM
     // at the time of begrun1 the snapshot has not been read
-    PM.set_mass(All.MassTable[1]);
+    // PM.set_mass(All.MassTable[1]);
 #endif
 
   char contfname[MAXLEN_PATH_EXTRA];

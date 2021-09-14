@@ -22,12 +22,14 @@ namespace gadget::gevolution_api
 struct particle_t 
 {
     MyIDType ID;
+    MyFloat mass;
     std::array<MyFloat,3> Pos;
     std::array<MyFloat,3> Vel;
     std::array<MyFloat,3> Acc;
    
     particle_t(const gevolution::particle & gev_p):
         ID{gev_p.ID},
+        mass{gev_p.mass},
         Pos{gev_p.pos[0],gev_p.pos[1],gev_p.pos[2]},
         Vel{gev_p.vel[0],gev_p.vel[1],gev_p.vel[2]},
         Acc{gev_p.acc}
@@ -43,6 +45,7 @@ struct particle_t
     void serialize(Archive & ar, const unsigned int /*version*/)
     {
         ar & ID;
+        ar & mass;
         ar & Pos;
         ar & Vel;
         ar & Acc;
@@ -58,6 +61,7 @@ struct particle_t
         // no c++ structures, hence we need to construct by hand
         gevolution::particle gev_part; 
         gev_part.ID = ID;
+        gev_part.mass = mass;
         for(int i=0;i<3;++i)
         {
             gev_part.pos[i]=Pos[i];
@@ -82,7 +86,7 @@ class newtonian_pm
     std::unique_ptr< gevolution::newtonian_pm > gev_pm;
     std::unique_ptr< gevolution::Particles_gevolution> pcls_cdm;
     int _size;
-    MyFloat _boxsize, Mass;
+    MyFloat _boxsize;
     int _sample_p_correction;
     double Asmth2; // smoothing scale (in gadget length units) squared
     static constexpr MyFloat pi = boost::math::constants::pi<MyFloat>();
@@ -139,9 +143,9 @@ class newtonian_pm
         {
             std::vector< std::vector<particle_t> > P_sendrecv(pm.latfield.com_pm.size());
             pm.P_buffer.clear();
-            // C++ magic: we use the updateVel() method from LATfield to iterate
-            // over particles. Clearly this method has a misleading name.
-            pm.pcls_cdm->updateVel
+            // C++ magic: we use the for_each() method from LATfield to iterate
+            // over particles.
+            pm.pcls_cdm->for_each
             (
                 [this,&P_sendrecv]
                 (const gevolution::particle & gev_part, LATfield2::Site)
@@ -285,11 +289,6 @@ class newtonian_pm
         my_log.str("");
         return log_mes;
     }
-    void set_mass(MyFloat M)
-    {
-        Mass = M;
-    }
-    
     newtonian_pm(MPI_Comm raw_com,int Ngrid):
         latfield(raw_com),
         _size(Ngrid)
@@ -313,13 +312,11 @@ class newtonian_pm
     void pm_init_periodic(
         particle_handler *Sp_ptr, 
         double in_boxsize /* */,
-        double M /* particle mass */,
         double asmth,
         int p /* sampling correction order */)
     {
         _sample_p_correction = p;
         _boxsize = in_boxsize;
-        Mass = M;
         Sp.reset(Sp_ptr);
         Asmth2 = asmth*asmth;
         
@@ -330,7 +327,7 @@ class newtonian_pm
         // we do this
             gevolution::particle_info pinfo;
             std::strcpy(pinfo.type_name,"gevolution::particle");
-            pinfo.mass = 1.0;// unit of mass such that particles have mass = 1!!
+            pinfo.mass = 1.0;// this is ignored, particles have individual mass
             pinfo.relativistic=false;
             std::array<double,3> box{1.,1.,1.};
             pcls_cdm->initialize(
@@ -367,6 +364,7 @@ class newtonian_pm
         {
             auto & p = P_buffer[i];
             p.ID = Sp->get_id(i);
+            p.mass = Sp->get_mass(i);
             p.Vel= Sp->get_velocity(i); // TODO: unit conversion
             p.Pos= Sp->get_position(i); // in units of the boxsize
             
@@ -437,7 +435,7 @@ class newtonian_pm
         
         // set the accelerations
         const MyFloat conversion_factor 
-            = 4 * pi * Mass / boxsize() / boxsize();
+            = 4 * pi / boxsize() / boxsize();
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
