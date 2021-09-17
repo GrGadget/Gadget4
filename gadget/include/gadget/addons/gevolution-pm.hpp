@@ -72,8 +72,10 @@ struct particle_t
     }
 };
 
-class newtonian_pm
+class base_pm
 {
+    protected:
+    
     latfield_handler latfield;
     std::unique_ptr< particle_handler> Sp;
     std::stringstream my_log;
@@ -83,7 +85,6 @@ class newtonian_pm
     // processes participate in the construction of the Particle Mesh, that's
     // unavoidable because every process has its own fraction of the particles
     // of the simulation.
-    std::unique_ptr< gevolution::newtonian_pm > gev_pm;
     std::unique_ptr< gevolution::Particles_gevolution> pcls_cdm;
     int _size;
     MyFloat _boxsize;
@@ -106,11 +107,11 @@ class newtonian_pm
         only valid for active processes!
     */
     {
-        newtonian_pm& pm;
+        base_pm& pm;
         std::unordered_map<MyIDType,int> origin; 
         
         public:
-        gadget_domain_t(newtonian_pm& ref):
+        gadget_domain_t(base_pm& ref):
             pm{ref}
         {
             // send to correct process based on position
@@ -179,13 +180,13 @@ class newtonian_pm
         3. dtor: exchange particle data back
     */
     {
-        newtonian_pm& pm;
+        base_pm& pm;
             
         // tag particles that come from non-active processes
         std::unordered_map<MyIDType,bool> from_twin; 
         
         public:
-        latfield_domain_t(newtonian_pm& ref):
+        latfield_domain_t(base_pm& ref):
             pm{ref}
         // exchange particles forward to active processes
         {
@@ -289,16 +290,6 @@ class newtonian_pm
         my_log.str("");
         return log_mes;
     }
-    newtonian_pm(MPI_Comm raw_com,int Ngrid):
-        latfield(raw_com),
-        _size(Ngrid)
-    {
-        if(latfield.active())
-        {
-            gev_pm.reset(new gevolution::newtonian_pm{Ngrid} );    
-            pcls_cdm.reset(new gevolution::Particles_gevolution{} );
-        }
-    }
     
     int size()const{return _size;}
     MyFloat k_fundamental() const{return 2*pi/boxsize();}
@@ -309,11 +300,65 @@ class newtonian_pm
         // ? 
     }
     
+    virtual void pm_init_periodic(
+        particle_handler *Sp_ptr, 
+        double in_boxsize /* */,
+        double asmth,
+        int p /* sampling correction order */) = 0;
+    
+    
+    int sampling_correction_order()const
+    /*
+        order of the correction to sampling in k-space.
+        eg. p = 2 for CIC
+    */
+    {
+        return _sample_p_correction;
+    }
+    
+    int signed_mode(int k)const
+    {
+        return k >= size() / 2 ? k - size() : k;
+    }
+   
+    virtual void pmforce_periodic(int,int*) = 0;
+   
+    
+    void compute_forces()
+        // only executed by active processes
+    {
+    }
+    
+    virtual ~base_pm()
+    {}
+    base_pm(MPI_Comm raw_com,int Ngrid):
+        latfield(raw_com),
+        _size(Ngrid)
+    {
+    }
+};
+
+class newtonian_pm : public base_pm
+{
+    using base_pm::latfield;
+    
+    std::unique_ptr< gevolution::newtonian_pm > gev_pm;
+    public:
+    newtonian_pm(MPI_Comm raw_com,int Ngrid):
+        base_pm(raw_com,Ngrid)
+    {
+        if(latfield.active())
+        {
+            gev_pm.reset(new gevolution::newtonian_pm{Ngrid} );    
+            pcls_cdm.reset(new gevolution::Particles_gevolution{} );
+        }
+    }
+    
     void pm_init_periodic(
         particle_handler *Sp_ptr, 
         double in_boxsize /* */,
         double asmth,
-        int p /* sampling correction order */)
+        int p /* sampling correction order */) override
     {
         _sample_p_correction = p;
         _boxsize = in_boxsize;
@@ -337,22 +382,7 @@ class newtonian_pm
                 box.data());
         }
     }
-    
-    int sampling_correction_order()const
-    /*
-        order of the correction to sampling in k-space.
-        eg. p = 2 for CIC
-    */
-    {
-        return _sample_p_correction;
-    }
-    
-    int signed_mode(int k)const
-    {
-        return k >= size() / 2 ? k - size() : k;
-    }
-    
-    void pmforce_periodic(int,int*)
+    void pmforce_periodic(int,int*) override
     {
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
         // tag particles index in the handler
@@ -451,12 +481,26 @@ class newtonian_pm
         #endif
     }
     
-    void compute_forces()
-        // only executed by active processes
+    ~newtonian_pm() override
+    {}
+};
+/*
+class relativistic_pm : public base_pm
+{
+    std::unique_ptr< gevolution::relativistic_pm > gev_pm;
+    public:
+    relativistic_pm(MPI_Comm raw_com,int Ngrid):
+        latfield(raw_com),
+        _size(Ngrid)
     {
+        if(latfield.active())
+        {
+            gev_pm.reset(new gevolution::relativistic_pm{Ngrid} );    
+            pcls_cdm.reset(new gevolution::Particles_gevolution{} );
+        }
     }
 };
-
+*/
 }
 
 #endif
