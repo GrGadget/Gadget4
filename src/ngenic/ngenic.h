@@ -32,6 +32,8 @@ typedef fftwf_complex fft_complex;
 #include "../data/simparticles.h"
 #include "gadget/pm_mpi_fft.h"  // pm_mpi_fft
 
+namespace gadget{
+
 class ngenic :
 #ifdef FFT_COLUMN_BASED
     public mpi_fft_columns
@@ -161,6 +163,8 @@ class ngenic :
     return k * x;
   }
 };
+
+} // namespace gadget
 
 #endif
 #endif

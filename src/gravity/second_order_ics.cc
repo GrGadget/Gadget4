@@ -28,6 +28,8 @@
 
 #ifdef SECOND_ORDER_LPT_ICS
 
+namespace gadget{
+
 double sim::F1_Omega(double a)
 {
   double omega_a = All.Omega0 / (All.Omega0 + a * (1 - All.Omega0 - All.OmegaLambda) + a * a * a * All.OmegaLambda);
@@ -143,5 +145,7 @@ void sim::second_order_ic_correction(void)
   NgbTree.treeallocate(Sp.NumGas, &Sp, &Domain);
   NgbTree.treebuild(Sp.NumGas, NULL);
 }
+
+} // namespace gadget
 
 #endif

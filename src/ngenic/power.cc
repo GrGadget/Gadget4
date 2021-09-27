@@ -21,6 +21,8 @@
 #include "../ngenic/ngenic.h"  // class ngenic;
 #include "gadget/macros.h"     // Terminate
 
+namespace gadget{
+
 double ngenic::ngenic_power_spec(double k)
 {
   double power = 0;
@@ -329,5 +331,7 @@ double ngenic::ngenic_f2_omega(double a)
 
   return 2 * pow(omega_a, 4.0 / 7);
 }
+
+} // namespace gadget
 
 #endif

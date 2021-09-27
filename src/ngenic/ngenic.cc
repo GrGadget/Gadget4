@@ -56,6 +56,8 @@ typedef long long large_array_offset; /* use a larger data type in this case so 
 typedef unsigned int large_array_offset;
 #endif
 
+namespace gadget{
+
 void ngenic::ngenic_displace_particles(void)
 {
   TIMER_START(CPU_NGENIC);
@@ -1221,5 +1223,7 @@ void ngenic::print_spec(void)
       fclose(fd);
     }
 }
+
+} // namespace gadget
 
 #endif

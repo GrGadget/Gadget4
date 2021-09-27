@@ -28,6 +28,8 @@
 #include "gadget/intposconvert.h"
 #include "gadget/mpi_utils.h"
 
+namespace gadget{
+
 void ngenic::create_grid(void)
 {
   long long gridSize    = All.GridSize;
@@ -102,5 +104,7 @@ void ngenic::create_grid(void)
 
   mpi_printf("NGENIC: generated grid of size %d\n", All.GridSize);
 }
+
+} // namespace gadget
 
 #endif
