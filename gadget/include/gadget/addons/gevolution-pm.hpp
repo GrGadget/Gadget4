@@ -423,6 +423,7 @@ class newtonian_pm : public base_pm
                     success &= pcls_cdm->addParticle_global(gevolution::particle(p));
                 assert(success);
                 
+                gev_pm->clear_sources();
                 gev_pm->sample(*pcls_cdm);
                 
                 gev_pm->update_kspace();
