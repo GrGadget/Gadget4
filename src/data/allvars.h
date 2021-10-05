@@ -125,6 +125,7 @@ struct global_data_all_processes : public parameters
                                    units specified. Otherwise the value provided is taken as internal gravity
                                    constant G. */
   double G;                        /**< Gravity-constant in internal units */
+  double c;                        /**< Speed of light in internal units */
 
   /* Cosmology */
 

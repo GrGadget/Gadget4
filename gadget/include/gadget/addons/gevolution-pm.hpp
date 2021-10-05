@@ -305,7 +305,9 @@ class base_pm
         particle_handler *Sp_ptr, 
         double in_boxsize /* */,
         double asmth,
-        int p /* sampling correction order */) = 0;
+        int p /* sampling correction order */,
+        double mass_conversion,
+        double vel_conversion) = 0;
     
     
     int sampling_correction_order()const
@@ -341,16 +343,20 @@ class base_pm
 
 class newtonian_pm : public base_pm
 {
+    double Mass_conversion{1}, Pos_conversion{1}, Vel_conversion{1};
     using base_pm::latfield;
     
-    std::unique_ptr< gevolution::newtonian_pm > gev_pm;
+    std::unique_ptr<
+        gevolution::newtonian_pm<gevolution::Cplx,gevolution::Particles_gevolution> 
+        > gev_pm;
     public:
     newtonian_pm(MPI_Comm raw_com,int Ngrid):
         base_pm(raw_com,Ngrid)
     {
         if(latfield.active())
         {
-            gev_pm.reset(new gevolution::newtonian_pm{Ngrid} );    
+            gev_pm.reset(new
+            gevolution::newtonian_pm<gevolution::Cplx,gevolution::Particles_gevolution>{Ngrid} );    
             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
         }
     }
@@ -359,8 +365,14 @@ class newtonian_pm : public base_pm
         particle_handler *Sp_ptr, 
         double in_boxsize /* */,
         double asmth,
-        int p /* sampling correction order */) override
+        int p /* sampling correction order */,
+        double mass_conversion,
+        double vel_conversion) override
     {
+        // Pos_conversion  = 1;
+        Vel_conversion  = vel_conversion;
+        Mass_conversion = mass_conversion; 
+        
         _sample_p_correction = p;
         _boxsize = in_boxsize;
         Sp.reset(Sp_ptr);
@@ -395,9 +407,15 @@ class newtonian_pm : public base_pm
         {
             auto & p = P_buffer[i];
             p.ID = Sp->get_id(i);
-            p.mass = Sp->get_mass(i);
+            p.mass = Sp->get_mass(i) * Mass_conversion;
             p.Vel= Sp->get_velocity(i); // TODO: unit conversion
             p.Pos= Sp->get_position(i); // in units of the boxsize
+            
+            for(int k=0;k<3;++k)
+            {
+                p.Vel[k] *= Vel_conversion;
+                p.Pos[k] *= Pos_conversion;
+            }
             
             Sp_index[p.ID] = i;
         }
@@ -425,6 +443,10 @@ class newtonian_pm : public base_pm
                 
                 gev_pm->clear_sources();
                 gev_pm->sample(*pcls_cdm);
+                auto [mean_m,mean_p,mean_v] = gev_pm->test_velocities(*pcls_cdm);
+                my_log << "mean     mass: " << mean_m << "\n";
+                my_log << "mean sqr(pos): " << mean_p << "\n";
+                my_log << "mean sqr(vel): " << mean_v << "\n";
                 
                 gev_pm->update_kspace();
                 // k-space begin
@@ -467,7 +489,7 @@ class newtonian_pm : public base_pm
         
         // set the accelerations
         const MyFloat conversion_factor 
-            = 4 * pi / boxsize() / boxsize();
+            = 4 * pi / boxsize() / boxsize() / Mass_conversion;
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);

@@ -248,7 +248,11 @@ void sim::begrun1(const char *parameterFile)
         new simparticles_handler{Sp},
         All.BoxSize,
         /* smoothing length = */ Asmth,
-        /* sampling correction order = */ All.SamplingCorrection );
+        /* sampling correction order = */ All.SamplingCorrection,
+        /* mass conversion = */
+        8*M_PI*All.G/3/All.BoxSize/All.BoxSize/All.BoxSize/All.Hubble/All.Hubble/All.HubbleParam/All.HubbleParam,
+        /* velocity conversion = */
+        1.0/All.c);
 #else
       PM.pm_init_periodic(new simparticles_handler{Sp},All.BoxSize,Asmth);
 #endif
@@ -356,6 +360,7 @@ void sim::begrun2(void)
  */
 void sim::set_units(void)
 {
+  All.c = CLIGHT/All.UnitVelocity_in_cm_per_s;
   All.UnitTime_in_s         = All.UnitLength_in_cm / All.UnitVelocity_in_cm_per_s;
   All.UnitTime_in_Megayears = All.UnitTime_in_s / SEC_PER_MEGAYEAR;
   All.UnitTime_in_years     = All.UnitTime_in_s / SEC_PER_YEAR;
