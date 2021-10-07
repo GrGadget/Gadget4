@@ -246,13 +246,8 @@ void sim::begrun1(const char *parameterFile)
 #ifdef GEVOLUTION_PM
       PM.pm_init_periodic(
         new simparticles_handler{Sp},
-        All.BoxSize,
-        /* smoothing length = */ Asmth,
-        /* sampling correction order = */ All.SamplingCorrection,
-        /* mass conversion = */
-        8*M_PI*All.G/3/All.BoxSize/All.BoxSize/All.BoxSize/All.Hubble/All.Hubble/All.HubbleParam/All.HubbleParam,
-        /* velocity conversion = */
-        1.0/All.c);
+        All,
+        /* smoothing length */ Asmth);
 #else
       PM.pm_init_periodic(new simparticles_handler{Sp},All.BoxSize,Asmth);
 #endif

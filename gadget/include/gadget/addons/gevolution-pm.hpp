@@ -76,7 +76,12 @@ struct particle_t
 
 class base_pm
 {
+    std::unique_ptr<
+       gevolution::particle_mesh<gevolution::Cplx,gevolution::Particles_gevolution> 
+        > gev_pm;
+    
     protected:
+    double Mass_conversion{1}, Pos_conversion{1}, Vel_conversion{1};
     gevolution::cosmology cosmo; // TODO: initialize this
     
     latfield_handler latfield;
@@ -303,13 +308,55 @@ class base_pm
         // ? 
     }
     
-    virtual void pm_init_periodic(
+    void pm_init_periodic(
         particle_handler *Sp_ptr, 
-        double in_boxsize /* */,
-        double asmth,
-        int p /* sampling correction order */,
-        double mass_conversion,
-        double vel_conversion) = 0;
+        gadget::global_data_all_processes gadget_data, 
+        double asmth)
+    {
+        // boxsize in units of Mpc/h
+        _boxsize = gadget_data.BoxSize * gadget_data.UnitLength_in_cm 
+            / (1e6 * PARSEC); // TODO: check if this is correct
+        
+        cosmo.h = gadget_data.HubbleParam;
+        cosmo.fourpiG = 1.5 * _boxsize * _boxsize / cosmo.C_SPEED_OF_LIGHT / cosmo.C_SPEED_OF_LIGHT;
+        
+        cosmo.Omega_fld = cosmo.wa_fld = cosmo.w0_fld = 0;
+        cosmo.num_ncdm = 0;
+        
+        // TODO: check if these are correct
+        cosmo.Omega_rad = 0;
+        cosmo.Omega_b = gadget_data.OmegaBaryon;
+        cosmo.Omega_m = gadget_data.Omega0;
+        cosmo.Omega_Lambda = gadget_data.OmegaLambda;
+        cosmo.Omega_cdm = cosmo.Omega_m - cosmo.Omega_b; 
+        
+        // Pos_conversion  = 1;
+        Vel_conversion  = 1.0/gadget_data.c;
+        Mass_conversion = 8*M_PI*gadget_data.G/3
+            /gadget_data.BoxSize/gadget_data.BoxSize/gadget_data.BoxSize/gadget_data.Hubble/gadget_data.Hubble
+            /gadget_data.HubbleParam/gadget_data.HubbleParam;
+        
+        _sample_p_correction = gadget_data.SamplingCorrection;
+        Sp.reset(Sp_ptr);
+        Asmth2 = asmth*asmth;
+        
+        if(latfield.active())
+            // executed by active processes only
+        {
+        // for the lack of a good constructor and reset function
+        // we do this
+            gevolution::particle_info pinfo;
+            std::strcpy(pinfo.type_name,"gevolution::particle");
+            pinfo.mass = 1.0;// this is ignored, particles have individual mass
+            pinfo.relativistic=false;
+            std::array<double,3> box{1.,1.,1.};
+            pcls_cdm->initialize(
+                pinfo,
+                gevolution::particle_dataType{},
+                &(gev_pm->lattice()),
+                box.data());
+        }
+    }
     
     
     int sampling_correction_order()const
@@ -345,12 +392,8 @@ class base_pm
 
 class newtonian_pm : public base_pm
 {
-    double Mass_conversion{1}, Pos_conversion{1}, Vel_conversion{1};
     using base_pm::latfield;
     
-    std::unique_ptr<
-        gevolution::newtonian_pm<gevolution::Cplx,gevolution::Particles_gevolution> 
-        > gev_pm;
     public:
     newtonian_pm(MPI_Comm raw_com,int Ngrid):
         base_pm(raw_com,Ngrid)
@@ -363,40 +406,6 @@ class newtonian_pm : public base_pm
         }
     }
     
-    void pm_init_periodic(
-        particle_handler *Sp_ptr, 
-        double in_boxsize /* */,
-        double asmth,
-        int p /* sampling correction order */,
-        double mass_conversion,
-        double vel_conversion) override
-    {
-        // Pos_conversion  = 1;
-        Vel_conversion  = vel_conversion;
-        Mass_conversion = mass_conversion; 
-        
-        _sample_p_correction = p;
-        _boxsize = in_boxsize;
-        Sp.reset(Sp_ptr);
-        Asmth2 = asmth*asmth;
-        
-        if(latfield.active())
-            // executed by active processes only
-        {
-        // for the lack of a good constructor and reset function
-        // we do this
-            gevolution::particle_info pinfo;
-            std::strcpy(pinfo.type_name,"gevolution::particle");
-            pinfo.mass = 1.0;// this is ignored, particles have individual mass
-            pinfo.relativistic=false;
-            std::array<double,3> box{1.,1.,1.};
-            pcls_cdm->initialize(
-                pinfo,
-                gevolution::particle_dataType{},
-                &(gev_pm->lattice()),
-                box.data());
-        }
-    }
     void pmforce_periodic(int,int*, double /* a */) override
     {
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
@@ -513,12 +522,8 @@ class newtonian_pm : public base_pm
 
 class relativistic_pm : public base_pm
 {
-    // TODO: move this variables to the base class
-    double Mass_conversion{1}, Pos_conversion{1}, Vel_conversion{1};
     using base_pm::latfield;
     
-    std::unique_ptr<
-        gevolution::relativistic_pm > gev_pm;
     public:
     relativistic_pm(MPI_Comm raw_com,int Ngrid):
         base_pm(raw_com,Ngrid)
@@ -531,45 +536,9 @@ class relativistic_pm : public base_pm
         }
     }
     
-    /* TODO: remove this function to avoid code repetition */
-    void pm_init_periodic(
-        particle_handler *Sp_ptr, 
-        double in_boxsize /* */,
-        double asmth,
-        int p /* sampling correction order */,
-        double mass_conversion,
-        double vel_conversion) override
-    {
-        // Pos_conversion  = 1;
-        Vel_conversion  = vel_conversion;
-        Mass_conversion = mass_conversion; 
-        
-        _sample_p_correction = p;
-        _boxsize = in_boxsize;
-        Sp.reset(Sp_ptr);
-        Asmth2 = asmth*asmth;
-        
-        if(latfield.active())
-            // executed by active processes only
-        {
-        // for the lack of a good constructor and reset function
-        // we do this
-            gevolution::particle_info pinfo;
-            std::strcpy(pinfo.type_name,"gevolution::particle");
-            pinfo.mass = 1.0;// this is ignored, particles have individual mass
-            pinfo.relativistic=false;
-            std::array<double,3> box{1.,1.,1.};
-            pcls_cdm->initialize(
-                pinfo,
-                gevolution::particle_dataType{},
-                &(gev_pm->lattice()),
-                box.data());
-        }
-    }
     
     /* TODO: remove the lines of code that repeat */
-    // TODO: make sure 'a' passed is the scale factor, aka All.Time?
-    void pmforce_periodic(int,int*, double a) override
+    void pmforce_periodic(int,int*, double a /* scale factor */) override
     {
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
         // tag particles index in the handler
@@ -616,18 +585,22 @@ class relativistic_pm : public base_pm
                 assert(success);
                 
                 gev_pm->clear_sources(); // OK
-                gev_pm->sample(*pcls_cdm,a); // TODO: this depends on 'a'
+                gev_pm->sample(*pcls_cdm,a); 
                 auto [mean_m,mean_p,mean_v] = gev_pm->test_velocities(*pcls_cdm);
                 my_log << "mean     mass: " << mean_m << "\n";
                 my_log << "mean sqr(pos): " << mean_p << "\n";
                 my_log << "mean sqr(vel): " << mean_v << "\n";
                 
-                // TODO: accomodate all of these dependencies
                 // TODO: compute dtau
-                gev_pm->compute_potential(a,gevolution::Hconf(a,cosmo),cosmo.fourpiG,/*
-                dtau = */ 1.0,cosmo.Omega_m); 
+                gev_pm->compute_potential(
+                    a,
+                    gevolution::Hconf(a,cosmo),
+                    cosmo.fourpiG,
+                    /* dtau = */ 1.0,
+                    cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm (a, cosmo)
+                    ); 
                
-                gev_pm->compute_forces(*pcls_cdm,a); // TODO: this depends on 'a'
+                gev_pm->compute_forces(*pcls_cdm,a);
                 
             }
         }
@@ -640,7 +613,7 @@ class relativistic_pm : public base_pm
         {
             const int i= Sp_index.at(p.ID);
             
-            // TODO: are the accelerations found by direct multiplication here?
+            // TODO: convert d(a q)/dt to d(a u)/dt
             for(auto & ax : p.Acc)
                 ax *= conversion_factor;
             
