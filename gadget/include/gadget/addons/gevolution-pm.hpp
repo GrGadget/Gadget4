@@ -408,7 +408,7 @@ class newtonian_pm : public base_pm
             auto & p = P_buffer[i];
             p.ID = Sp->get_id(i);
             p.mass = Sp->get_mass(i) * Mass_conversion;
-            p.Vel= Sp->get_velocity(i); // TODO: unit conversion
+            p.Vel= Sp->get_velocity(i);
             p.Pos= Sp->get_position(i); // in units of the boxsize
             
             for(int k=0;k<3;++k)
@@ -509,149 +509,148 @@ class newtonian_pm : public base_pm
     {}
 };
 
-// class relativistic_pm : public base_pm
-// {
-//     std::unique_ptr< gevolution::relativistic_pm > gev_pm;
-//     public:
-//     relativistic_pm(MPI_Comm raw_com,int Ngrid):
-//         base_pm(raw_com,Ngrid)
-//     {
-//         if(latfield.active())
-//         {
-//             gev_pm.reset(new gevolution::relativistic_pm{Ngrid} );    
-//             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
-//         }
-//     }
-//     
-//     // TODO: is this function necessarily different for newtonian_pm and
-//     // relativistic_pm?
-//     void pm_init_periodic(
-//         particle_handler *Sp_ptr, 
-//         double in_boxsize /* */,
-//         double asmth,
-//         int p /* sampling correction order */) override
-//     {
-//         _sample_p_correction = p;
-//         _boxsize = in_boxsize;
-//         Sp.reset(Sp_ptr);
-//         Asmth2 = asmth*asmth;
-//         
-//         if(latfield.active())
-//             // executed by active processes only
-//         {
-//         // for the lack of a good constructor and reset function
-//         // we do this
-//             gevolution::particle_info pinfo;
-//             std::strcpy(pinfo.type_name,"gevolution::particle");
-//             pinfo.mass = 1.0;// this is ignored, particles have individual mass
-//             pinfo.relativistic=true;// TODO: is this important?
-//             std::array<double,3> box{1.,1.,1.};
-//             pcls_cdm->initialize(
-//                 pinfo,
-//                 gevolution::particle_dataType{},
-//                 &(gev_pm->lattice()),
-//                 box.data());
-//         }
-//     }
-//     void pmforce_periodic(int,int*) override
-//     {
-//         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
-//         // tag particles index in the handler
-//         std::unordered_map<MyIDType,int> Sp_index; 
-//         
-//         // load particles into buffer
-//         P_buffer.resize(Sp->size());
-//         for(auto i=0U;i<P_buffer.size();++i)
-//         {
-//             auto & p = P_buffer[i];
-//             p.ID = Sp->get_id(i);
-//             p.mass = Sp->get_mass(i);
-//             p.Vel= Sp->get_velocity(i); // TODO: unit conversion
-//             p.Pos= Sp->get_position(i); // in units of the boxsize
-//             
-//             Sp_index[p.ID] = i;
-//         }
-//         #ifndef NDEBUG
-//         std::size_t start_hash = hash_ids();
-//         #endif
-//         
-//         {
-//             // send particles to active processes
-//             // on destruction particles will be sent back
-//             latfield_domain_t D_lat{*this}; 
-//             
-//             if(latfield.active())
-//             {
-//                 // send particles from gadget's domain to latfield's 
-//                 // on destruction particles will be sent back
-//                 gadget_domain_t D_gad{*this}; 
-//                 
-//                 // update pcls_cdm from P_buffer
-//                 pcls_cdm->clear(); // remove existing particles, we start fresh
-//                 bool success = true;
-//                 for(const auto &p : P_buffer)
-//                     success &= pcls_cdm->addParticle_global(gevolution::particle(p));
-//                 assert(success);
-//                 
-//                 gev_pm->sample(*pcls_cdm);
-//                 
-//                 gev_pm->update_kspace();
-//                 // k-space begin
-//                 
-//                 gev_pm->solve_poisson_eq();
-//                 
-//                 // sampling spline correction order p (p=2 CIC)
-//                 gev_pm->apply_filter_kspace( 
-//                     [this](std::array<int,3> mode)
-//                     {
-//                         double factor{1.0};
-//                         for(int i=0;i<3;++i)
-//                         if(mode[i]){
-//                             double phase = signed_mode(mode[i]) * pi / size();
-//                             factor *= phase / std::sin(phase);
-//                         }
-//                         return std::pow(factor,sampling_correction_order());
-//                     });
-//                 
-//                 // smoothing the field at the Asmth scale
-//                 gev_pm->apply_filter_kspace( 
-//                     [this](std::array<int,3> mode)
-//                     {
-//                         double k2{0.0};
-//                         for(int i=0;i<3;++i)
-//                         {
-//                             double ki = signed_mode(mode[i]) * k_fundamental();
-//                             k2 += ki*ki;
-//                         }
-//                         return std::exp( - Asmth2 * k2);
-//                     });
-//                 
-//                 // k-space end
-//                 gev_pm->update_rspace();
-//                 
-//                 gev_pm->compute_forces(*pcls_cdm,/* fourpiG = */ 1.0 ); 
-//                 
-//             }
-//         }
-//         
-//         // set the accelerations
-//         const MyFloat conversion_factor 
-//             = 4 * pi / boxsize() / boxsize();
-//         for(auto& p : P_buffer)
-//         {
-//             const int i= Sp_index.at(p.ID);
-//             
-//             for(auto & ax : p.Acc)
-//                 ax *= conversion_factor;
-//             
-//             Sp->set_acceleration(i,p.Acc);
-//         }
-//         #ifndef NDEBUG
-//         std::size_t end_hash = hash_ids();
-//         assert(start_hash == end_hash);
-//         #endif
-//     }
-// };
+class relativistic_pm : public base_pm
+{
+    // TODO: move this variables to the base class
+    double Mass_conversion{1}, Pos_conversion{1}, Vel_conversion{1};
+    using base_pm::latfield;
+    
+    std::unique_ptr<
+        gevolution::relativistic_pm > gev_pm;
+    public:
+    relativistic_pm(MPI_Comm raw_com,int Ngrid):
+        base_pm(raw_com,Ngrid)
+    {
+        if(latfield.active())
+        {
+            gev_pm.reset(new
+            gevolution::relativistic_pm{Ngrid} );    
+            pcls_cdm.reset(new gevolution::Particles_gevolution{} );
+        }
+    }
+    
+    /* TODO: remove this function to avoid code repetition */
+    void pm_init_periodic(
+        particle_handler *Sp_ptr, 
+        double in_boxsize /* */,
+        double asmth,
+        int p /* sampling correction order */,
+        double mass_conversion,
+        double vel_conversion) override
+    {
+        // Pos_conversion  = 1;
+        Vel_conversion  = vel_conversion;
+        Mass_conversion = mass_conversion; 
+        
+        _sample_p_correction = p;
+        _boxsize = in_boxsize;
+        Sp.reset(Sp_ptr);
+        Asmth2 = asmth*asmth;
+        
+        if(latfield.active())
+            // executed by active processes only
+        {
+        // for the lack of a good constructor and reset function
+        // we do this
+            gevolution::particle_info pinfo;
+            std::strcpy(pinfo.type_name,"gevolution::particle");
+            pinfo.mass = 1.0;// this is ignored, particles have individual mass
+            pinfo.relativistic=false;
+            std::array<double,3> box{1.,1.,1.};
+            pcls_cdm->initialize(
+                pinfo,
+                gevolution::particle_dataType{},
+                &(gev_pm->lattice()),
+                box.data());
+        }
+    }
+    
+    /* TODO: remove the lines of code that repeat */
+    void pmforce_periodic(int,int*) override
+    {
+        my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
+        // tag particles index in the handler
+        std::unordered_map<MyIDType,int> Sp_index; 
+        
+        // load particles into buffer
+        P_buffer.resize(Sp->size());
+        for(auto i=0U;i<P_buffer.size();++i)
+        {
+            auto & p = P_buffer[i];
+            p.ID = Sp->get_id(i);
+            p.mass = Sp->get_mass(i) * Mass_conversion;
+            p.Vel= Sp->get_velocity(i); // TODO: convert velocity to momentum
+            p.Pos= Sp->get_position(i); // in units of the boxsize
+            
+            for(int k=0;k<3;++k)
+            {
+                p.Vel[k] *= Vel_conversion;
+                p.Pos[k] *= Pos_conversion;
+            }
+            
+            Sp_index[p.ID] = i;
+        }
+        #ifndef NDEBUG
+        std::size_t start_hash = hash_ids();
+        #endif
+        
+        {
+            // send particles to active processes
+            // on destruction particles will be sent back
+            latfield_domain_t D_lat{*this}; 
+            
+            if(latfield.active())
+            {
+                // send particles from gadget's domain to latfield's 
+                // on destruction particles will be sent back
+                gadget_domain_t D_gad{*this}; 
+                
+                // update pcls_cdm from P_buffer
+                pcls_cdm->clear(); // remove existing particles, we start fresh
+                bool success = true;
+                for(const auto &p : P_buffer)
+                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
+                assert(success);
+                
+                gev_pm->clear_sources(); // OK
+                gev_pm->sample(*pcls_cdm,a); // TODO: this depends on 'a'
+                auto [mean_m,mean_p,mean_v] = gev_pm->test_velocities(*pcls_cdm);
+                my_log << "mean     mass: " << mean_m << "\n";
+                my_log << "mean sqr(pos): " << mean_p << "\n";
+                my_log << "mean sqr(vel): " << mean_v << "\n";
+                
+                // TODO: accomodate all of these dependencies
+                gev_pm->compute_potential(a,Hconf,4piG,dtau,Omega); 
+               
+                gev_pm->compute_forces(*pcls_cdm,a); // TODO: this depends on 'a'
+                
+            }
+        }
+        
+        // set the accelerations
+        // TODO: correct conversion factor
+        const MyFloat conversion_factor 
+            = 4 * pi / boxsize() / boxsize() / Mass_conversion;
+        for(auto& p : P_buffer)
+        {
+            const int i= Sp_index.at(p.ID);
+            
+            // TODO: are the accelerations found by direct multiplication here?
+            for(auto & ax : p.Acc)
+                ax *= conversion_factor;
+            
+            Sp->set_acceleration(i,p.Acc);
+        }
+        #ifndef NDEBUG
+        std::size_t end_hash = hash_ids();
+        assert(start_hash == end_hash);
+        #endif
+    }
+    
+    ~relativistic_pm() override
+    {}
+};
+
 }
 
 #endif
