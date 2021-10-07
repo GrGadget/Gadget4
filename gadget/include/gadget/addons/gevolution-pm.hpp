@@ -4,6 +4,7 @@
 #include <gevolution/newtonian_pm.hpp>
 #include <gevolution/gr_pm.hpp>
 #include <gevolution/Particles_gevolution.hpp>
+#include <gevolution/background.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/array.hpp>
@@ -76,6 +77,7 @@ struct particle_t
 class base_pm
 {
     protected:
+    gevolution::cosmology cosmo; // TODO: initialize this
     
     latfield_handler latfield;
     std::unique_ptr< particle_handler> Sp;
@@ -324,7 +326,7 @@ class base_pm
         return k >= size() / 2 ? k - size() : k;
     }
    
-    virtual void pmforce_periodic(int,int*) = 0;
+    virtual void pmforce_periodic(int,int*, double a) = 0;
    
     
     void compute_forces()
@@ -395,7 +397,7 @@ class newtonian_pm : public base_pm
                 box.data());
         }
     }
-    void pmforce_periodic(int,int*) override
+    void pmforce_periodic(int,int*, double /* a */) override
     {
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
         // tag particles index in the handler
@@ -566,7 +568,8 @@ class relativistic_pm : public base_pm
     }
     
     /* TODO: remove the lines of code that repeat */
-    void pmforce_periodic(int,int*) override
+    // TODO: make sure 'a' passed is the scale factor, aka All.Time?
+    void pmforce_periodic(int,int*, double a) override
     {
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
         // tag particles index in the handler
@@ -620,7 +623,9 @@ class relativistic_pm : public base_pm
                 my_log << "mean sqr(vel): " << mean_v << "\n";
                 
                 // TODO: accomodate all of these dependencies
-                gev_pm->compute_potential(a,Hconf,4piG,dtau,Omega); 
+                // TODO: compute dtau
+                gev_pm->compute_potential(a,gevolution::Hconf(a,cosmo),cosmo.fourpiG,/*
+                dtau = */ 1.0,cosmo.Omega_m); 
                
                 gev_pm->compute_forces(*pcls_cdm,a); // TODO: this depends on 'a'
                 

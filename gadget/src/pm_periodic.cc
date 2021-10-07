@@ -1536,7 +1536,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
  *  for a power spectrum calculation. In the later case, typelist flags the particle
  *  types that should be included in the density field.
  */
-void pm_periodic::pmforce_periodic(int mode, int *typelist)
+void pm_periodic::pmforce_periodic(int mode, int *typelist, double /* a */)
 {
   my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
   std::vector<std::array<double, 3>> GravPM(Sp->size(), {0, 0, 0});

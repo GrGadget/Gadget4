@@ -70,7 +70,7 @@ class pm_periodic :
     
   int size()const{return Ngrid[0];}  
   void pm_init_periodic(particle_handler *Sp_ptr, double boxsize, double asmth);
-  void pmforce_periodic(int mode, int *typelist);
+  void pmforce_periodic(int mode, int *typelist, double /*a*/ = 0 );
   void calculate_power_spectra(int num, char *OutputDir);
 
  private:
