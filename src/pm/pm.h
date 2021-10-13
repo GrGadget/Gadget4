@@ -37,21 +37,20 @@ namespace gadget{
         };
     #endif
 #else
+    
+    template<class base_type>
+    class gevolution_pm : public base_type
+    {
+         public:
+          gevolution_pm(MPI_Comm comm, int ngrid) : base_type(comm, ngrid) {}
+    };
+    
     #ifdef GEVOLUTION_GR
-    class pm : public ::gadget::gevolution_api::relativistic_pm
-    {
-        using base_t = ::gadget::gevolution_api::relativistic_pm;
-     public:
-      pm(MPI_Comm comm, int ngrid) : base_t(comm, ngrid) {}
-    };
+    using pm = gevolution_pm<::gadget::gevolution_api::relativistic_pm>;
     #else
-    class pm : public ::gadget::gevolution_api::newtonian_pm
-    {
-        using base_t = ::gadget::gevolution_api::newtonian_pm;
-     public:
-      pm(MPI_Comm comm, int ngrid) : base_t(comm, ngrid) {}
-    };
+    using pm = gevolution_pm<::gadget::gevolution_api::newtonian_pm>;
     #endif
+    
 #endif
 }
 #endif
