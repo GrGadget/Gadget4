@@ -413,10 +413,11 @@ class simparticles_handler : public particle_handler
   std::array<MyFloat, 3> get_position(int i) const override
   {
     auto IntPos = get_IntPosition(i);
+    const double fac = FacIntToCoord;
     return { 
-        IntPos[0]*FacIntToCoord, 
-        IntPos[1]*FacIntToCoord,
-        IntPos[2]*FacIntToCoord  };// in units of the boxsize
+        IntPos[0] * fac, 
+        IntPos[1] * fac,
+        IntPos[2] * fac  };// in units of the boxsize
   }
   std::array<MyFloat, 3> get_velocity(int i) const  override 
   {
