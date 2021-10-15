@@ -409,7 +409,8 @@ class base_pm
 class newtonian_pm : 
     public base_pm
 {
-    using gev_pm = ::gevolution::newtonian_pm< ::gevolution::Cplx,::gevolution::Particles_gevolution >;
+    using gev_pm = ::gevolution::newtonian_pm< 
+        ::gevolution::Cplx, ::gevolution::Particles_gevolution >;
     using base_pm::latfield;
     
     // WARNING: gev_pm is only accessible to those processes participating in
@@ -540,112 +541,136 @@ class newtonian_pm :
     {}
 };
 
-// class relativistic_pm : public base_pm
-// {
-//     using base_pm::latfield;
-//     
-//     public:
-//     relativistic_pm(MPI_Comm raw_com,int Ngrid):
-//         base_pm(raw_com,Ngrid)
-//     {
-//         if(latfield.active())
-//         {
-//             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
-//         }
-//     }
-//     
-//     
-//     /* TODO: remove the lines of code that repeat */
-//     void pmforce_periodic(int,int*, double a /* scale factor */) override
-//     {
-//         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
-//         // tag particles index in the handler
-//         std::unordered_map<MyIDType,int> Sp_index; 
-//         
-//         // load particles into buffer
-//         P_buffer.resize(Sp->size());
-//         for(auto i=0U;i<P_buffer.size();++i)
-//         {
-//             auto & p = P_buffer[i];
-//             p.ID = Sp->get_id(i);
-//             p.mass = Sp->get_mass(i) * Mass_conversion;
-//             p.Vel= Sp->get_velocity(i); // TODO: convert velocity to momentum
-//             p.Pos= Sp->get_position(i); // in units of the boxsize
-//             
-//             for(int k=0;k<3;++k)
-//             {
-//                 p.Vel[k] *= Vel_conversion;
-//                 p.Pos[k] *= Pos_conversion;
-//             }
-//             
-//             Sp_index[p.ID] = i;
-//         }
-//         #ifndef NDEBUG
-//         std::size_t start_hash = hash_ids();
-//         #endif
-//         
-//         {
-//             // send particles to active processes
-//             // on destruction particles will be sent back
-//             latfield_domain_t D_lat{*this}; 
-//             
-//             if(latfield.active())
-//             {
-//                 // send particles from gadget's domain to latfield's 
-//                 // on destruction particles will be sent back
-//                 gadget_domain_t D_gad{*this}; 
-//                 
-//                 // update pcls_cdm from P_buffer
-//                 pcls_cdm->clear(); // remove existing particles, we start fresh
-//                 bool success = true;
-//                 for(const auto &p : P_buffer)
-//                     success &= pcls_cdm->addParticle_global(gevolution::particle(p));
-//                 assert(success);
-//                 
-//                 gev_pm->clear_sources(); // OK
-//                 gev_pm->sample(*pcls_cdm,a); 
-//                 auto [mean_m,mean_p,mean_v] = gev_pm->test_velocities(*pcls_cdm);
-//                 my_log << "mean     mass: " << mean_m << "\n";
-//                 my_log << "mean sqr(pos): " << mean_p << "\n";
-//                 my_log << "mean sqr(vel): " << mean_v << "\n";
-//                 
-//                 // TODO: compute dtau
-//                 gev_pm->compute_potential(
-//                     a,
-//                     gevolution::Hconf(a,cosmo),
-//                     cosmo.fourpiG,
-//                     /* dtau = */ 1.0,
-//                     cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm (a, cosmo)
-//                     ); 
-//                
-//                 gev_pm->compute_forces(*pcls_cdm,a);
-//                 
-//             }
-//         }
-//         
-//         // set the accelerations
-//         // TODO: correct conversion factor
-//         const MyFloat conversion_factor 
-//             = 4 * pi / boxsize() / boxsize() / Mass_conversion;
-//         for(auto& p : P_buffer)
-//         {
-//             const int i= Sp_index.at(p.ID);
-//             
-//             // TODO: convert d(a q)/dt to d(a u)/dt
-//             for(auto & ax : p.Acc)
-//                 ax *= conversion_factor;
-//             
-//             Sp->set_acceleration(i,p.Acc);
-//         }
-//         #ifndef NDEBUG
-//         std::size_t end_hash = hash_ids();
-//         assert(start_hash == end_hash);
-//         #endif
-//     }
-//     
-//     ~relativistic_pm() override
-//     {}
-// };
+class relativistic_pm : 
+    public base_pm
+{
+    using gev_pm = ::gevolution::relativistic_pm< 
+        ::gevolution::Cplx, ::gevolution::Particles_gevolution >;
+    using base_pm::latfield;
+    
+    // WARNING: gev_pm is only accessible to those processes participating in
+    // LATfield, ie. latfield.active()
+    
+    std::unique_ptr<gev_pm> gev_pm_ptr;
+    
+    public:
+    
+    using base_pm::size;
+    
+    relativistic_pm(MPI_Comm raw_com,int Ngrid):
+        base_pm(raw_com,Ngrid)
+    {
+        if(latfield.active())
+        {
+            gev_pm_ptr.reset(new gev_pm{Ngrid});
+            pcls_cdm.reset(new gevolution::Particles_gevolution{} );
+        }
+    }
+    
+    
+    /* TODO: remove the lines of code that repeat */
+    void pmforce_periodic(int,int*, double a /* scale factor */)
+    {
+        static double a_old = -1;
+        double da = 1.0;
+        if( a_old < 0 )
+            da = 1.0;
+        else
+        {
+            da = a - a_old;
+            a_old = a;
+        }
+        
+        
+        my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
+        // tag particles index in the handler
+        std::unordered_map<MyIDType,int> Sp_index; 
+        
+        // load particles into buffer
+        P_buffer.resize(Sp->size());
+        for(auto i=0U;i<P_buffer.size();++i)
+        {
+            auto & p = P_buffer[i];
+            p.ID = Sp->get_id(i);
+            p.mass = Sp->get_mass(i) * Mass_conversion;
+            p.Vel= Sp->get_velocity(i); // TODO: convert velocity to momentum
+            p.Pos= Sp->get_position(i);
+            
+            for(int k=0;k<3;++k)
+            {
+                p.Vel[k] = 0 ; // TODO: experiment, compute relativistic forces when vel=0
+                // p.Vel[k] *= Vel_conversion;
+                p.Pos[k] *= Pos_conversion;
+            }
+            
+            Sp_index[p.ID] = i;
+        }
+        #ifndef NDEBUG
+        std::size_t start_hash = hash_ids();
+        #endif
+        
+        {
+            // send particles to active processes
+            // on destruction particles will be sent back
+            latfield_domain_t D_lat{*this}; 
+            
+            if(latfield.active())
+            {
+                // send particles from gadget's domain to latfield's 
+                // on destruction particles will be sent back
+                gadget_domain_t D_gad{*this}; 
+                
+                // update pcls_cdm from P_buffer
+                pcls_cdm->clear(); // remove existing particles, we start fresh
+                bool success = true;
+                for(const auto &p : P_buffer)
+                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
+                assert(success);
+                
+                gev_pm_ptr->clear_sources(); // OK
+                gev_pm_ptr->sample(*pcls_cdm,a); 
+                auto [mean_m,mean_p,mean_v] = gev_pm_ptr->test_velocities(*pcls_cdm);
+                my_log << "mean     mass: " << mean_m << "\n";
+                my_log << "mean sqr(pos): " << mean_p << "\n";
+                my_log << "mean sqr(vel): " << mean_v << "\n";
+                
+                // TODO: compute dtau
+                const double Hconf = gevolution::Hconf(a,cosmo);
+                gev_pm_ptr->compute_potential(
+                    a,Hconf,cosmo.fourpiG,
+                    /* dtau = */ da/a/Hconf,
+                    cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm (a, cosmo)
+                    ); 
+               
+                gev_pm_ptr->compute_forces(*pcls_cdm,1.0,a);
+                
+            }
+        }
+        
+        // TODO: use a Newtonian PM to correct for the Tree contributions
+        
+        // set the accelerations
+        // TODO: correct conversion factor
+        const MyFloat conversion_factor = a*Acc_conversion;
+        for(auto& p : P_buffer)
+        {
+            const int i= Sp_index.at(p.ID);
+            
+            // TODO: convert d(a q)/dt to d(a u)/dt
+            for(auto & ax : p.Acc)
+                ax *= conversion_factor;
+            
+            Sp->set_acceleration(i,p.Acc);
+        }
+        #ifndef NDEBUG
+        std::size_t end_hash = hash_ids();
+        assert(start_hash == end_hash);
+        #endif
+    }
+    
+    ~relativistic_pm() override
+    {}
+};
 
 }
 
