@@ -480,11 +480,12 @@ class newtonian_pm :
                 
                 gev_pm_ptr -> clear_sources();
                 gev_pm_ptr -> sample(*pcls_cdm,a);
-                auto [mean_m,mean_p,mean_v] = gev_pm_ptr -> test_velocities(*pcls_cdm);
+                auto [mean_m,mean_p,mean_v,mean_a] = gev_pm_ptr -> test_velocities(*pcls_cdm);
                 my_log << "mean     mass: " << mean_m << "\n";
                 my_log << "mean sqr(pos): " << mean_p << "\n";
                 my_log << "mean sqr(vel): " << mean_v << "\n";
-        
+                my_log << "mean sqr(acc): " << mean_a << "\n";
+                
                 gev_pm_ptr -> compute_potential(cosmo.fourpiG, a);
                 
                 // sampling spline correction order p (p=2 CIC)
@@ -521,7 +522,7 @@ class newtonian_pm :
         }
         
         // set the accelerations
-        const MyFloat conversion_factor = a * Acc_conversion;
+        const MyFloat conversion_factor = Acc_conversion;
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
@@ -598,8 +599,8 @@ class relativistic_pm :
             
             for(int k=0;k<3;++k)
             {
-                p.Vel[k] = 0 ; // TODO: experiment, compute relativistic forces when vel=0
-                // p.Vel[k] *= Vel_conversion;
+                //p.Vel[k] = 0 ; // TODO: experiment, compute relativistic forces when vel=0
+                p.Vel[k] *= Vel_conversion;
                 p.Pos[k] *= Pos_conversion;
             }
             
@@ -627,22 +628,81 @@ class relativistic_pm :
                     success &= pcls_cdm->addParticle_global(gevolution::particle(p));
                 assert(success);
                 
+                // idea: gadget.vel remains a * u 
+                // pcls_cdm.for_each(
+                //     [&](particle& part, const Site& xpart)
+                //     {
+                //         // Newtonian Momentum to velocity
+                //         std::array<double,3>
+                //             velocity{part.vel[0]/a,part.vel[1]/a,part.vel[2]/a};
+                //         
+                //         // velocity to GR Momentum
+                //         std::array<double,3> gev_pm_ptr->velocity_to_momentum(
+                //             velocity,
+                //             {part.pos[0],part.pos[1],part.pos[2]},
+                //             xpart,
+                //             a);
+                //             
+                //         for(int i=0;i<3;++i)
+                //         {
+                //             part.vel[i] = momentum[i];
+                //         }
+                //     }
+                // );
+                
                 gev_pm_ptr->clear_sources(); // OK
                 gev_pm_ptr->sample(*pcls_cdm,a); 
-                auto [mean_m,mean_p,mean_v] = gev_pm_ptr->test_velocities(*pcls_cdm);
-                my_log << "mean     mass: " << mean_m << "\n";
-                my_log << "mean sqr(pos): " << mean_p << "\n";
-                my_log << "mean sqr(vel): " << mean_v << "\n";
+                
                 
                 // TODO: compute dtau
                 const double Hconf = gevolution::Hconf(a,cosmo);
+                //const double dtau = 0.0238377;  
+                const double dtau = da/a/Hconf;  
+                const double Omega = cosmo.Omega_cdm + cosmo.Omega_b 
+                    + bg_ncdm(a, cosmo);
+                
+                my_log
+                       << "4 pi g: " << cosmo.fourpiG << '\n'
+                       << "a " << a << '\n'
+                       << "Hconf: " << Hconf << '\n'
+                       << "dtau: " << dtau << '\n'
+                       << "Omega: " << Omega << '\n';
+                
                 gev_pm_ptr->compute_potential(
-                    a,Hconf,cosmo.fourpiG,
-                    /* dtau = */ da/a/Hconf,
-                    cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm (a, cosmo)
+                    cosmo.fourpiG,
+                    a,
+                    Hconf,
+                    dtau,
+                    Omega
                     ); 
-               
+                
+                my_log << gev_pm_ptr -> report() << '\n';
                 gev_pm_ptr->compute_forces(*pcls_cdm,1.0,a);
+                
+                // idea: gadget.vel remains a*u, but we need to compute that
+                // from the momentum
+                // pcls_cdm.for_each(
+                //     [&](particle& part, const Site& xpart)
+                //     {
+                //         std::array<Real,3> velocity =
+                //         gev_pm_ptr->momentum_to_velocity(
+                //             {part.vel[0],part.vel[1],part.vel[2]},
+                //             {part.pos[0],part.pos[1],part.pos[2]},
+                //             xpart,
+                //             a);
+                //         for(int i=0;i<3;++i)
+                //         {
+                //             part.vel[i] += a * velocity[i];
+                //         }
+                //     }
+                // );
+                
+                auto [mean_m,mean_p,mean_v,mean_a] = gev_pm_ptr->test_velocities(*pcls_cdm);
+                my_log << "mean     mass: " << mean_m << "\n";
+                my_log << "mean sqr(pos): " << mean_p << "\n";
+                my_log << "mean sqr(vel): " << mean_v << "\n";
+                my_log << "mean sqr(acc): " << mean_a << "\n";
+                my_log << gev_pm_ptr -> report() << '\n';
                 
             }
         }
@@ -651,7 +711,7 @@ class relativistic_pm :
         
         // set the accelerations
         // TODO: correct conversion factor
-        const MyFloat conversion_factor = a*Acc_conversion;
+        const MyFloat conversion_factor = Acc_conversion; // TODO: 'a' factor or not
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
