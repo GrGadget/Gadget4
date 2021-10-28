@@ -408,10 +408,9 @@ class simparticles_handler : public particle_handler
   void set_velocity(int i, std::array<MyFloat, 3> V) const override
   {
     //int i             = Sp.get_active_index(idx);
-    // TODO: uncomment here
-    // Sp.P[i].Vel[0] = V[0];
-    // Sp.P[i].Vel[1] = V[1];
-    // Sp.P[i].Vel[2] = V[2]; // in gadget units
+    Sp.P[i].Vel[0] = V[0];
+    Sp.P[i].Vel[1] = V[1];
+    Sp.P[i].Vel[2] = V[2]; // in gadget units
   }
   
   MyIDType get_id(int i)  const override

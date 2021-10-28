@@ -1837,7 +1837,7 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist, double a)
   {
     auto p = Sp->get_momentum(i);
     for(auto &px : p)
-        px *= a;
+        px *= inv_a;
         
     Sp->set_velocity(i,p);
   }

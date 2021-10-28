@@ -48,7 +48,7 @@ struct particle_data
   }
 
   MyIntPosType IntPos[3];    /**< particle position at its current time, stored as an integer type */
-  // MyFloat Vel[3];            /**< particle velocity at its current time, vel = dx/dt */
+  MyFloat Vel[3];            /**< particle velocity at its current time, vel = dx/dt */
   
   MyFloat Momentum[3];       /**< particle momemtum (p) */
   // MyFloat Force[3];          /**< force = dp/dt */
