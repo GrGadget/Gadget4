@@ -65,7 +65,7 @@ void sim::find_timesteps_and_do_gravity_step_first_half(void)
       for(int i = 0; i < Sp.NumPart; i++)
         {
           for(int j = 0; j < 3; j++)
-            Sp.P[i].Vel[j] += Sp.P[i].GravPM[j] * dt_gravkick;
+            Sp.P[i].Momentum[j] += Sp.P[i].GravPM[j] * dt_gravkick;
         }
     }
 #endif
@@ -215,7 +215,7 @@ void sim::find_timesteps_and_do_gravity_step_first_half(void)
 
 #ifndef PM_ONLY
               for(int j = 0; j < 3; j++)
-                Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
+                Sp.P[target].Momentum[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
 #endif
             }
         }
@@ -259,7 +259,7 @@ void sim::find_timesteps_and_do_gravity_step_first_half(void)
 
 #ifndef PM_ONLY
       for(int j = 0; j < 3; j++)
-        Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
+        Sp.P[target].Momentum[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
 #endif
     }
 
@@ -357,13 +357,13 @@ void sim::do_gravity_step_second_half(void)
 
 #ifndef PM_ONLY
                   for(int j = 0; j < 3; j++)
-                    Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
+                    Sp.P[target].Momentum[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
 #endif
                   if(Sp.P[target].getType() == 0 && All.HighestOccupiedGravTimeBin == timebin)
                     {
                       for(int j = 0; j < 3; j++)
                         {
-                          Sp.SphP[target].VelPred[j] = Sp.P[target].Vel[j];
+                          Sp.SphP[target].VelPred[j] = Sp.P[target].Momentum[j];
 #ifndef PM_ONLY
                           Sp.SphP[target].FullGravAccel[j] = Sp.P[target].GravAccel[j];
 #else
@@ -407,12 +407,12 @@ void sim::do_gravity_step_second_half(void)
             dt_gravkick = (tend - tstart) * All.Timebase_interval;
 #ifndef PM_ONLY
           for(int j = 0; j < 3; j++)
-            Sp.P[target].Vel[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
+            Sp.P[target].Momentum[j] += Sp.P[target].GravAccel[j] * dt_gravkick;
 #endif
           if(Sp.P[target].getType() == 0)
             {
               for(int j = 0; j < 3; j++)
-                Sp.SphP[target].VelPred[j] = Sp.P[target].Vel[j];
+                Sp.SphP[target].VelPred[j] = Sp.P[target].Momentum[j];
             }
         }
     }
@@ -439,12 +439,12 @@ void sim::do_gravity_step_second_half(void)
 
       for(int i = 0; i < Sp.NumPart; i++)
         for(int j = 0; j < 3; j++)
-          Sp.P[i].Vel[j] += Sp.P[i].GravPM[j] * dt_gravkick;
+          Sp.P[i].Momentum[j] += Sp.P[i].GravPM[j] * dt_gravkick;
 
       for(int i = 0; i < Sp.NumGas; i++)
         if(Sp.P[i].getType() == 0)
           for(int j = 0; j < 3; j++)
-            Sp.SphP[i].VelPred[j] = Sp.P[i].Vel[j];
+            Sp.SphP[i].VelPred[j] = Sp.P[i].Momentum[j];
 
       gravity_set_oldacc(All.HighestActiveTimeBin);
     }
@@ -559,9 +559,9 @@ void sim::hydro_force(int step_indicator)
 
       Sp.SphP[target].Entropy += Sp.SphP[target].DtEntropy * dt_entr;
 
-      Sp.P[target].Vel[0] += Sp.SphP[target].HydroAccel[0] * dt_hydrokick;
-      Sp.P[target].Vel[1] += Sp.SphP[target].HydroAccel[1] * dt_hydrokick;
-      Sp.P[target].Vel[2] += Sp.SphP[target].HydroAccel[2] * dt_hydrokick;
+      Sp.P[target].Momentum[0] += Sp.SphP[target].HydroAccel[0] * dt_hydrokick;
+      Sp.P[target].Momentum[1] += Sp.SphP[target].HydroAccel[1] * dt_hydrokick;
+      Sp.P[target].Momentum[2] += Sp.SphP[target].HydroAccel[2] * dt_hydrokick;
 
       if(step_indicator == SECOND_HALF_STEP)
         {

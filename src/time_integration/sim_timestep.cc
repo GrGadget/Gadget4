@@ -237,7 +237,7 @@ integertime simparticles::get_timestep_grav(int p /*!< particle index */)
           "We better stop.\n"
           "Task=%d Part-ID=%lld type=%d dt_grav=%g dt=%g tibase=%g ac=%g xyz=(%g|%g|%g) vel=(%g|%g|%g) tree=(%g|%g|%g) mass=%g\n\n",
           ThisTask, (long long)P[p].ID.get(), P[p].getType(), dt_grav, dt, All.Timebase_interval, ac, pos[0], pos[1], pos[2],
-          P[p].Vel[0], P[p].Vel[1], P[p].Vel[2], P[p].GravAccel[0], P[p].GravAccel[1], P[p].GravAccel[2], P[p].getMass());
+          P[p].Momentum[0], P[p].Momentum[1], P[p].Momentum[2], P[p].GravAccel[0], P[p].GravAccel[1], P[p].GravAccel[2], P[p].getMass());
 
       myflush(stdout);
       Terminate("integer timestep reached zero");
@@ -367,7 +367,7 @@ integertime simparticles::get_timestep_hydro(int p /*!< particle index */)
           "vel=(%g|%g|%g) "
           "tree=(%g|%g|%g) mass=%g  All.cf_hubble_a=%g\n\n",
           ThisTask, (long long)P[p].ID.get(), P[p].getType(), dt, dt_courant, dt_kin, dt_treebased, dt_hsml, All.Timebase_interval,
-          (int)ti_step, ac, pos[0], pos[1], pos[2], P[p].Vel[0], P[p].Vel[1], P[p].Vel[2], P[p].GravAccel[0], P[p].GravAccel[1],
+          (int)ti_step, ac, pos[0], pos[1], pos[2], P[p].Momentum[0], P[p].Momentum[1], P[p].Momentum[2], P[p].GravAccel[0], P[p].GravAccel[1],
           P[p].GravAccel[2], P[p].getMass(), All.cf_hubble_a);
     }
 

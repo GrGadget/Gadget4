@@ -323,7 +323,7 @@ class simparticles : public intposconvert, public setcomm
         for(int i = 0; i < NumPart; i++)
           fwrite(&P[i].IntPos[0], 3, sizeof(MyIntPosType), fd);
         for(int i = 0; i < NumPart; i++)
-          fwrite(&P[i].Vel[0], 3, sizeof(MyFloat), fd);
+          fwrite(&P[i].Momentum[0], 3, sizeof(MyFloat), fd);
         for(int i = 0; i < NumPart; i++)
           fwrite(&P[i].ID, 1, sizeof(MyIDStorage), fd);
         fclose(fd);
@@ -405,6 +405,14 @@ class simparticles_handler : public particle_handler
     Sp.P[i].GravPM[1] = A[1];
     Sp.P[i].GravPM[2] = A[2]; // in gadget units
   }
+  void set_velocity(int i, std::array<MyFloat, 3> V) const override
+  {
+    //int i             = Sp.get_active_index(idx);
+    // TODO: uncomment here
+    // Sp.P[i].Vel[0] = V[0];
+    // Sp.P[i].Vel[1] = V[1];
+    // Sp.P[i].Vel[2] = V[2]; // in gadget units
+  }
   
   MyIDType get_id(int i)  const override
   {
@@ -419,9 +427,9 @@ class simparticles_handler : public particle_handler
         IntPos[1] * fac,
         IntPos[2] * fac  };// in units of the boxsize
   }
-  std::array<MyFloat, 3> get_velocity(int i) const  override 
+  std::array<MyFloat, 3> get_momentum(int i) const  override 
   {
-    return {Sp.P[i].Vel[0],Sp.P[i].Vel[1],Sp.P[i].Vel[2]};//in gadget units
+    return {Sp.P[i].Momentum[0],Sp.P[i].Momentum[1],Sp.P[i].Momentum[2]};//in gadget units
   }
 };
 } // namespace gadget

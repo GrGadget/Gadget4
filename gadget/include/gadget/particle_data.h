@@ -48,7 +48,11 @@ struct particle_data
   }
 
   MyIntPosType IntPos[3];    /**< particle position at its current time, stored as an integer type */
-  MyFloat Vel[3];            /**< particle velocity at its current time */
+  // MyFloat Vel[3];            /**< particle velocity at its current time, vel = dx/dt */
+  
+  MyFloat Momentum[3];       /**< particle momemtum (p) */
+  // MyFloat Force[3];          /**< force = dp/dt */
+  
   vector<MyFloat> GravAccel; /**< particle acceleration due to gravity */
 #if defined(PMGRID) && defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
   MyFloat GravPM[3]; /**< particle acceleration due to long-range PM gravity force */

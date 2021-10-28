@@ -27,14 +27,16 @@ struct particle_t
     MyFloat mass;
     std::array<MyFloat,3> Pos;
     std::array<MyFloat,3> Vel;
-    std::array<MyFloat,3> Acc;
+    std::array<MyFloat,3> Force;
+    std::array<MyFloat,3> Momentum;
    
     particle_t(const gevolution::particle & gev_p):
         ID{gev_p.ID},
         mass{gev_p.mass},
         Pos{gev_p.pos[0],gev_p.pos[1],gev_p.pos[2]},
         Vel{gev_p.vel[0],gev_p.vel[1],gev_p.vel[2]},
-        Acc{gev_p.acc}
+        Force{gev_p.force},
+        Momentum{gev_p.momentum}
     {}
    
     particle_t(MyIDType id):
@@ -50,7 +52,8 @@ struct particle_t
         ar & mass;
         ar & Pos;
         ar & Vel;
-        ar & Acc;
+        ar & Force;
+        ar & Momentum;
     }
     
     bool operator < (const particle_t & that)const
@@ -68,7 +71,8 @@ struct particle_t
         {
             gev_part.pos[i]=Pos[i];
             gev_part.vel[i]=Vel[i];
-            gev_part.acc[i]=Acc[i];
+            gev_part.force[i]=Force[i];
+            gev_part.momentum[i]=Momentum[i];
         }
         return gev_part;   
     }
@@ -80,7 +84,7 @@ class base_pm
     ::LATfield2::Lattice lat{};
     
     double Mass_conversion{1}, Pos_conversion{1}, Vel_conversion{1},
-           Acc_conversion{1};
+           Force_conversion{1}, Momentum_conversion{1};
     gevolution::cosmology cosmo;
     
     latfield_handler latfield;
@@ -342,10 +346,12 @@ class base_pm
         // Pos_conversion  = 1.0/gadget_data.BoxSize;
         Pos_conversion = 1.0;
         Vel_conversion  = 1.0/gadget_data.c;
+        Momentum_conversion = 1.0/gadget_data.c;
         Mass_conversion = 8*M_PI*gadget_data.G/3
             /gadget_data.BoxSize/gadget_data.BoxSize/gadget_data.BoxSize/gadget_data.Hubble/gadget_data.Hubble;
-        Acc_conversion = gadget_data.c * gadget_data.c 
-           / gadget_data.BoxSize / gadget_data.G;
+        Force_conversion = 
+            ( gadget_data.BoxSize * gadget_data.G )
+            / (gadget_data.c * gadget_data.c );
         
         // old way
         // cosmo.fourpiG = 1;
@@ -445,12 +451,12 @@ class newtonian_pm :
             auto & p = P_buffer[i];
             p.ID = Sp->get_id(i);
             p.mass = Sp->get_mass(i) * Mass_conversion;
-            p.Vel= Sp->get_velocity(i);
+            p.Momentum= Sp->get_momentum(i);
             p.Pos= Sp->get_position(i);
             
             for(int k=0;k<3;++k)
             {
-                p.Vel[k] *= Vel_conversion;
+                p.Momentum[k] *= Momentum_conversion;
                 p.Pos[k] *= Pos_conversion;
             }
             
@@ -518,19 +524,25 @@ class newtonian_pm :
                     });
                 
                 gev_pm_ptr -> compute_forces(*pcls_cdm,1.0,a);
+                gev_pm_ptr -> compute_velocities(*pcls_cdm,a);
             }
         }
         
         // set the accelerations
-        const MyFloat conversion_factor = Acc_conversion;
+        const MyFloat gadget_force = 1.0/Force_conversion;
+        const MyFloat gadget_velocity = 1.0/Vel_conversion;
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
             
-            for(auto & ax : p.Acc)
-                ax *= conversion_factor;
+            for(auto & ax : p.Force)
+                ax *= gadget_force;
             
-            Sp->set_acceleration(i,p.Acc);
+            for(auto & vx : p.Vel)
+                vx *= gadget_velocity;
+            
+            Sp->set_acceleration(i,p.Force);
+            Sp->set_velocity(i,p.Vel);
         }
         #ifndef NDEBUG
         std::size_t end_hash = hash_ids();
@@ -594,13 +606,12 @@ class relativistic_pm :
             auto & p = P_buffer[i];
             p.ID = Sp->get_id(i);
             p.mass = Sp->get_mass(i) * Mass_conversion;
-            p.Vel= Sp->get_velocity(i); // TODO: convert velocity to momentum
+            p.Momentum= Sp->get_momentum(i);
             p.Pos= Sp->get_position(i);
             
             for(int k=0;k<3;++k)
             {
-                //p.Vel[k] = 0 ; // TODO: experiment, compute relativistic forces when vel=0
-                p.Vel[k] *= Vel_conversion;
+                p.Momentum[k] *= Momentum_conversion;
                 p.Pos[k] *= Pos_conversion;
             }
             
@@ -678,6 +689,7 @@ class relativistic_pm :
                 
                 my_log << gev_pm_ptr -> report() << '\n';
                 gev_pm_ptr->compute_forces(*pcls_cdm,1.0,a);
+                gev_pm_ptr->compute_velocities(*pcls_cdm,a);
                 
                 // idea: gadget.vel remains a*u, but we need to compute that
                 // from the momentum
@@ -710,17 +722,20 @@ class relativistic_pm :
         // TODO: use a Newtonian PM to correct for the Tree contributions
         
         // set the accelerations
-        // TODO: correct conversion factor
-        const MyFloat conversion_factor = Acc_conversion; // TODO: 'a' factor or not
+        const MyFloat gadget_force = 1.0/Force_conversion;
+        const MyFloat gadget_velocity = 1.0/Vel_conversion;
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
             
-            // TODO: convert d(a q)/dt to d(a u)/dt
-            for(auto & ax : p.Acc)
-                ax *= conversion_factor;
+            for(auto & ax : p.Force)
+                ax *= gadget_force;
             
-            Sp->set_acceleration(i,p.Acc);
+            for(auto & vx : p.Vel)
+                vx *= gadget_velocity;
+            
+            Sp->set_acceleration(i,p.Force);
+            Sp->set_velocity(i,p.Vel);
         }
         #ifndef NDEBUG
         std::size_t end_hash = hash_ids();

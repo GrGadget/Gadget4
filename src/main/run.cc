@@ -759,7 +759,7 @@ void sim::print_particle_info(int i)
 
   printf("Task=%d, ID=%llu, Type=%d, TimeBinGrav=%d, TimeBinHydro=%d, Mass=%g, pos=%g|%g|%g, vel=%g|%g|%g, OldAcc=%g\n", ThisTask,
          (unsigned long long)Sp.P[i].ID.get(), Sp.P[i].getType(), Sp.P[i].TimeBinGrav, Sp.P[i].getTimeBinHydro(), Sp.P[i].getMass(),
-         pos[0], pos[1], pos[2], Sp.P[i].Vel[0], Sp.P[i].Vel[1], Sp.P[i].Vel[2], Sp.P[i].OldAcc);
+         pos[0], pos[1], pos[2], Sp.P[i].Momentum[0], Sp.P[i].Momentum[1], Sp.P[i].Momentum[2], Sp.P[i].OldAcc);
 #if defined(PMGRID) && defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
   printf("GravAccel=%g|%g|%g, GravPM=%g|%g|%g, Soft=%g, SoftClass=%d\n", Sp.P[i].GravAccel[0], Sp.P[i].GravAccel[1],
          Sp.P[i].GravAccel[2], Sp.P[i].GravPM[0], Sp.P[i].GravPM[1], Sp.P[i].GravPM[2],

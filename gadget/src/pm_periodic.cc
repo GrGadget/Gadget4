@@ -1536,7 +1536,7 @@ void pm_periodic::pmforce_uniform_optimized_readout_forces_or_potential_zy(fft_r
  *  for a power spectrum calculation. In the later case, typelist flags the particle
  *  types that should be included in the density field.
  */
-void pm_periodic::pmforce_periodic(int mode, int *typelist, double /* a */)
+void pm_periodic::pmforce_periodic(int mode, int *typelist, double a)
 {
   my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
   std::vector<std::array<double, 3>> GravPM(Sp->size(), {0, 0, 0});
@@ -1830,6 +1830,17 @@ void pm_periodic::pmforce_periodic(int mode, int *typelist, double /* a */)
   // write GravPM to particles
   for(int i = 0; i < GravPM.size(); ++i)
     Sp->set_acceleration(i, GravPM[i]);
+  
+  // update the velocities
+  const double inv_a = 1.0/a;
+  for(int i = 0; i < Sp->size(); ++i)
+  {
+    auto p = Sp->get_momentum(i);
+    for(auto &px : p)
+        px *= a;
+        
+    Sp->set_velocity(i,p);
+  }
 }
 
 #ifdef GRAVITY_TALLBOX

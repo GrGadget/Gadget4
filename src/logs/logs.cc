@@ -594,7 +594,7 @@ void logs::compute_global_quantities_of_system(void)
       if(P[i].getType() == 0)
         {
           for(int j = 0; j < 3; j++)
-            vel[j] = P[i].Vel[j];
+            vel[j] = P[i].Momentum[j];
 
           sys.EnergyKinComp[0] += 0.5 * Sp->P[i].getMass() * (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
 
@@ -606,7 +606,7 @@ void logs::compute_global_quantities_of_system(void)
       else
         {
           for(int j = 0; j < 3; j++)
-            vel[j] = P[i].Vel[j];
+            vel[j] = P[i].Momentum[j];
 
           sys.EnergyKinComp[P[i].getType()] +=
               0.5 * Sp->P[i].getMass() * (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]) * All.cf_a2inv;

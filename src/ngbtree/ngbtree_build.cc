@@ -219,7 +219,7 @@ void ngbtree::check_bounds(void)
               Terminate(
                   "level=%d  errflag=%d  pos=%g %g %g  vel=%g %g %g    min=%g %g %g   max=%g %g %g   vmin=%g %g %g  vmax=%g %g %g    "
                   "\n",
-                  nop->level, errflag, pos[0], pos[1], pos[2], Tp->P[i].Vel[0], Tp->P[i].Vel[1], Tp->P[i].Vel[2], min[0], min[1],
+                  nop->level, errflag, pos[0], pos[1], pos[2], Tp->P[i].Momentum[0], Tp->P[i].Momentum[1], Tp->P[i].Momentum[2], min[0], min[1],
                   min[2], max[0], max[1], max[2], nop->vmin[0], nop->vmin[1], nop->vmin[2], nop->vmax[0], nop->vmax[1], nop->vmax[2]);
             }
 
@@ -227,16 +227,16 @@ void ngbtree::check_bounds(void)
 
           for(int k = 0; k < 3; k++)
             {
-              if(nop->vmin[k] > Tp->P[i].Vel[k])
+              if(nop->vmin[k] > Tp->P[i].Momentum[k])
                 errflag = 1;
 
-              if(nop->vmax[k] < Tp->P[i].Vel[k])
+              if(nop->vmax[k] < Tp->P[i].Momentum[k])
                 errflag = 1;
             }
 
           if(errflag)
             {
-              Terminate("vel=%g %g %g   min=%g %g %g   max=%g %g %g\n", Tp->P[i].Vel[0], Tp->P[i].Vel[1], Tp->P[i].Vel[2],
+              Terminate("vel=%g %g %g   min=%g %g %g   max=%g %g %g\n", Tp->P[i].Momentum[0], Tp->P[i].Momentum[1], Tp->P[i].Momentum[2],
                         nop->vmin[0], nop->vmin[1], nop->vmin[2], nop->vmax[0], nop->vmax[1], nop->vmax[2]);
             }
 
@@ -324,11 +324,11 @@ void ngbtree::update_node_recursive(int no, int sib, int mode)
                   if(offset[k] > center_offset_max[k])
                     center_offset_max[k] = offset[k];
 
-                  if(vmin[k] > Tp->P[p].Vel[k])
-                    vmin[k] = Tp->P[p].Vel[k];
+                  if(vmin[k] > Tp->P[p].Momentum[k])
+                    vmin[k] = Tp->P[p].Momentum[k];
 
-                  if(vmax[k] < Tp->P[p].Vel[k])
-                    vmax[k] = Tp->P[p].Vel[k];
+                  if(vmax[k] < Tp->P[p].Momentum[k])
+                    vmax[k] = Tp->P[p].Momentum[k];
                 }
 
               not_empty = 1;
@@ -422,15 +422,15 @@ void ngbtree::update_vbounds(int i, int *nchanged, int *nodelist, char *flag_cha
 
       for(int j = 0; j < 3; j++)
         {
-          if(nop->vmin[j] > Tp->P[i].Vel[j])
+          if(nop->vmin[j] > Tp->P[i].Momentum[j])
             {
-              nop->vmin[j] = Tp->P[i].Vel[j];
+              nop->vmin[j] = Tp->P[i].Momentum[j];
               has_changed  = 1;
             }
 
-          if(nop->vmax[j] < Tp->P[i].Vel[j])
+          if(nop->vmax[j] < Tp->P[i].Momentum[j])
             {
-              nop->vmax[j] = Tp->P[i].Vel[j];
+              nop->vmax[j] = Tp->P[i].Momentum[j];
               has_changed  = 1;
             }
         }
