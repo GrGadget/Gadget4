@@ -48,7 +48,16 @@ struct particle_data
   }
 
   MyIntPosType IntPos[3];    /**< particle position at its current time, stored as an integer type */
-  MyFloat Vel[3];            /**< particle velocity at its current time, vel = dx/dt */
+  MyFloat Vel[3];            /**< particle peculiar velocity, which is equal to
+                                  dx/dtau where x is the comoving position and
+                                  tau the conformal time. Notice that if we
+                                  denote r=ax the physical coordinates and 
+                                  dt = a dtau the physical time, it follows that
+                                  dr/dt = H r + dx/dtau, therefore Vel = dx/dtau
+                                  is not only the absolute velocity in the
+                                  coordinates (x,tau) but it is also the
+                                  peculiar velocity in the physical coordinates
+                                  (r,t) */
   
   MyFloat Momentum[3];       /**< particle momemtum (p) */
   // MyFloat Force[3];          /**< force = dp/dt */

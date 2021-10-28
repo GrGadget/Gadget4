@@ -58,7 +58,10 @@ void sim::init(int RestartSnapNum)
           double fac = 1 / sqrt(All.cf_a3inv);
           for(int i = 0; i < Sp.NumPart; i++)
             for(int k = 0; k < 3; k++)
+            {
               Sp.P[i].Momentum[k] *= fac;
+              Sp.P[i].Vel[k] = Sp.P[i].Momentum[k]/All.Time;
+            }
 
           strcat(All.SnapshotFileBase, "_ics");
           mpi_printf("Start writing file %s\nRestartSnapNum %d\n", All.SnapshotFileBase, 0);
@@ -310,7 +313,10 @@ void sim::init(int RestartSnapNum)
       for(int i = 0; i < Sp.NumPart; i++)
         {
           for(int j = 0; j < 3; j++)
+          {
             Sp.P[i].Momentum[j] *= afac; /* for dm/gas particles, p = a^2 xdot */
+            Sp.P[i].Vel[j] = Sp.P[i].Momentum[j]/All.Time;
+          }
         }
     }
 
