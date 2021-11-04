@@ -336,7 +336,7 @@ int simparticles::drift_particle(particle_data *P, sph_particle_data *SphP, inte
   double dt_drift;
 
   if(All.ComovingIntegrationOn)
-    dt_drift = Driftfac.get_drift_factor(time0, time1) * All.Time;
+    dt_drift = Driftfac.get_drift_factor(time0, time1);
   else
     dt_drift = (time1 - time0) * All.Timebase_interval;
 
@@ -346,6 +346,8 @@ int simparticles::drift_particle(particle_data *P, sph_particle_data *SphP, inte
 #endif
 
   double posdiff[3];
+  
+  // TODO: compute Vel here
   for(int j = 0; j < 3; j++)
     posdiff[j] = P->Vel[j] * dt_drift;
 

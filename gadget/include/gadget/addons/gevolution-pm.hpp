@@ -437,6 +437,76 @@ class newtonian_pm :
         }
     }
     
+    void pmvelocity_periodic(int,int*, double a)
+    {
+        my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
+        
+        // tag particles index in the handler
+        std::unordered_map<MyIDType,int> Sp_index; 
+        
+        // load particles into buffer
+        P_buffer.resize(Sp->size());
+        for(auto i=0U;i<P_buffer.size();++i)
+        {
+            auto & p = P_buffer[i];
+            p.ID = Sp->get_id(i);
+            p.mass = Sp->get_mass(i) * Mass_conversion;
+            p.Momentum= Sp->get_momentum(i);
+            p.Pos= Sp->get_position(i);
+            
+            for(int k=0;k<3;++k)
+            {
+                p.Momentum[k] *= Momentum_conversion;
+                p.Pos[k] *= Pos_conversion;
+            }
+            
+            Sp_index[p.ID] = i;
+        }
+        #ifndef NDEBUG
+        std::size_t start_hash = hash_ids();
+        #endif
+        
+        {
+            // send particles to active processes
+            // on destruction particles will be sent back
+            latfield_domain_t D_lat{*this}; 
+            
+            if(latfield.active())
+            {
+                // send particles from gadget's domain to latfield's 
+                // on destruction particles will be sent back
+                gadget_domain_t D_gad{*this}; 
+                
+                // update pcls_cdm from P_buffer
+                pcls_cdm->clear(); // remove existing particles, we start fresh
+                bool success = true;
+                for(const auto &p : P_buffer)
+                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
+                assert(success);
+                
+                gev_pm_ptr -> clear_sources();
+                gev_pm_ptr -> sample(*pcls_cdm,a);
+                gev_pm_ptr -> compute_potential(cosmo.fourpiG, a);
+                gev_pm_ptr -> compute_velocities(*pcls_cdm,a);
+            }
+        }
+        
+        const MyFloat gadget_velocity = a/Vel_conversion;
+        for(auto& p : P_buffer)
+        {
+            const int i= Sp_index.at(p.ID);
+            
+            for(auto & vx : p.Vel)
+                vx *= gadget_velocity;
+            
+            Sp->set_velocity(i,p.Vel);
+        }
+        #ifndef NDEBUG
+        std::size_t end_hash = hash_ids();
+        assert(start_hash == end_hash);
+        #endif
+    }
+    
     void pmforce_periodic(int,int*, double a)
     {
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
@@ -530,7 +600,7 @@ class newtonian_pm :
         
         // set the accelerations
         const MyFloat gadget_force = 1.0/Force_conversion;
-        const MyFloat gadget_velocity = 1.0/Vel_conversion;
+        const MyFloat gadget_velocity = a/Vel_conversion;
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
@@ -580,20 +650,91 @@ class relativistic_pm :
         }
     }
     
+    /* TODO: remove the lines of code that repeat */
+    void pmvelocity_periodic(int,int*, double a /* scale factor */)
+    {
+        my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
+        // tag particles index in the handler
+        std::unordered_map<MyIDType,int> Sp_index; 
+        
+        // load particles into buffer
+        P_buffer.resize(Sp->size());
+        for(auto i=0U;i<P_buffer.size();++i)
+        {
+            auto & p = P_buffer[i];
+            p.ID = Sp->get_id(i);
+            p.mass = Sp->get_mass(i) * Mass_conversion;
+            p.Momentum= Sp->get_momentum(i);
+            p.Pos= Sp->get_position(i);
+            
+            for(int k=0;k<3;++k)
+            {
+                p.Momentum[k] *= Momentum_conversion;
+                p.Pos[k] *= Pos_conversion;
+            }
+            
+            Sp_index[p.ID] = i;
+        }
+        #ifndef NDEBUG
+        std::size_t start_hash = hash_ids();
+        #endif
+        
+        {
+            // send particles to active processes
+            // on destruction particles will be sent back
+            latfield_domain_t D_lat{*this}; 
+            
+            if(latfield.active())
+            {
+                // send particles from gadget's domain to latfield's 
+                // on destruction particles will be sent back
+                gadget_domain_t D_gad{*this}; 
+                
+                // update pcls_cdm from P_buffer
+                pcls_cdm->clear(); // remove existing particles, we start fresh
+                bool success = true;
+                for(const auto &p : P_buffer)
+                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
+                assert(success);
+                
+                gev_pm_ptr->clear_sources(); // OK
+                gev_pm_ptr->sample(*pcls_cdm,a); 
+                
+                
+                const double Hconf = gevolution::Hconf(a,cosmo);
+                const double Omega = cosmo.Omega_cdm + cosmo.Omega_b 
+                    + bg_ncdm(a, cosmo);
+                
+                gev_pm_ptr->compute_potential(
+                    cosmo.fourpiG,
+                    a,
+                    Hconf,
+                    Omega
+                    ); 
+                
+                gev_pm_ptr->compute_velocities(*pcls_cdm,a);
+            }
+        }
+        
+        const MyFloat gadget_velocity = a/Vel_conversion;
+        for(auto& p : P_buffer)
+        {
+            const int i= Sp_index.at(p.ID);
+            
+            for(auto & vx : p.Vel)
+                vx *= gadget_velocity;
+            
+            Sp->set_velocity(i,p.Vel);
+        }
+        #ifndef NDEBUG
+        std::size_t end_hash = hash_ids();
+        assert(start_hash == end_hash);
+        #endif
+    }
     
     /* TODO: remove the lines of code that repeat */
     void pmforce_periodic(int,int*, double a /* scale factor */)
     {
-        static double a_old = -1;
-        double da = 1.0;
-        if( a_old < 0 )
-            da = 1.0;
-        else
-        {
-            da = a - a_old;
-            a_old = a;
-        }
-        
         
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
         // tag particles index in the handler
@@ -665,10 +806,7 @@ class relativistic_pm :
                 gev_pm_ptr->sample(*pcls_cdm,a); 
                 
                 
-                // TODO: compute dtau
                 const double Hconf = gevolution::Hconf(a,cosmo);
-                //const double dtau = 0.0238377;  
-                const double dtau = da/a/Hconf;  
                 const double Omega = cosmo.Omega_cdm + cosmo.Omega_b 
                     + bg_ncdm(a, cosmo);
                 
@@ -676,14 +814,12 @@ class relativistic_pm :
                        << "4 pi g: " << cosmo.fourpiG << '\n'
                        << "a " << a << '\n'
                        << "Hconf: " << Hconf << '\n'
-                       << "dtau: " << dtau << '\n'
                        << "Omega: " << Omega << '\n';
                 
                 gev_pm_ptr->compute_potential(
                     cosmo.fourpiG,
                     a,
                     Hconf,
-                    dtau,
                     Omega
                     ); 
                 
@@ -723,7 +859,7 @@ class relativistic_pm :
         
         // set the accelerations
         const MyFloat gadget_force = 1.0/Force_conversion;
-        const MyFloat gadget_velocity = 1.0/Vel_conversion;
+        const MyFloat gadget_velocity = a/Vel_conversion;
         for(auto& p : P_buffer)
         {
             const int i= Sp_index.at(p.ID);
