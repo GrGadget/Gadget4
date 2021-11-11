@@ -60,7 +60,8 @@ void sim::init(int RestartSnapNum)
             for(int k = 0; k < 3; k++)
             {
               Sp.P[i].Momentum[k] *= fac;
-              Sp.P[i].Vel[k] = Sp.P[i].Momentum[k];
+              // TODO: velocity here
+              // Sp.P[i].Vel[k] = Sp.P[i].Momentum[k];
             }
 
           strcat(All.SnapshotFileBase, "_ics");
@@ -315,7 +316,8 @@ void sim::init(int RestartSnapNum)
           for(int j = 0; j < 3; j++)
           {
             Sp.P[i].Momentum[j] *= afac; /* for dm/gas particles, p = a^2 xdot */
-            Sp.P[i].Vel[j] = Sp.P[i].Momentum[j];
+            // TODO: velocity here
+            // Sp.P[i].Vel[j] = Sp.P[i].Momentum[j];
           }
         }
     }

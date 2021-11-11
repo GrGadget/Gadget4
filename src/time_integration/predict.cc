@@ -347,9 +347,11 @@ int simparticles::drift_particle(particle_data *P, sph_particle_data *SphP, inte
 
   double posdiff[3];
   
-  // TODO: compute Vel here
   for(int j = 0; j < 3; j++)
-    posdiff[j] = P->Vel[j] * dt_drift;
+    posdiff[j] = P->Momentum[j] * dt_drift;
+    
+    // TODO: velocity here
+    // posdiff[j] = P->Vel[j] * dt_drift;
 
   MyIntPosType delta[3];
   pos_to_signedintpos(posdiff, (MySignedIntPosType *)delta);

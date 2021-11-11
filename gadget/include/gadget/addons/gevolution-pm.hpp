@@ -499,7 +499,8 @@ class newtonian_pm :
             for(auto & vx : p.Vel)
                 vx *= gadget_velocity;
             
-            Sp->set_velocity(i,p.Vel);
+            // TODO: velocity here
+            // Sp->set_velocity(i,p.Vel);
         }
         #ifndef NDEBUG
         std::size_t end_hash = hash_ids();
@@ -612,7 +613,8 @@ class newtonian_pm :
                 vx *= gadget_velocity;
             
             Sp->set_acceleration(i,p.Force);
-            Sp->set_velocity(i,p.Vel);
+            // TODO: velocity here
+            // Sp->set_velocity(i,p.Vel);
         }
         #ifndef NDEBUG
         std::size_t end_hash = hash_ids();
@@ -724,7 +726,8 @@ class relativistic_pm :
             for(auto & vx : p.Vel)
                 vx *= gadget_velocity;
             
-            Sp->set_velocity(i,p.Vel);
+            // TODO: velocity here
+            // Sp->set_velocity(i,p.Vel);
         }
         #ifndef NDEBUG
         std::size_t end_hash = hash_ids();
@@ -871,7 +874,8 @@ class relativistic_pm :
                 vx *= gadget_velocity;
             
             Sp->set_acceleration(i,p.Force);
-            Sp->set_velocity(i,p.Vel);
+            // TODO: velocity here
+            // Sp->set_velocity(i,p.Vel);
         }
         #ifndef NDEBUG
         std::size_t end_hash = hash_ids();

@@ -17,7 +17,8 @@ class particle_handler
   virtual MyIDType get_id(int i) const   = 0;
   virtual double get_mass(int i) const                                = 0;
   virtual void set_acceleration(int i, std::array<MyFloat, 3> A) const = 0;
-  virtual void set_velocity(int i, std::array<MyFloat, 3> V) const = 0;
+  // TODO: velocity here
+  // virtual void set_velocity(int i, std::array<MyFloat, 3> V) const = 0;
   virtual ~particle_handler() {}
 };
 

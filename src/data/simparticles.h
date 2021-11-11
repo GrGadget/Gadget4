@@ -405,13 +405,14 @@ class simparticles_handler : public particle_handler
     Sp.P[i].GravPM[1] = A[1];
     Sp.P[i].GravPM[2] = A[2]; // in gadget units
   }
-  void set_velocity(int i, std::array<MyFloat, 3> V) const override
-  {
-    //int i             = Sp.get_active_index(idx);
-    Sp.P[i].Vel[0] = V[0];
-    Sp.P[i].Vel[1] = V[1];
-    Sp.P[i].Vel[2] = V[2]; // in gadget units
-  }
+  // TODO: velocity here
+  // void set_velocity(int i, std::array<MyFloat, 3> V) const override
+  // {
+  //   //int i             = Sp.get_active_index(idx);
+  //   Sp.P[i].Vel[0] = V[0];
+  //   Sp.P[i].Vel[1] = V[1];
+  //   Sp.P[i].Vel[2] = V[2]; // in gadget units
+  // }
   
   MyIDType get_id(int i)  const override
   {

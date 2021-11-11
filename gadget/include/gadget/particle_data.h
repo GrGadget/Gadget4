@@ -48,7 +48,9 @@ struct particle_data
   }
 
   MyIntPosType IntPos[3];    /**< particle position at its current time, stored as an integer type */
-  MyFloat Vel[3];            /**< particle peculiar velocity, which is equal to
+  // TODO: compute Vel here
+  // MyFloat Vel[3];            
+                             /**< particle peculiar velocity, which is equal to
                                   dx/dtau where x is the comoving position and
                                   tau the conformal time. Notice that if we
                                   denote r=ax the physical coordinates and 
