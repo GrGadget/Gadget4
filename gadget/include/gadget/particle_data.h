@@ -64,6 +64,14 @@ struct particle_data
   MyFloat Momentum[3];       /**< particle momemtum (p) */
   // MyFloat Force[3];          /**< force = dp/dt */
   
+  #ifdef GEVOLUTION_GR
+  // Metric components at the particle position 
+  MyFloat Phi{0};              
+  std::array<MyFloat,3> B{0,0,0};  
+  // with these 
+  // dx/dtau = B + (1+3 Phi) p/mca
+  #endif
+  
   vector<MyFloat> GravAccel; /**< particle acceleration due to gravity */
 #if defined(PMGRID) && defined(PERIODIC) && !defined(TREEPM_NOTIMESPLIT)
   MyFloat GravPM[3]; /**< particle acceleration due to long-range PM gravity force */

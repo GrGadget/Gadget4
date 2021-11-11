@@ -29,6 +29,10 @@ struct particle_t
     std::array<MyFloat,3> Vel;
     std::array<MyFloat,3> Force;
     std::array<MyFloat,3> Momentum;
+    
+    // Metric
+    MyFloat Phi{0};
+    std::array<MyFloat,3> B{0,0,0};
    
     particle_t(const gevolution::particle & gev_p):
         ID{gev_p.ID},
@@ -36,7 +40,9 @@ struct particle_t
         Pos{gev_p.pos[0],gev_p.pos[1],gev_p.pos[2]},
         Vel{gev_p.vel[0],gev_p.vel[1],gev_p.vel[2]},
         Force{gev_p.force},
-        Momentum{gev_p.momentum}
+        Momentum{gev_p.momentum},
+        Phi{gev_p.Phi},
+        B{gev_p.B}
     {}
    
     particle_t(MyIDType id):
@@ -54,6 +60,8 @@ struct particle_t
         ar & Vel;
         ar & Force;
         ar & Momentum;
+        ar & Phi;
+        ar & B;
     }
     
     bool operator < (const particle_t & that)const
@@ -715,6 +723,7 @@ class relativistic_pm :
                     ); 
                 
                 gev_pm_ptr->compute_velocities(*pcls_cdm,a);
+                gev_pm_ptr->project_metric(*pcls_cdm);
             }
         }
         
@@ -725,6 +734,10 @@ class relativistic_pm :
             
             for(auto & vx : p.Vel)
                 vx *= gadget_velocity;
+            
+            #ifdef GEVOLUTION_PM
+            Sp->set_metric(i,p.Phi,p.B);
+            #endif
             
             // TODO: velocity here
             // Sp->set_velocity(i,p.Vel);
@@ -830,6 +843,8 @@ class relativistic_pm :
                 gev_pm_ptr->compute_forces(*pcls_cdm,1.0,a);
                 gev_pm_ptr->compute_velocities(*pcls_cdm,a);
                 
+                gev_pm_ptr->project_metric(*pcls_cdm);
+                
                 // idea: gadget.vel remains a*u, but we need to compute that
                 // from the momentum
                 // pcls_cdm.for_each(
@@ -876,6 +891,10 @@ class relativistic_pm :
             Sp->set_acceleration(i,p.Force);
             // TODO: velocity here
             // Sp->set_velocity(i,p.Vel);
+            
+            #ifdef GEVOLUTION_PM
+            Sp->set_metric(i,p.Phi,p.B);
+            #endif
         }
         #ifndef NDEBUG
         std::size_t end_hash = hash_ids();

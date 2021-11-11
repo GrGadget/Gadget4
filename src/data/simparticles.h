@@ -431,6 +431,14 @@ class simparticles_handler : public particle_handler
   {
     return {Sp.P[i].Momentum[0],Sp.P[i].Momentum[1],Sp.P[i].Momentum[2]};//in gadget units
   }
+  #ifdef GEVOLUTION_PM
+  void set_metric(int i, MyFloat Phi, std::array<MyFloat,3> B) const override
+  {
+    //int i             = Sp.get_active_index(idx);
+    Sp.P[i].Phi = Phi;
+    Sp.P[i].B = B;
+  }
+  #endif
 };
 } // namespace gadget
 #endif
