@@ -347,14 +347,15 @@ int simparticles::drift_particle(particle_data *P, sph_particle_data *SphP, inte
 
   double posdiff[3];
   
-  for(int j = 0; j < 3; j++)
-    posdiff[j] = P->Momentum[j] * dt_drift;
   
   // TODO: velocity here
-  #ifdef GEVOLUTION_PM
+  #ifdef GEVOLUTION_GR
   // TODO: check if the B factor is correct
   for(int j = 0; j < 3; j++)
     posdiff[j] = ( P->Momentum[j] *(1+3*P->Phi)+ P->B[j] * All.Time * All.c)* dt_drift;
+  #else
+  for(int j = 0; j < 3; j++)
+    posdiff[j] = P->Momentum[j] * dt_drift;
   #endif
 
   MyIntPosType delta[3];

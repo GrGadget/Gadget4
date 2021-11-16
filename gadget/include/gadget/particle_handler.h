@@ -20,7 +20,7 @@ class particle_handler
   // TODO: velocity here
   // virtual void set_velocity(int i, std::array<MyFloat, 3> V) const = 0;
   
-  #ifdef GEVOLUTION_PM
+  #ifdef GEVOLUTION_GR
   virtual void set_metric(int i, MyFloat Phi, std::array<MyFloat,3> B) const = 0;
   #endif
   
