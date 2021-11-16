@@ -418,6 +418,63 @@ class base_pm
                 /* ghost cells = */ 2);
         }
     }
+    
+    /*
+        Operation to execute on the LATfield/Gevolution side
+    */
+    template<class function_type>
+    void execute(function_type F)
+    {
+        // tag particles index in the handler
+        std::unordered_map<MyIDType,int> Sp_index; 
+        
+        // load particles into buffer
+        P_buffer.resize(Sp->size());
+        for(auto i=0U;i<P_buffer.size();++i)
+        {
+            auto & p = P_buffer[i];
+            p.ID = Sp->get_id(i);
+            p.mass = Sp->get_mass(i) * Mass_conversion;
+            p.Momentum= Sp->get_momentum(i);
+            p.Pos= Sp->get_position(i);
+            
+            for(int k=0;k<3;++k)
+            {
+                p.Momentum[k] *= Momentum_conversion;
+                p.Pos[k] *= Pos_conversion;
+            }
+            Sp_index[p.ID] = i;
+        }
+        #ifndef NDEBUG
+        std::size_t start_hash = hash_ids();
+        #endif
+        {
+            // send particles to active processes
+            // on destruction particles will be sent back
+            latfield_domain_t D_lat{*this}; 
+            
+            if(latfield.active())
+            {
+                // send particles from gadget's domain to latfield's 
+                // on destruction particles will be sent back
+                gadget_domain_t D_gad{*this}; 
+                
+                // update pcls_cdm from P_buffer
+                pcls_cdm->clear(); // remove existing particles, we start fresh
+                bool success = true;
+                for(const auto &p : P_buffer)
+                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
+                assert(success);
+                
+                // Do whatever
+                F();
+            }
+        }
+        #ifndef NDEBUG
+        std::size_t end_hash = hash_ids();
+        assert(start_hash == end_hash);
+        #endif
+    }
 };
 
 class newtonian_pm : 
