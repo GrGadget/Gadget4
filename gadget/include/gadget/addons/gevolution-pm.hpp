@@ -614,166 +614,18 @@ class relativistic_pm :
     }
     
     /* TODO: remove the lines of code that repeat */
-    void pmvelocity_periodic(int,int*, double a /* scale factor */)
-    {
-        my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
-        // tag particles index in the handler
-        std::unordered_map<MyIDType,int> Sp_index; 
-        
-        // load particles into buffer
-        P_buffer.resize(Sp->size());
-        for(auto i=0U;i<P_buffer.size();++i)
-        {
-            auto & p = P_buffer[i];
-            p.ID = Sp->get_id(i);
-            p.mass = Sp->get_mass(i) * Mass_conversion;
-            p.Momentum= Sp->get_momentum(i);
-            p.Pos= Sp->get_position(i);
-            
-            for(int k=0;k<3;++k)
-            {
-                p.Momentum[k] *= Momentum_conversion;
-                p.Pos[k] *= Pos_conversion;
-            }
-            
-            Sp_index[p.ID] = i;
-        }
-        #ifndef NDEBUG
-        std::size_t start_hash = hash_ids();
-        #endif
-        
-        {
-            // send particles to active processes
-            // on destruction particles will be sent back
-            latfield_domain_t D_lat{*this}; 
-            
-            if(latfield.active())
-            {
-                // send particles from gadget's domain to latfield's 
-                // on destruction particles will be sent back
-                gadget_domain_t D_gad{*this}; 
-                
-                // update pcls_cdm from P_buffer
-                pcls_cdm->clear(); // remove existing particles, we start fresh
-                bool success = true;
-                for(const auto &p : P_buffer)
-                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
-                assert(success);
-                
-                gev_pm_ptr->clear_sources(); // OK
-                gev_pm_ptr->sample(*pcls_cdm,a); 
-                
-                
-                const double Hconf = gevolution::Hconf(a,cosmo);
-                const double Omega = cosmo.Omega_cdm + cosmo.Omega_b 
-                    + bg_ncdm(a, cosmo);
-                
-                gev_pm_ptr->compute_potential(
-                    cosmo.fourpiG,
-                    a,
-                    Hconf,
-                    Omega
-                    ); 
-                
-                gev_pm_ptr->compute_velocities(*pcls_cdm,a);
-                gev_pm_ptr->project_metric(*pcls_cdm);
-            }
-        }
-        
-        const MyFloat gadget_velocity = a/Vel_conversion;
-        for(auto& p : P_buffer)
-        {
-            const int i= Sp_index.at(p.ID);
-            
-            for(auto & vx : p.Vel)
-                vx *= gadget_velocity;
-            
-            #ifdef GEVOLUTION_GR
-            Sp->set_metric(i,p.Phi,p.B);
-            #endif
-            
-            // TODO: velocity here
-            // Sp->set_velocity(i,p.Vel);
-        }
-        #ifndef NDEBUG
-        std::size_t end_hash = hash_ids();
-        assert(start_hash == end_hash);
-        #endif
-    }
-    
-    /* TODO: remove the lines of code that repeat */
     void pmforce_periodic(int,int*, double a /* scale factor */)
     {
-        
+        // TODO: use a Newtonian PM to correct for the Tree contributions
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
-        // tag particles index in the handler
-        std::unordered_map<MyIDType,int> Sp_index; 
         
-        // load particles into buffer
-        P_buffer.resize(Sp->size());
-        for(auto i=0U;i<P_buffer.size();++i)
-        {
-            auto & p = P_buffer[i];
-            p.ID = Sp->get_id(i);
-            p.mass = Sp->get_mass(i) * Mass_conversion;
-            p.Momentum= Sp->get_momentum(i);
-            p.Pos= Sp->get_position(i);
-            
-            for(int k=0;k<3;++k)
-            {
-                p.Momentum[k] *= Momentum_conversion;
-                p.Pos[k] *= Pos_conversion;
-            }
-            
-            Sp_index[p.ID] = i;
-        }
-        #ifndef NDEBUG
-        std::size_t start_hash = hash_ids();
-        #endif
+        auto Sp_index = base_pm::load_particles();
         
-        {
-            // send particles to active processes
-            // on destruction particles will be sent back
-            latfield_domain_t D_lat{*this}; 
-            
-            if(latfield.active())
+        base_pm::execute(
+            [&]()
             {
-                // send particles from gadget's domain to latfield's 
-                // on destruction particles will be sent back
-                gadget_domain_t D_gad{*this}; 
-                
-                // update pcls_cdm from P_buffer
-                pcls_cdm->clear(); // remove existing particles, we start fresh
-                bool success = true;
-                for(const auto &p : P_buffer)
-                    success &= pcls_cdm->addParticle_global(gevolution::particle(p));
-                assert(success);
-                
-                // idea: gadget.vel remains a * u 
-                // pcls_cdm.for_each(
-                //     [&](particle& part, const Site& xpart)
-                //     {
-                //         // Newtonian Momentum to velocity
-                //         std::array<double,3>
-                //             velocity{part.vel[0]/a,part.vel[1]/a,part.vel[2]/a};
-                //         
-                //         // velocity to GR Momentum
-                //         std::array<double,3> gev_pm_ptr->velocity_to_momentum(
-                //             velocity,
-                //             {part.pos[0],part.pos[1],part.pos[2]},
-                //             xpart,
-                //             a);
-                //             
-                //         for(int i=0;i<3;++i)
-                //         {
-                //             part.vel[i] = momentum[i];
-                //         }
-                //     }
-                // );
-                
                 gev_pm_ptr->clear_sources(); // OK
                 gev_pm_ptr->sample(*pcls_cdm,a); 
-                
                 
                 const double Hconf = gevolution::Hconf(a,cosmo);
                 const double Omega = cosmo.Omega_cdm + cosmo.Omega_b 
@@ -798,35 +650,15 @@ class relativistic_pm :
                 
                 gev_pm_ptr->project_metric(*pcls_cdm);
                 
-                // idea: gadget.vel remains a*u, but we need to compute that
-                // from the momentum
-                // pcls_cdm.for_each(
-                //     [&](particle& part, const Site& xpart)
-                //     {
-                //         std::array<Real,3> velocity =
-                //         gev_pm_ptr->momentum_to_velocity(
-                //             {part.vel[0],part.vel[1],part.vel[2]},
-                //             {part.pos[0],part.pos[1],part.pos[2]},
-                //             xpart,
-                //             a);
-                //         for(int i=0;i<3;++i)
-                //         {
-                //             part.vel[i] += a * velocity[i];
-                //         }
-                //     }
-                // );
-                
                 auto [mean_m,mean_p,mean_v,mean_a] = gev_pm_ptr->test_velocities(*pcls_cdm);
                 my_log << "mean     mass: " << mean_m << "\n";
                 my_log << "mean sqr(pos): " << mean_p << "\n";
                 my_log << "mean sqr(vel): " << mean_v << "\n";
                 my_log << "mean sqr(acc): " << mean_a << "\n";
                 my_log << gev_pm_ptr -> report() << '\n';
-                
-            }
-        }
-        
-        // TODO: use a Newtonian PM to correct for the Tree contributions
+            
+            });
+            
         
         // set the accelerations
         const MyFloat gadget_force = 1.0/Force_conversion;
@@ -842,17 +674,11 @@ class relativistic_pm :
                 vx *= gadget_velocity;
             
             Sp->set_acceleration(i,p.Force);
-            // TODO: velocity here
-            // Sp->set_velocity(i,p.Vel);
             
             #ifdef GEVOLUTION_GR
             Sp->set_metric(i,p.Phi,p.B);
             #endif
         }
-        #ifndef NDEBUG
-        std::size_t end_hash = hash_ids();
-        assert(start_hash == end_hash);
-        #endif
     }
     
     ~relativistic_pm() override
