@@ -590,14 +590,19 @@ class newtonian_pm :
 class relativistic_pm : 
     public base_pm
 {
-    using gev_pm = ::gevolution::relativistic_pm< 
+    using gev_gr = ::gevolution::relativistic_pm< 
         ::gevolution::Cplx, ::gevolution::Particles_gevolution >;
+    
+    using gev_newton = ::gevolution::newtonian_pm< 
+        ::gevolution::Cplx, ::gevolution::Particles_gevolution >;
+        
     using base_pm::latfield;
     
     // WARNING: gev_pm is only accessible to those processes participating in
     // LATfield, ie. latfield.active()
     
-    std::unique_ptr<gev_pm> gev_pm_ptr;
+    std::unique_ptr<gev_gr> gev_gr_ptr;
+    std::unique_ptr<gev_newton> gev_newton_ptr;
     
     public:
     
@@ -608,7 +613,8 @@ class relativistic_pm :
     {
         if(latfield.active())
         {
-            gev_pm_ptr.reset(new gev_pm{Ngrid});
+            gev_gr_ptr.reset(new gev_gr{Ngrid});
+            gev_newton_ptr.reset(new gev_newton{Ngrid});
             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
         }
     }
@@ -624,39 +630,94 @@ class relativistic_pm :
         base_pm::execute(
             [&]()
             {
-                gev_pm_ptr->clear_sources(); // OK
-                gev_pm_ptr->sample(*pcls_cdm,a); 
+                // set to zero the PM forces
+                pcls_cdm->for_each(
+                    [](::gevolution::particle &part, const ::LATfield2::Site& /* xpart */)
+                    {
+                        for(int i=0;i<3;++i)
+                            part.force[i] = 0;
+                    }
+                );
+                
+                // Gevolution GR 
+                gev_gr_ptr->clear_sources();
+                gev_gr_ptr->sample(*pcls_cdm,a); 
                 
                 const double Hconf = gevolution::Hconf(a,cosmo);
                 const double Omega = cosmo.Omega_cdm + cosmo.Omega_b 
                     + bg_ncdm(a, cosmo);
                 
-                my_log
-                       << "4 pi g: " << cosmo.fourpiG << '\n'
-                       << "a " << a << '\n'
-                       << "Hconf: " << Hconf << '\n'
-                       << "Omega: " << Omega << '\n';
+                // my_log
+                //        << "4 pi g: " << cosmo.fourpiG << '\n'
+                //        << "a " << a << '\n'
+                //        << "Hconf: " << Hconf << '\n'
+                //        << "Omega: " << Omega << '\n';
                 
-                gev_pm_ptr->compute_potential(
+                gev_gr_ptr->compute_potential(
                     cosmo.fourpiG,
                     a,
                     Hconf,
                     Omega
                     ); 
                 
-                my_log << gev_pm_ptr -> report() << '\n';
-                gev_pm_ptr->compute_forces(*pcls_cdm,1.0,a);
-                gev_pm_ptr->compute_velocities(*pcls_cdm,a);
+                // my_log << gev_gr_ptr -> report() << '\n';
+                gev_gr_ptr->compute_forces(*pcls_cdm,1.0,a);
+                gev_gr_ptr->compute_velocities(*pcls_cdm,a);
+                gev_gr_ptr->project_metric(*pcls_cdm);
                 
-                gev_pm_ptr->project_metric(*pcls_cdm);
+                // auto [mean_m,mean_p,mean_v,mean_a] = gev_gr_ptr->test_velocities(*pcls_cdm);
+                // my_log << "mean     mass: " << mean_m << "\n";
+                // my_log << "mean sqr(pos): " << mean_p << "\n";
+                // my_log << "mean sqr(vel): " << mean_v << "\n";
+                // my_log << "mean sqr(acc): " << mean_a << "\n";
+                // my_log << gev_gr_ptr -> report() << '\n';
                 
-                auto [mean_m,mean_p,mean_v,mean_a] = gev_pm_ptr->test_velocities(*pcls_cdm);
-                my_log << "mean     mass: " << mean_m << "\n";
-                my_log << "mean sqr(pos): " << mean_p << "\n";
-                my_log << "mean sqr(vel): " << mean_v << "\n";
-                my_log << "mean sqr(acc): " << mean_a << "\n";
-                my_log << gev_pm_ptr -> report() << '\n';
-            
+                // Gevolution Newton without smoothing
+                
+                gev_newton_ptr -> clear_sources();
+                gev_newton_ptr -> sample(*pcls_cdm,a);
+                gev_newton_ptr -> compute_potential(cosmo.fourpiG, a);
+                
+                gev_newton_ptr ->
+                compute_forces(*pcls_cdm,1.0,a,gev_newton::force_reduction::minus);
+                
+                // Gevolution Newton with smoothing
+                
+                gev_newton_ptr -> clear_sources();
+                gev_newton_ptr -> sample(*pcls_cdm,a);
+                gev_newton_ptr -> compute_potential(cosmo.fourpiG, a);
+                
+                // sampling spline correction order p (p=2 CIC)
+                ::gevolution::apply_filter_kspace(
+                     *gev_newton_ptr,
+                     [this](std::array<int,3> mode)
+                     {
+                         double factor{1.0};
+                         for(int i=0;i<3;++i)
+                         if(mode[i]){
+                             double phase = signed_mode(mode[i]) * pi / size();
+                             factor *= phase / std::sin(phase);
+                         }
+                         return std::pow(factor,sampling_correction_order());
+                     });
+                
+                // smoothing the field at the Asmth scale
+                ::gevolution::apply_filter_kspace(
+                    *gev_newton_ptr,
+                    [this](std::array<int,3> mode)
+                    {
+                         double k2{0.0};
+                         for(int i=0;i<3;++i)
+                         {
+                             double ki = signed_mode(mode[i]) * k_fundamental();
+                             k2 += ki*ki;
+                         }
+                         return std::exp( - Asmth2 * k2);
+                    
+                    });
+                
+                gev_newton_ptr ->
+                compute_forces(*pcls_cdm,1.0,a,gev_newton::force_reduction::plus);
             });
             
         
