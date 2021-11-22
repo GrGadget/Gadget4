@@ -40,8 +40,8 @@ class simparticles : public intposconvert, public setcomm
   int NumPart; /**< number of particles on the LOCAL processor */
   int NumGas;  /**< number of gas particles on the LOCAL processor  */
 
-  int MaxPart;    /**< This gives the maxmimum number of particles that can be stored on one processor. */
-  int MaxPartSph; /**< This gives the maxmimum number of SPH particles that can be stored on one processor. */
+  int MaxPart{};    /**< This gives the maxmimum number of particles that can be stored on one processor. */
+  int MaxPartSph{}; /**< This gives the maxmimum number of SPH particles that can be stored on one processor. */
 
   long long TotNumPart; /**<  total particle numbers (global value) */
   long long TotNumGas;  /**<  total gas particle number (global value) */
