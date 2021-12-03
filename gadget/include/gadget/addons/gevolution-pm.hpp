@@ -653,8 +653,9 @@ class relativistic_pm :
                 //        << "Hconf: " << Hconf << '\n'
                 //        << "Omega: " << Omega << '\n';
                 
-                constexpr double GR_CUT_DISTANCE = RCUT; // distance at which the
+                // constexpr double GR_CUT_DISTANCE = RCUT; // distance at which the
                 // GR effects are effectively cut in units of L/N
+                const double GRsmth2 = std::pow(GR_CUT_DISTANCE*boxsize()/size() ,2);
                 
                 
                 gev_gr_ptr->compute_potential(
@@ -670,11 +671,10 @@ class relativistic_pm :
                          double k2{0.0};
                          for(int i=0;i<3;++i)
                          {
-                             double ki = 2*pi*signed_mode(mode[i]) * 1.0/size()
-                                * GR_CUT_DISTANCE ;
+                             double ki = signed_mode(mode[i])*k_fundamental();
                              k2 += ki*ki;
                          }
-                         return std::exp( -k2);
+                         return std::exp( -k2*GRsmth2);
                     
                     });
                 
@@ -702,11 +702,10 @@ class relativistic_pm :
                          double k2{0.0};
                          for(int i=0;i<3;++i)
                          {
-                             double ki = 2*pi*signed_mode(mode[i]) * 1.0/size() 
-                                * GR_CUT_DISTANCE ;
+                             double ki = signed_mode(mode[i])*k_fundamental();
                              k2 += ki*ki;
                          }
-                         return std::exp( -k2);
+                         return std::exp( -k2*GRsmth2);
                     
                     });
                 gev_newton_ptr ->
