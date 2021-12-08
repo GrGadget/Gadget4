@@ -604,12 +604,18 @@ class relativistic_pm :
     std::unique_ptr<gev_gr> gev_gr_ptr;
     std::unique_ptr<gev_newton> gev_newton_ptr;
     
+    // const double GRsmth2;
+    
     public:
     
     using base_pm::size;
     
     relativistic_pm(MPI_Comm raw_com,int Ngrid):
         base_pm(raw_com,Ngrid)
+        
+        // this doesn't work because the boxsize is not known at construct, a
+        // bad design choice from Gadget4
+        // ,GRsmth2{std::pow(GR_CUT_DISTANCE*boxsize()/size() ,2)}
     {
         if(latfield.active())
         {
@@ -622,8 +628,14 @@ class relativistic_pm :
     /* TODO: remove the lines of code that repeat */
     void pmforce_periodic(int,int*, double a /* scale factor */)
     {
+    // constexpr double GR_CUT_DISTANCE = RCUT; // distance at which the
+    // GR effects are effectively cut in units of L/N
+        const double GRsmth2 = std::pow(GR_CUT_DISTANCE*boxsize()/size() ,2);
+        
         // TODO: use a Newtonian PM to correct for the Tree contributions
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
+        my_log << "Asmth2 = " << Asmth2 << "\n";
+        my_log << "GRsmth2 = " << GRsmth2 << "\n";
         
         auto Sp_index = base_pm::load_particles();
         
@@ -653,9 +665,6 @@ class relativistic_pm :
                 //        << "Hconf: " << Hconf << '\n'
                 //        << "Omega: " << Omega << '\n';
                 
-                // constexpr double GR_CUT_DISTANCE = RCUT; // distance at which the
-                // GR effects are effectively cut in units of L/N
-                const double GRsmth2 = std::pow(GR_CUT_DISTANCE*boxsize()/size() ,2);
                 
                 
                 gev_gr_ptr->compute_potential(
@@ -666,7 +675,7 @@ class relativistic_pm :
                     ); 
                 ::gevolution::apply_filter_kspace(
                     *gev_gr_ptr,
-                    [this](std::array<int,3> mode)
+                    [this,GRsmth2](std::array<int,3> mode)
                     {
                          double k2{0.0};
                          for(int i=0;i<3;++i)
@@ -697,7 +706,7 @@ class relativistic_pm :
                 gev_newton_ptr -> compute_potential(cosmo.fourpiG, a);
                 ::gevolution::apply_filter_kspace(
                     *gev_newton_ptr,
-                    [this](std::array<int,3> mode)
+                    [this,GRsmth2](std::array<int,3> mode)
                     {
                          double k2{0.0};
                          for(int i=0;i<3;++i)
