@@ -506,7 +506,7 @@ class newtonian_pm :
     {
         if(latfield.active())
         {
-            gev_pm_ptr.reset(new gev_pm{Ngrid});
+            gev_pm_ptr.reset(new gev_pm(Ngrid,latfield.com_pm));
             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
         }
     }
@@ -604,17 +604,23 @@ class relativistic_pm :
     std::unique_ptr<gev_gr> gev_gr_ptr;
     std::unique_ptr<gev_newton> gev_newton_ptr;
     
+    // const double GRsmth2;
+    
     public:
     
     using base_pm::size;
     
     relativistic_pm(MPI_Comm raw_com,int Ngrid):
         base_pm(raw_com,Ngrid)
+        
+        // this doesn't work because the boxsize is not known at construct, a
+        // bad design choice from Gadget4
+        // ,GRsmth2{std::pow(GR_CUT_DISTANCE*boxsize()/size() ,2)}
     {
         if(latfield.active())
         {
-            gev_gr_ptr.reset(new gev_gr{Ngrid});
-            gev_newton_ptr.reset(new gev_newton{Ngrid});
+            gev_gr_ptr.reset(new gev_gr(Ngrid,latfield.com_pm));
+            gev_newton_ptr.reset(new gev_newton(Ngrid,latfield.com_pm));
             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
         }
     }
@@ -622,8 +628,14 @@ class relativistic_pm :
     /* TODO: remove the lines of code that repeat */
     void pmforce_periodic(int,int*, double a /* scale factor */)
     {
+    // constexpr double GR_CUT_DISTANCE = RCUT; // distance at which the
+    // GR effects are effectively cut in units of L/N
+        const double GRsmth2 = std::pow(GR_CUT_DISTANCE*boxsize()/size() ,2);
+        
         // TODO: use a Newtonian PM to correct for the Tree contributions
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
+        my_log << "Asmth2 = " << Asmth2 << "\n";
+        my_log << "GRsmth2 = " << GRsmth2 << "\n";
         
         auto Sp_index = base_pm::load_particles();
         
@@ -653,12 +665,45 @@ class relativistic_pm :
                 //        << "Hconf: " << Hconf << '\n'
                 //        << "Omega: " << Omega << '\n';
                 
+                
+                
                 gev_gr_ptr->compute_potential(
                     cosmo.fourpiG,
                     a,
                     Hconf,
                     Omega
                     ); 
+                
+                // exponential cut at GRsmth scale
+                ::gevolution::apply_filter_kspace(
+                    *gev_gr_ptr,
+                    [this,GRsmth2](std::array<int,3> mode)
+                    {
+                         double k2{0.0};
+                         for(int i=0;i<3;++i)
+                         {
+                             double ki = signed_mode(mode[i])*k_fundamental();
+                             k2 += ki*ki;
+                         }
+                         return std::exp( -k2*GRsmth2);
+                    
+                    });
+                    
+                // CIC corrections
+                #ifdef GR_CIC_CORRECTION
+                ::gevolution::apply_filter_kspace(
+                     *gev_gr_ptr,
+                     [this](std::array<int,3> mode)
+                     {
+                         double factor{1.0};
+                         for(int i=0;i<3;++i)
+                         if(mode[i]){
+                             double phase = signed_mode(mode[i]) * pi / size();
+                             factor *= phase / std::sin(phase);
+                         }
+                         return std::pow(factor,sampling_correction_order());
+                     });
+                #endif
                 
                 // my_log << gev_gr_ptr -> report() << '\n';
                 gev_gr_ptr->compute_forces(*pcls_cdm,1.0,a);
@@ -672,12 +717,42 @@ class relativistic_pm :
                 // my_log << "mean sqr(acc): " << mean_a << "\n";
                 // my_log << gev_gr_ptr -> report() << '\n';
                 
-                // Gevolution Newton without smoothing
+                // Gevolution Newton without smoothing, cut at the Nyquist scale
                 
                 gev_newton_ptr -> clear_sources();
                 gev_newton_ptr -> sample(*pcls_cdm,a);
                 gev_newton_ptr -> compute_potential(cosmo.fourpiG, a);
                 
+                // exponential cut at GRsmth scale
+                ::gevolution::apply_filter_kspace(
+                    *gev_newton_ptr,
+                    [this,GRsmth2](std::array<int,3> mode)
+                    {
+                         double k2{0.0};
+                         for(int i=0;i<3;++i)
+                         {
+                             double ki = signed_mode(mode[i])*k_fundamental();
+                             k2 += ki*ki;
+                         }
+                         return std::exp( -k2*GRsmth2);
+                    
+                    });
+                
+                // CIC corrections
+                #ifdef GR_CIC_CORRECTION
+                ::gevolution::apply_filter_kspace(
+                     *gev_newton_ptr,
+                     [this](std::array<int,3> mode)
+                     {
+                         double factor{1.0};
+                         for(int i=0;i<3;++i)
+                         if(mode[i]){
+                             double phase = signed_mode(mode[i]) * pi / size();
+                             factor *= phase / std::sin(phase);
+                         }
+                         return std::pow(factor,sampling_correction_order());
+                     });
+                #endif
                 gev_newton_ptr ->
                 compute_forces(*pcls_cdm,1.0,a,gev_newton::force_reduction::minus);
                 
