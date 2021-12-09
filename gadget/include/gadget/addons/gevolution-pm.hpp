@@ -673,6 +673,8 @@ class relativistic_pm :
                     Hconf,
                     Omega
                     ); 
+                
+                // exponential cut at GRsmth scale
                 ::gevolution::apply_filter_kspace(
                     *gev_gr_ptr,
                     [this,GRsmth2](std::array<int,3> mode)
@@ -686,6 +688,22 @@ class relativistic_pm :
                          return std::exp( -k2*GRsmth2);
                     
                     });
+                    
+                // CIC corrections
+                #ifdef GR_CIC_CORRECTION
+                ::gevolution::apply_filter_kspace(
+                     *gev_gr_ptr,
+                     [this](std::array<int,3> mode)
+                     {
+                         double factor{1.0};
+                         for(int i=0;i<3;++i)
+                         if(mode[i]){
+                             double phase = signed_mode(mode[i]) * pi / size();
+                             factor *= phase / std::sin(phase);
+                         }
+                         return std::pow(factor,sampling_correction_order());
+                     });
+                #endif
                 
                 // my_log << gev_gr_ptr -> report() << '\n';
                 gev_gr_ptr->compute_forces(*pcls_cdm,1.0,a);
@@ -704,6 +722,8 @@ class relativistic_pm :
                 gev_newton_ptr -> clear_sources();
                 gev_newton_ptr -> sample(*pcls_cdm,a);
                 gev_newton_ptr -> compute_potential(cosmo.fourpiG, a);
+                
+                // exponential cut at GRsmth scale
                 ::gevolution::apply_filter_kspace(
                     *gev_newton_ptr,
                     [this,GRsmth2](std::array<int,3> mode)
@@ -717,6 +737,22 @@ class relativistic_pm :
                          return std::exp( -k2*GRsmth2);
                     
                     });
+                
+                // CIC corrections
+                #ifdef GR_CIC_CORRECTION
+                ::gevolution::apply_filter_kspace(
+                     *gev_newton_ptr,
+                     [this](std::array<int,3> mode)
+                     {
+                         double factor{1.0};
+                         for(int i=0;i<3;++i)
+                         if(mode[i]){
+                             double phase = signed_mode(mode[i]) * pi / size();
+                             factor *= phase / std::sin(phase);
+                         }
+                         return std::pow(factor,sampling_correction_order());
+                     });
+                #endif
                 gev_newton_ptr ->
                 compute_forces(*pcls_cdm,1.0,a,gev_newton::force_reduction::minus);
                 
