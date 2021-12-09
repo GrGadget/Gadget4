@@ -506,7 +506,7 @@ class newtonian_pm :
     {
         if(latfield.active())
         {
-            gev_pm_ptr.reset(new gev_pm(Ngrid,latfield.com_pm));
+            gev_pm_ptr.reset(new gev_pm{Ngrid});
             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
         }
     }
@@ -613,8 +613,8 @@ class relativistic_pm :
     {
         if(latfield.active())
         {
-            gev_gr_ptr.reset(new gev_gr(Ngrid,latfield.com_pm));
-            gev_newton_ptr.reset(new gev_newton(Ngrid,latfield.com_pm));
+            gev_gr_ptr.reset(new gev_gr{Ngrid});
+            gev_newton_ptr.reset(new gev_newton{Ngrid});
             pcls_cdm.reset(new gevolution::Particles_gevolution{} );
         }
     }
@@ -653,30 +653,12 @@ class relativistic_pm :
                 //        << "Hconf: " << Hconf << '\n'
                 //        << "Omega: " << Omega << '\n';
                 
-                constexpr double GR_CUT_DISTANCE = 1.5; // distance at which the
-                // GR effects are effectively cut in units of L/N
-                
-                
                 gev_gr_ptr->compute_potential(
                     cosmo.fourpiG,
                     a,
                     Hconf,
                     Omega
                     ); 
-                ::gevolution::apply_filter_kspace(
-                    *gev_gr_ptr,
-                    [this](std::array<int,3> mode)
-                    {
-                         double k2{0.0};
-                         for(int i=0;i<3;++i)
-                         {
-                             double ki = 2*pi*signed_mode(mode[i]) * 1.0/size()
-                                * GR_CUT_DISTANCE ;
-                             k2 += ki*ki;
-                         }
-                         return std::exp( -k2);
-                    
-                    });
                 
                 // my_log << gev_gr_ptr -> report() << '\n';
                 gev_gr_ptr->compute_forces(*pcls_cdm,1.0,a);
@@ -690,25 +672,12 @@ class relativistic_pm :
                 // my_log << "mean sqr(acc): " << mean_a << "\n";
                 // my_log << gev_gr_ptr -> report() << '\n';
                 
-                // Gevolution Newton without smoothing, cut at the Nyquist scale
+                // Gevolution Newton without smoothing
                 
                 gev_newton_ptr -> clear_sources();
                 gev_newton_ptr -> sample(*pcls_cdm,a);
                 gev_newton_ptr -> compute_potential(cosmo.fourpiG, a);
-                ::gevolution::apply_filter_kspace(
-                    *gev_newton_ptr,
-                    [this](std::array<int,3> mode)
-                    {
-                         double k2{0.0};
-                         for(int i=0;i<3;++i)
-                         {
-                             double ki = 2*pi*signed_mode(mode[i]) * 1.0/size() 
-                                * GR_CUT_DISTANCE ;
-                             k2 += ki*ki;
-                         }
-                         return std::exp( -k2);
-                    
-                    });
+                
                 gev_newton_ptr ->
                 compute_forces(*pcls_cdm,1.0,a,gev_newton::force_reduction::minus);
                 
