@@ -248,8 +248,8 @@ void ngenic::ngenic_displace_particles(void)
           if(Pdisp[n].deltapos[axes] > maxdisp)
             maxdisp = Pdisp[n].deltapos[axes];
 
-          if(Sp->P[n].Vel[axes] > maxvel)
-            maxvel = Sp->P[n].Vel[axes];
+          if(Sp->P[n].Momentum[axes] > maxvel)
+            maxvel = Sp->P[n].Momentum[axes];
         }
     }
 
@@ -1036,7 +1036,7 @@ void ngenic::ngenic_readout_disp(fft_real *grid, int axis, double pfac, double v
 #endif
 
         Pdisp[i].deltapos[axis] += pfac * value;
-        Sp->P[i].Vel[axis] += vfac * value;
+        Sp->P[i].Momentum[axis] += vfac * value;
       }
   }
 

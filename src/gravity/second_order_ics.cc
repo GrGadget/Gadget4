@@ -91,7 +91,7 @@ void sim::second_order_ic_correction(void)
     {
       double posdiff[3];
       for(int j = 0; j < 3; j++)
-        posdiff[j] = fac1 * P[i].Vel[j]; /* Zeldovich displacement */
+        posdiff[j] = fac1 * P[i].Momentum[j]; /* Zeldovich displacement */
 
       MyIntPosType delta[3];
       Sp.pos_to_signedintpos(posdiff, (MySignedIntPosType *)delta);
@@ -117,7 +117,7 @@ void sim::second_order_ic_correction(void)
         P[i].IntPos[j] += delta[j];
 
       for(int j = 0; j < 3; j++)
-        P[i].Vel[j] += fac3 * acc[j]; /* second order lpt velocity correction */
+        P[i].Momentum[j] += fac3 * acc[j]; /* second order lpt velocity correction */
     }
 
   /* now restore the correct masses */

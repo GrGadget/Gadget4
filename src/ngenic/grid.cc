@@ -93,9 +93,9 @@ void ngenic::create_grid(void)
 
       Sp->pos_to_intpos(xyz, Sp->P[i].IntPos);
 
-      Sp->P[i].Vel[0] = 0.;
-      Sp->P[i].Vel[1] = 0.;
-      Sp->P[i].Vel[2] = 0.;
+      Sp->P[i].Momentum[0] = 0.;
+      Sp->P[i].Momentum[1] = 0.;
+      Sp->P[i].Momentum[2] = 0.;
 
       Sp->P[i].ID.set(ipcell + 1);
 
