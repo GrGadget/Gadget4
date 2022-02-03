@@ -319,10 +319,7 @@ class base_pm
     MyFloat k_fundamental() const{return 2*pi/boxsize();}
     MyFloat boxsize() const {return _boxsize;}
     
-    void calculate_power_spectra(int num, char *OutputDir)
-    {
-        // ? 
-    }
+    virtual void calculate_power_spectra(int num, char *OutputDir) = 0;
     
     void pm_init_periodic(
         particle_handler *Sp_ptr, 
@@ -499,6 +496,22 @@ class newtonian_pm :
     std::unique_ptr<gev_pm> gev_pm_ptr;
     
     public:
+    
+    
+    virtual void calculate_power_spectra(int num, char *OutputDir) override
+    {
+       std::filesystem::path outdir{OutputDir}; 
+       outdir /= "powerspecs";
+       // TODO: does path exists?
+       // std::string prefix = std::format("power_",num); // in C++20
+       std::string prefix = std::to_string(num);
+       const int remain = 3-prefix.size();
+       prefix = "power" + std::string(remain,'0') + prefix;
+       
+       std::filesystem::path out_prefix = outdir / prefix;
+       gev_pm_ptr -> save_power_spectrum(out_prefix); 
+    }
+    
     using base_pm::size;
     
     newtonian_pm(MPI_Comm raw_com,int Ngrid):
@@ -607,6 +620,19 @@ class relativistic_pm :
     // const double GRsmth2;
     
     public:
+    virtual void calculate_power_spectra(int num, char *OutputDir) override
+    {
+       std::filesystem::path outdir{OutputDir}; 
+       outdir /= "powerspecs";
+       // TODO: does path exists?
+       // std::string prefix = std::format("power_",num); // in C++20
+       std::string prefix = std::to_string(num);
+       const int remain = 3-prefix.size();
+       prefix = "power" + std::string(remain,'0') + prefix;
+       
+       std::filesystem::path out_prefix = outdir / prefix;
+       gev_gr_ptr -> save_power_spectrum(out_prefix); 
+    }
     
     using base_pm::size;
     
