@@ -509,7 +509,8 @@ class newtonian_pm :
        prefix = "power" + std::string(remain,'0') + prefix;
        
        std::filesystem::path out_prefix = outdir / prefix;
-       gev_pm_ptr -> save_power_spectrum(out_prefix); 
+       if(latfield.active())
+            gev_pm_ptr -> save_power_spectrum(out_prefix); 
     }
     
     using base_pm::size;
@@ -631,7 +632,8 @@ class relativistic_pm :
        prefix = "power" + std::string(remain,'0') + prefix;
        
        std::filesystem::path out_prefix = outdir / prefix;
-       gev_gr_ptr -> save_power_spectrum(out_prefix); 
+       if(latfield.active())
+            gev_gr_ptr -> save_power_spectrum(out_prefix); 
     }
     
     using base_pm::size;
