@@ -548,14 +548,15 @@ class newtonian_pm :
             [&]()
             {
                 gev_pm_ptr -> clear_sources();
-                gev_pm_ptr -> sample(*pcls_cdm,a);
-                auto [mean_m,mean_p,mean_v,mean_a] = gev_pm_ptr -> test_velocities(*pcls_cdm);
-                my_log << "mean     mass: " << mean_m << "\n";
-                my_log << "mean sqr(pos): " << mean_p << "\n";
-                my_log << "mean sqr(vel): " << mean_v << "\n";
-                my_log << "mean sqr(acc): " << mean_a << "\n";
                 
+                gev_pm_ptr -> sample(*pcls_cdm,a);
                 gev_pm_ptr -> compute_potential(cosmo.fourpiG, a);
+                // auto [mean_m,mean_p,mean_v,mean_a] = gev_pm_ptr -> test_velocities(*pcls_cdm);
+                // my_log << "mean     mass: " << mean_m << "\n";
+                // my_log << "mean sqr(pos): " << mean_p << "\n";
+                // my_log << "mean sqr(vel): " << mean_v << "\n";
+                // my_log << "mean sqr(acc): " << mean_a << "\n";
+                
                 
                 // sampling spline correction order p (p=2 CIC)
                 ::gevolution::apply_filter_kspace(
@@ -703,9 +704,6 @@ class relativistic_pm :
                     }
                 );
                 
-                // Gevolution GR 
-                gev_gr_ptr->clear_sources();
-                gev_gr_ptr->sample(*pcls_cdm,a); 
                 
                 const double Hconf = gevolution::Hconf(a,cosmo);
                 const double Omega = cosmo.Omega_cdm + cosmo.Omega_b 
@@ -719,12 +717,19 @@ class relativistic_pm :
                 
                 
                 
-                gev_gr_ptr->compute_potential(
-                    cosmo.fourpiG,
-                    a,
-                    Hconf,
-                    Omega
-                    ); 
+                // Gevolution GR 
+                for(int iter=0;iter<3;++iter)
+                {
+                    // TODO: can we measure here convergence?
+                    gev_gr_ptr->clear_sources();
+                    gev_gr_ptr->sample(*pcls_cdm,a); 
+                    gev_gr_ptr->compute_potential(
+                        cosmo.fourpiG,
+                        a,
+                        Hconf,
+                        Omega
+                        ); 
+                }
                 
                 // exponential cut at GRsmth scale
                 ::gevolution::apply_filter_kspace(
