@@ -15,6 +15,7 @@
 #include <array>
 #include <vector>
 #include <sstream>
+#include <exception>
 #include <gadget/addons/latfield_handler.hpp>
 #include "gadget/particle_handler.h"  // particle_handler
 
@@ -406,6 +407,8 @@ class base_pm
         latfield(raw_com),
         _size(Ngrid)
     {
+        my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
+        my_log << "Ngrid = " << Ngrid << '\n';
         if(latfield.active())
         {
             // TODO: do not repeat this initialization here, use a single lattice
@@ -502,7 +505,17 @@ class newtonian_pm :
     {
        std::filesystem::path outdir{OutputDir}; 
        outdir /= "powerspecs";
-       // TODO: does path exists?
+       if(latfield.am_I_root())
+       {
+            if(!exists(outdir))
+            {
+                create_directory(outdir);
+            }else if(!is_directory(outdir))
+            {
+                throw std::runtime_error(
+                    outdir.string() + " path is not a directory");
+            }
+       }
        // std::string prefix = std::format("power_",num); // in C++20
        std::string prefix = std::to_string(num);
        const int remain = 3-prefix.size();
@@ -625,7 +638,17 @@ class relativistic_pm :
     {
        std::filesystem::path outdir{OutputDir}; 
        outdir /= "powerspecs";
-       // TODO: does path exists?
+       if(latfield.am_I_root())
+       {
+            if(!exists(outdir))
+            {
+                create_directory(outdir);
+            }else if(!is_directory(outdir))
+            {
+                throw std::runtime_error(
+                    outdir.string() + " path is not a directory");
+            }
+       }
        // std::string prefix = std::format("power_",num); // in C++20
        std::string prefix = std::to_string(num);
        const int remain = 3-prefix.size();
@@ -664,6 +687,7 @@ class relativistic_pm :
         my_log << "calling " << __PRETTY_FUNCTION__ << "\n"; 
         my_log << "Asmth2 = " << Asmth2 << "\n";
         my_log << "GRsmth2 = " << GRsmth2 << "\n";
+        my_log << "PMGRID = " << size()  << "\n";
         
         auto Sp_index = base_pm::load_particles();
         

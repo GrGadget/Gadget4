@@ -76,7 +76,7 @@ class latfield_handler
     
     int twin_rank() const { return twin_proc; }
     int this_rank() const { return com_world.rank(); }
-    
+    bool am_I_root() const { return com_world.rank()==0; }
     bool has_twin() const { return twin_proc != com_world.rank();}
 };
 
