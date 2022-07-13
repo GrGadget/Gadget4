@@ -2,12 +2,12 @@ project('OpenGadget4','c','cpp', version: '4.0.0',
     default_options:
     ['optimization=3','buildtype=release','warning_level=3','cpp_std=c++17'])
 
-if get_option('buildtype')=='release'
-    add_global_arguments('-Ofast',language: 'cpp')
-    add_global_arguments('-DNDEBUG',language: 'cpp')
-else
-    add_global_arguments('-g3',language: 'cpp')
-endif
+# if get_option('buildtype')=='release'
+#     add_global_arguments('-Ofast',language: 'cpp')
+#     add_global_arguments('-DNDEBUG',language: 'cpp')
+# else
+#     add_global_arguments('-g3',language: 'cpp')
+# endif
 
 cpp=meson.get_compiler('cpp')
 format = find_program('clang-format',required: false)
@@ -21,8 +21,9 @@ gsl = dependency('gsl')
 hwloc = dependency('hwloc')
 healpix = dependency('chealpix')
 boost = dependency('boost', modules: ['mpi','serialization','unit_test_framework'])
-latfield = dependency('latfield')
-gevolution = dependency('gevolution')
+
+latfield = dependency('latfield', fallback: ['LATfield2','liblatfield_dep'])
+gevolution = dependency('gevolution', fallback: ['gevolution-1.2','libgevolution_dep'])
 
 pkg=import('pkgconfig')
 
@@ -39,7 +40,7 @@ subdir('vectorclass')
 subdir('half')
 
 subdir('gadget')
-executable('Gadget4',
+gadget_exec = executable('Gadget4',
     sources,headers,config_header,compile_header,git_version,
     dependencies:
     [fftw3,mpi,hwloc,hdf5,gsl,md5,vectorclass,gadget,half,healpix,boost,
