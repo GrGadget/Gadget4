@@ -17,12 +17,15 @@
 namespace gadget{ 
 void pinning::get_core_set(void)
 {
+#ifdef IMPOSE_PINNING
   cpuset = hwloc_bitmap_alloc();
   hwloc_get_proc_cpubind(topology, getpid(), cpuset, 0);
+#endif
 }
 
 void pinning::detect_topology(void)
 {
+#ifdef IMPOSE_PINNING
   /* Allocate and initialize topology object. */
   hwloc_topology_init(&topology);
 
@@ -53,10 +56,12 @@ void pinning::detect_topology(void)
     pus = -1;
   else
     pus = hwloc_get_nbobjs_by_depth(topology, depth);
+#endif
 }
 
 void pinning::pin_to_core_set(setcomm *sc)
 {
+#ifdef IMPOSE_PINNING
   sc->mpi_printf("PINNING: We have %d sockets, %d physical cores and %d logical cores on the first MPI-task's node.\n", sockets, cores,
                  pus);
   if(cores <= 0 || sockets <= 0 || pus <= 0)
@@ -152,10 +157,12 @@ void pinning::pin_to_core_set(setcomm *sc)
   hwloc_cpuset_t current_cpu = hwloc_bitmap_dup(obj->cpuset);
 
   hwloc_set_proc_cpubind(topology, getpid(), current_cpu, HWLOC_CPUBIND_PROCESS);
+#endif
 }
 
 void pinning::report_pinning(setcomm *sc)
 {
+#ifdef IMPOSE_PINNING
   if(flag_pinning_error)
     return;
 
@@ -177,5 +184,6 @@ void pinning::report_pinning(setcomm *sc)
       fflush(stdout);
       MPI_Barrier(sc->Communicator);
     }
+#endif
 }
 }
