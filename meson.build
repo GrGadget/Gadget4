@@ -18,7 +18,7 @@ mpi = dependency('mpi',language: 'cpp')
 fftw3 = dependency('fftw3')
 hdf5 = dependency('hdf5',language: 'cpp')
 gsl = dependency('gsl')
-hwloc = dependency('hwloc')
+hwloc = dependency('hwloc', required: false)
 healpix = dependency('chealpix')
 boost = dependency('boost', modules: ['mpi','serialization','unit_test_framework'])
 
