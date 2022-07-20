@@ -115,14 +115,19 @@
 
 /* ... often used physical constants (cgs units; NIST 2010) */
 
-#define GRAVITY 6.6738e-8
-#define SOLAR_MASS 1.989e33
-#define BOLTZMANN 1.38065e-16
-#define CLIGHT 2.99792458e10
+namespace gadget
+{
+    // physical constants in CGS units
+    constexpr double PARSEC =  3.085678e18; // cm
+    constexpr double GRAVITY = 6.6738e-8; // dy cm^2 / g^2
+    constexpr double SOLAR_MASS = 1.989e33; // g
+    constexpr double BOLTZMANN = 1.38065e-16; // erg/K
+    constexpr double CLIGHT = 2.99792458e10; // cm/s
+    constexpr double PROTONMASS = 1.67262178e-24; // g
+    constexpr double HUBBLE = 100*1e5/1e6/PARSEC; // h/s
+}
 
-#define PARSEC 3.085678e18
-#define PROTONMASS 1.67262178e-24
-#define HUBBLE 3.2407789e-18 /* in h/sec */
+
 
 #define SEC_PER_MEGAYEAR 3.15576e13
 #define SEC_PER_YEAR 3.15576e7
