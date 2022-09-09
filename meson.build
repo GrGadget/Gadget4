@@ -27,7 +27,15 @@ gevolution = dependency('gevolution', fallback: ['gevolution-1.2','libgevolution
 
 pkg=import('pkgconfig')
 
-user_config=files(meson.build_root() / 'Config.sh')
+user_config_fname = get_option('config_file')
+default_user_config_fname=meson.build_root() / 'Config.sh'
+
+
+if user_config_fname==''
+    user_config = files(default_user_config_fname)
+else
+    user_config = files(user_config_fname)
+endif    
 
 subdir('buildsystem')
 
