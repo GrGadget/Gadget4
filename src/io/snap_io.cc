@@ -726,6 +726,13 @@ void snap_io::fill_file_header(int writeTask, int lastTask, long long *n_type, l
 #else
   header.flag_doubleprecision = 0;
 #endif
+
+#ifdef INITIAL_CONDITIONS_CONTAIN_ENTROPY
+    header.flag_entropy_instead_u=1;
+#else
+    header.flag_entropy_instead_u=0;
+#endif
+
 #endif
 }
 
